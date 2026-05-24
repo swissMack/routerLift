@@ -23,6 +23,7 @@ public:
     float    accelMmPerSec2()     const { return accelMmS2_; }
     float    softMinMm()          const { return softMinMm_; }
     float    softMaxMm()          const { return softMaxMm_; }
+    bool     dirInverted()        const { return dirInverted_; }
 
     // --- Motion commands (return false if rejected by soft limits) ---
     bool moveToMm(float targetMm);

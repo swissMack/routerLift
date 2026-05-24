@@ -217,7 +217,7 @@ void Display::renderCalibMotor_() {
     int8_t c = UIMenu.cursor(); bool e = UIMenu.isEditing();
     snprintf(v, sizeof(v), "%u",      Motor.stepsPerRev());           drawCalibRow(spr, 50,  c==0, e, "Steps/rev",  v);
     snprintf(v, sizeof(v), "%.3f mm", Motor.spindlePitchMm());        drawCalibRow(spr, 88,  c==1, e, "Pitch",      v);
-    snprintf(v, sizeof(v), "%s",      Motor.isEnabled()?"yes":"no");  drawCalibRow(spr, 126, c==2, e, "Dir invert", v);
+    snprintf(v, sizeof(v), "%s",      Motor.dirInverted()?"yes":"no"); drawCalibRow(spr, 126, c==2, e, "Dir invert", v);
 }
 
 void Display::renderCalibMotion_() {

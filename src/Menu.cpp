@@ -229,7 +229,7 @@ void Menu::handleCalibMotor_() {
         switch (cursor_) {
             case 0: Motor.setStepsPerRev(Motor.stepsPerRev() + p * 100); break;
             case 1: Motor.setSpindlePitchMm(Motor.spindlePitchMm() + p * 0.1f); break;
-            case 2: Motor.setDirectionInverted(!Motor.isEnabled()); break;
+            case 2: Motor.setDirectionInverted(!Motor.dirInverted()); break;
         }
     }
 }
