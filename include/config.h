@@ -85,8 +85,9 @@ namespace Mech {
 
 // ---------------------------------------------------------------------------
 // MPG (manual pulse generator)
+// Namespace name avoids colliding with the MPG class in src/MPG.h.
 // ---------------------------------------------------------------------------
-namespace MPG {
+namespace MPGCfg {
     // Pulses per revolution at the MPG (after full-quadrature decode).
     // Most 4-terminal 5V MPGs are 100 PPR.
     constexpr uint16_t PULSES_PER_REV = 100;

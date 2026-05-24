@@ -11,7 +11,7 @@ void FootSwitch::update() {
         lastRaw_   = raw;
         changedMs_ = now;
     }
-    if ((now - changedMs_) >= UI::BUTTON_DEBOUNCE_MS && raw != stable_) {
+    if ((now - changedMs_) >= Safety::BUTTON_DEBOUNCE_MS && raw != stable_) {
         stable_ = raw;
         if (stable_) justPressed_  = true;
         else         justReleased_ = true;

@@ -28,7 +28,7 @@ void MPG::update() {
 
     // Full-quad gives 4 counts per detent/pulse. Inverted signals reverse direction.
     int32_t pulses = raw / 4;
-    if (::MPG::SIGNALS_INVERTED) pulses = -pulses;
+    if (MPGCfg::SIGNALS_INVERTED) pulses = -pulses;
 
     if (pulses != 0) {
         pendingPulses_ += pulses;
@@ -55,14 +55,14 @@ void MPG::updateScaling_(int32_t pulses) {
 
     // Map pulses/sec to a scale factor between 1.0 and VELOCITY_SCALE_MAX.
     float scale;
-    if (pulsesPerSec_ <= ::MPG::VEL_PPS_LOW) {
+    if (pulsesPerSec_ <= MPGCfg::VEL_PPS_LOW) {
         scale = 1.0f;
-    } else if (pulsesPerSec_ >= ::MPG::VEL_PPS_HIGH) {
-        scale = ::MPG::VELOCITY_SCALE_MAX;
+    } else if (pulsesPerSec_ >= MPGCfg::VEL_PPS_HIGH) {
+        scale = MPGCfg::VELOCITY_SCALE_MAX;
     } else {
-        float t = (pulsesPerSec_ - ::MPG::VEL_PPS_LOW) /
-                  (::MPG::VEL_PPS_HIGH - ::MPG::VEL_PPS_LOW);
-        scale = 1.0f + t * (::MPG::VELOCITY_SCALE_MAX - 1.0f);
+        float t = (pulsesPerSec_ - MPGCfg::VEL_PPS_LOW) /
+                  (MPGCfg::VEL_PPS_HIGH - MPGCfg::VEL_PPS_LOW);
+        scale = 1.0f + t * (MPGCfg::VELOCITY_SCALE_MAX - 1.0f);
     }
     stepMm_ = Rate.baseStepMm() * scale;
 }

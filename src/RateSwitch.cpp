@@ -29,9 +29,9 @@ const char* RateSwitch::label() const {
 
 float RateSwitch::baseStepMm() const {
     switch (band_) {
-        case Band::X1:   return ::MPG::STEP_X1_MM;
-        case Band::X10:  return ::MPG::STEP_X10_MM;
-        case Band::X100: return ::MPG::STEP_X100_MM;
+        case Band::X1:   return MPGCfg::STEP_X1_MM;
+        case Band::X10:  return MPGCfg::STEP_X10_MM;
+        case Band::X100: return MPGCfg::STEP_X100_MM;
     }
-    return ::MPG::STEP_X1_MM;
+    return MPGCfg::STEP_X1_MM;
 }
