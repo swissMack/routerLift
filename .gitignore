@@ -1,0 +1,36 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+lib/readme.txt
+
+# Build artefacts
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.a
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.directory
+
+# Local config that shouldn't be committed
+*.local
+secrets.h
+.claude/ # optional — skip if you want it tracked
