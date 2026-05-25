@@ -18,6 +18,7 @@
 #include "Safety.h"
 #include "Display.h"
 #include "Menu.h"
+#include "Settings.h"
 
 enum class AppState : uint8_t {
     BOOT,
@@ -77,12 +78,9 @@ void setup() {
     RouterRelay.begin();
     UIMenu.begin();
 
-    Motor.setStepsPerRev(Mech::DEFAULT_STEPS_PER_REV);
-    Motor.setSpindlePitchMm(Mech::DEFAULT_SPINDLE_PITCH_MM);
-    Motor.setMaxSpeedMmPerSec(Mech::DEFAULT_MAX_SPEED_MM_S);
-    Motor.setAccelMmPerSec2(Mech::DEFAULT_ACCEL_MM_S2);
-    Motor.setSoftLimits(Mech::DEFAULT_SOFT_MIN_MM, Mech::DEFAULT_SOFT_MAX_MM);
-    Zero.setStampOffsetMm(Mech::DEFAULT_STAMP_OFFSET_MM);
+    // Load persisted calibration from NVS, falling back to Mech/Safety
+    // defaults for any missing keys. Replaces the hard-coded default block.
+    Config.begin();
 
     Home.start();
     appState = AppState::HOMING;
@@ -98,6 +96,7 @@ void loop() {
     TouchPanel.update();
     Home.update();
     Zero.update();
+    Config.update();
     checkEndstops();
     enforceSoftLimits();
 

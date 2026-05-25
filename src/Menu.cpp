@@ -7,6 +7,7 @@
 #include "Zeroing.h"
 #include "Relay.h"
 #include "Safety.h"
+#include "Settings.h"
 #include "config.h"
 
 Menu UIMenu;
@@ -231,6 +232,7 @@ void Menu::handleCalibMotor_() {
             case 1: Motor.setSpindlePitchMm(Motor.spindlePitchMm() + p * 0.1f); break;
             case 2: Motor.setDirectionInverted(!Motor.dirInverted()); break;
         }
+        Config.scheduleSave();
     }
 }
 
@@ -249,6 +251,7 @@ void Menu::handleCalibMotion_() {
             case 0: Motor.setMaxSpeedMmPerSec(Motor.maxSpeedMmPerSec() + p * 1.0f); break;
             case 1: Motor.setAccelMmPerSec2(Motor.accelMmPerSec2() + p * 10.0f); break;
         }
+        Config.scheduleSave();
     }
 }
 
@@ -267,6 +270,7 @@ void Menu::handleCalibLimits_() {
         float hi = Motor.softMaxMm();
         if (cursor_ == 0) { lo += p * 0.5f; Motor.setSoftLimits(lo, hi); }
         if (cursor_ == 1) { hi += p * 0.5f; Motor.setSoftLimits(lo, hi); }
+        Config.scheduleSave();
     }
 }
 
@@ -289,6 +293,7 @@ void Menu::handleCalibSensors_() {
             if (v > 30000) v = 30000;
             RouterRelay.setStartupDelayMs((uint16_t)v);
         }
+        Config.scheduleSave();
     }
 }
 
