@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1300" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="13">
+  <!--
+    Router Lift v1.1.0 - functional wiring schematic.
+    Companion to docs/HARDWARE.md (pin tables) and docs/ARCHITECTURE.md.
+    Block-diagram style: components are labeled rectangles, wires are
+    coloured by signal class, every wire endpoint carries a pin label.
+    Hand-edited SVG, no schematic-capture tool.
+  -->
+
+  <style>
+    .title       { font-size: 22px; font-weight: 700; fill: #111; }
+    .subtitle    { font-size: 13px; fill: #555; }
+    .block-title { font-size: 15px; font-weight: 700; fill: #111; }
+    .pin         { font-size: 11px; fill: #222; }
+    .pin-r       { font-size: 11px; fill: #222; text-anchor: end; }
+    .wire-lbl    { font-size: 10px; fill: #333; }
+    .wire-lbl-bg { fill: #fff; opacity: 0.85; }
+    .note        { font-size: 11px; fill: #555; }
+    .small       { font-size: 10px; fill: #555; }
+    .mono        { font-family: 'JetBrains Mono','SF Mono',Menlo,monospace; font-size: 11px; fill: #222; }
+
+    .block       { fill: #fafafa; stroke: #333; stroke-width: 1.5; }
+    .block-mcu   { fill: #eef4ff; stroke: #2a4d8f; stroke-width: 1.5; }
+    .block-power { fill: #fff1e0; stroke: #b86c00; stroke-width: 1.5; }
+    .block-disp  { fill: #eefbe6; stroke: #356b1a; stroke-width: 1.5; }
+    .block-drv   { fill: #fee9e9; stroke: #8b1b1b; stroke-width: 1.5; }
+    .block-io    { fill: #f1ecff; stroke: #5b3aa6; stroke-width: 1.5; }
+    .block-mech  { fill: #f0f0f0; stroke: #444; stroke-width: 1.5; stroke-dasharray: 4 3; }
+
+    .w-power24   { stroke: #c0392b; stroke-width: 2.2; fill: none; }
+    .w-power5    { stroke: #e67e22; stroke-width: 2.2; fill: none; }
+    .w-power33   { stroke: #d4a017; stroke-width: 2.2; fill: none; }
+    .w-gnd       { stroke: #111; stroke-width: 1.5; fill: none; }
+    .w-sig       { stroke: #2c3e50; stroke-width: 1.4; fill: none; }
+    .w-i2c       { stroke: #6c3483; stroke-width: 1.6; fill: none; }
+    .w-spi       { stroke: #1f618d; stroke-width: 1.6; fill: none; }
+    .w-mains     { stroke: #5e1a1a; stroke-width: 3; fill: none; stroke-dasharray: 6 3; }
+    .w-stepper   { stroke: #6e2c00; stroke-width: 2; fill: none; }
+
+    .dot         { fill: #111; }
+    .arrow       { fill: #111; }
+  </style>
+
+  <defs>
+    <marker id="arrow-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="arrow"/>
+    </marker>
+  </defs>
+
+  <!-- ====================== TITLE ====================== -->
+  <text x="40" y="40" class="title">Router Lift v1.1.0 — wiring schematic</text>
+  <text x="40" y="60" class="subtitle">Companion to docs/HARDWARE.md (pin tables) and docs/ARCHITECTURE.md (module map). Signal classes are colour-coded; see legend lower-right.</text>
+
+  <!-- ====================== POWER TREE ====================== -->
+  <g id="power-tree">
+    <rect x="40" y="90" width="260" height="320" rx="8" class="block-power"/>
+    <text x="170" y="112" text-anchor="middle" class="block-title">Power tree</text>
+    <text x="170" y="130" text-anchor="middle" class="small">Star ground at PSU. One node per rail.</text>
+
+    <!-- 24V PSU -->
+    <rect x="60" y="146" width="220" height="40" rx="4" fill="#fff" stroke="#b86c00"/>
+    <text x="170" y="170" text-anchor="middle" class="pin">24 V PSU (mains-to-DC)</text>
+
+    <!-- bus to consumers -->
+    <line x1="170" y1="186" x2="170" y2="212" class="w-power24"/>
+    <line x1="80" y1="212"  x2="260" y2="212" class="w-power24"/>
+
+    <text x="80"  y="226" class="small">24 V to:</text>
+    <text x="80"  y="240" class="small">• DM542 V+ / V-</text>
+    <text x="80"  y="254" class="small">• NPN inductive sensors (×3)</text>
+    <text x="80"  y="268" class="small">• SSR control side (optional)</text>
+
+    <!-- 5V buck -->
+    <line x1="170" y1="212" x2="170" y2="290" class="w-power24"/>
+    <rect x="100" y="290" width="140" height="32" rx="4" fill="#fff" stroke="#e67e22"/>
+    <text x="170" y="310" text-anchor="middle" class="pin">Buck → 5 V</text>
+    <line x1="170" y1="322" x2="170" y2="342" class="w-power5"/>
+    <line x1="80"  y1="342" x2="260" y2="342" class="w-power5"/>
+    <text x="80"  y="356" class="small">5 V to:</text>
+    <text x="80"  y="370" class="small">• MPG +V (handwheel)</text>
+    <text x="80"  y="384" class="small">• PC817 LED anode (×2)</text>
+    <text x="80"  y="398" class="small">• TFT backlight</text>
+
+    <!-- 3.3V buck (off 5V) -->
+    <line x1="240" y1="342" x2="280" y2="342" class="w-power5"/>
+    <line x1="280" y1="342" x2="280" y2="100" class="w-power5"/>
+    <rect x="200" y="100" width="100" height="32" rx="4" fill="#fff" stroke="#d4a017"/>
+    <text x="250" y="121" text-anchor="middle" class="pin">Buck → 3.3 V</text>
+    <line x1="250" y1="100" x2="250" y2="85" class="w-power33"/>
+    <text x="250" y="80" text-anchor="middle" class="small">3.3 V → ESP32, MCP23017,</text>
+    <text x="250" y="68" text-anchor="middle" class="small">PC817 transistor side, XPT2046</text>
+  </g>
+
+  <!-- ====================== ESP32 BLOCK ====================== -->
+  <g id="esp32">
+    <rect x="700" y="90" width="380" height="700" rx="10" class="block-mcu"/>
+    <text x="890" y="115" text-anchor="middle" class="block-title">ESP32 DevKit V1 (WROOM-32)</text>
+    <text x="890" y="132" text-anchor="middle" class="small">3.3 V logic — not 5 V tolerant. All 5 V signals must be level-shifted.</text>
+
+    <!-- power pins -->
+    <line x1="720" y1="155" x2="700" y2="155" class="w-power33"/>
+    <text x="724" y="159" class="pin">3V3</text>
+    <line x1="720" y1="175" x2="700" y2="175" class="w-gnd"/>
+    <text x="724" y="179" class="pin">GND</text>
+
+    <!-- left side: peripheral GPIOs going to MCP / sensors -->
+    <line x1="700" y1="220" x2="680" y2="220" class="w-i2c"/>
+    <text x="724" y="224" class="pin">GPIO 21  SDA</text>
+    <line x1="700" y1="240" x2="680" y2="240" class="w-i2c"/>
+    <text x="724" y="244" class="pin">GPIO 22  SCL</text>
+
+    <line x1="700" y1="280" x2="680" y2="280" class="w-sig"/>
+    <text x="724" y="284" class="pin">GPIO 32  MPG-A (post-opto)</text>
+    <line x1="700" y1="300" x2="680" y2="300" class="w-sig"/>
+    <text x="724" y="304" class="pin">GPIO 33  MPG-B (post-opto)</text>
+
+    <line x1="700" y1="340" x2="680" y2="340" class="w-sig"/>
+    <text x="724" y="344" class="pin">GPIO 16  RELAY → SSR ctl</text>
+
+    <!-- right side: TFT + Touch SPI bus -->
+    <line x1="1080" y1="180" x2="1100" y2="180" class="w-spi"/>
+    <text x="1076" y="184" class="pin-r">SCK   GPIO 18</text>
+    <line x1="1080" y1="200" x2="1100" y2="200" class="w-spi"/>
+    <text x="1076" y="204" class="pin-r">MOSI  GPIO 23</text>
+    <line x1="1080" y1="220" x2="1100" y2="220" class="w-spi"/>
+    <text x="1076" y="224" class="pin-r">MISO  GPIO 19</text>
+    <line x1="1080" y1="240" x2="1100" y2="240" class="w-spi"/>
+    <text x="1076" y="244" class="pin-r">TFT_CS  GPIO 15</text>
+    <line x1="1080" y1="260" x2="1100" y2="260" class="w-spi"/>
+    <text x="1076" y="264" class="pin-r">TFT_DC  GPIO 2</text>
+    <line x1="1080" y1="280" x2="1100" y2="280" class="w-spi"/>
+    <text x="1076" y="284" class="pin-r">TFT_RST GPIO 4</text>
+    <line x1="1080" y1="310" x2="1100" y2="310" class="w-spi"/>
+    <text x="1076" y="314" class="pin-r">TCH_CS  GPIO 5</text>
+    <line x1="1080" y1="330" x2="1100" y2="330" class="w-spi"/>
+    <text x="1076" y="334" class="pin-r">TCH_IRQ GPIO 17 (polled)</text>
+
+    <!-- right side: stepper -->
+    <line x1="1080" y1="380" x2="1100" y2="380" class="w-sig"/>
+    <text x="1076" y="384" class="pin-r">STEP   GPIO 25</text>
+    <line x1="1080" y1="400" x2="1100" y2="400" class="w-sig"/>
+    <text x="1076" y="404" class="pin-r">DIR    GPIO 26</text>
+    <line x1="1080" y1="420" x2="1100" y2="420" class="w-sig"/>
+    <text x="1076" y="424" class="pin-r">EN     GPIO 27  (active-LOW)</text>
+
+    <!-- Note inside ESP32 block -->
+    <text x="890" y="490" text-anchor="middle" class="small">Step generation: FastAccelStepper</text>
+    <text x="890" y="506" text-anchor="middle" class="small">uses RMT / MCPWM hardware timer.</text>
+    <text x="890" y="522" text-anchor="middle" class="small">MPG: PCNT peripheral, full-quad.</text>
+    <text x="890" y="538" text-anchor="middle" class="small">UI loop: ~20 Hz; watchdog: 5 s.</text>
+
+    <!-- internal note about deprecated drivers -->
+    <text x="890" y="580" text-anchor="middle" class="small" font-style="italic">
+      platform pinned to espressif32 @ 6.6.0
+    </text>
+    <text x="890" y="595" text-anchor="middle" class="small" font-style="italic">
+      (legacy RMT macros required by FastAccelStepper 0.30.x)
+    </text>
+
+    <!-- bottom: USB / serial -->
+    <line x1="890" y1="780" x2="890" y2="800" class="w-sig"/>
+    <rect x="800" y="745" width="180" height="36" rx="4" fill="#fff" stroke="#2a4d8f"/>
+    <text x="890" y="767" text-anchor="middle" class="pin">USB ⇄ serial monitor (115200)</text>
+  </g>
+
+  <!-- ====================== MCP23017 BLOCK ====================== -->
+  <g id="mcp">
+    <rect x="320" y="430" width="340" height="430" rx="10" class="block-io"/>
+    <text x="490" y="455" text-anchor="middle" class="block-title">MCP23017 I/O expander (I²C 0x20)</text>
+    <text x="490" y="472" text-anchor="middle" class="small">Internal pull-ups enabled on every input. Polled, not interrupt-driven.</text>
+
+    <!-- I2C in -->
+    <line x1="660" y1="500" x2="700" y2="500" class="w-i2c"/>
+    <text x="668" y="495" class="pin">SDA</text>
+    <line x1="660" y1="520" x2="700" y2="520" class="w-i2c"/>
+    <text x="668" y="515" class="pin">SCL</text>
+    <text x="660" y="540" text-anchor="end" class="small">to ESP32 21/22, 4.7 kΩ pull-ups to 3V3</text>
+
+    <!-- Port A -->
+    <rect x="340" y="555" width="140" height="135" rx="6" fill="#fff" stroke="#5b3aa6"/>
+    <text x="410" y="575" text-anchor="middle" class="pin">Port A — sensors / foot</text>
+    <text x="350" y="595" class="pin">A.0  Endstop ↓</text>
+    <text x="350" y="611" class="pin">A.1  Endstop ↑</text>
+    <text x="350" y="627" class="pin">A.2  Brass-stamp pickup</text>
+    <text x="350" y="643" class="pin">A.3  Foot switch</text>
+    <text x="350" y="675" class="small" font-style="italic">all active-LOW, debounced in SW</text>
+
+    <!-- wires out of port A -->
+    <line x1="340" y1="595" x2="300" y2="595" class="w-sig"/>
+    <line x1="340" y1="611" x2="300" y2="611" class="w-sig"/>
+    <line x1="340" y1="627" x2="300" y2="627" class="w-sig"/>
+    <line x1="340" y1="643" x2="300" y2="643" class="w-sig"/>
+
+    <!-- Port B -->
+    <rect x="500" y="555" width="140" height="230" rx="6" fill="#fff" stroke="#5b3aa6"/>
+    <text x="570" y="575" text-anchor="middle" class="pin">Port B — board ID + rate sw</text>
+    <text x="510" y="595" class="pin">B.0  Board ID bit 0</text>
+    <text x="510" y="611" class="pin">B.1  Board ID bit 1</text>
+    <text x="510" y="627" class="pin">B.2  Board ID bit 2</text>
+    <text x="510" y="643" class="pin">B.3  Board ID bit 3</text>
+    <text x="510" y="667" class="pin">B.4  Rate switch ×1</text>
+    <text x="510" y="683" class="pin">B.5  Rate switch ×10</text>
+    <text x="510" y="699" class="pin">B.6  Rate switch ×100</text>
+    <text x="510" y="723" class="small" font-style="italic">B.0..B.3: jumper to GND on</text>
+    <text x="510" y="737" class="small" font-style="italic">function board for ROUTER_LIFT (=1)</text>
+    <text x="510" y="755" class="small" font-style="italic">B.4..B.6: rotary SP3T, common=GND</text>
+
+    <text x="490" y="820" text-anchor="middle" class="note">checkEndstops() polls A.0/A.1 outside Homing/Zeroing.</text>
+    <text x="490" y="836" text-anchor="middle" class="note">Any unexpected trigger → Safety::trigger(ENDSTOP_HIT).</text>
+  </g>
+
+  <!-- ====================== ENDSTOPS / STAMP / FOOT ====================== -->
+  <g id="sensors">
+    <rect x="40" y="500" width="260" height="350" rx="8" class="block-io"/>
+    <text x="170" y="522" text-anchor="middle" class="block-title">NPN sensors + foot switch</text>
+
+    <!-- Endstop bottom -->
+    <rect x="60" y="540" width="220" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="170" y="558" text-anchor="middle" class="pin">Inductive sensor — bottom endstop</text>
+    <text x="170" y="576" text-anchor="middle" class="small">24 V supply, open-collector NPN out</text>
+    <line x1="280" y1="565" x2="300" y2="565" class="w-sig"/>
+    <text x="284" y="558" class="small">→ MCP A.0</text>
+
+    <!-- Endstop top -->
+    <rect x="60" y="600" width="220" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="170" y="618" text-anchor="middle" class="pin">Inductive sensor — top endstop</text>
+    <text x="170" y="636" text-anchor="middle" class="small">24 V supply, NPN out</text>
+    <line x1="280" y1="625" x2="300" y2="625" class="w-sig"/>
+    <text x="284" y="618" class="small">→ MCP A.1</text>
+
+    <!-- Stamp pickup -->
+    <rect x="60" y="660" width="220" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="170" y="678" text-anchor="middle" class="pin">Brass-stamp pickup (NPN)</text>
+    <text x="170" y="696" text-anchor="middle" class="small">tool-length zero, triggers on stamp travel</text>
+    <line x1="280" y1="685" x2="300" y2="685" class="w-sig"/>
+    <text x="284" y="678" class="small">→ MCP A.2</text>
+
+    <!-- Foot switch -->
+    <rect x="60" y="720" width="220" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="170" y="738" text-anchor="middle" class="pin">Foot switch (momentary, NO)</text>
+    <text x="170" y="756" text-anchor="middle" class="small">one pole to GND, other to A.3</text>
+    <line x1="280" y1="745" x2="300" y2="745" class="w-sig"/>
+    <text x="284" y="738" class="small">→ MCP A.3</text>
+
+    <!-- Sensor power note -->
+    <line x1="40" y1="800" x2="300" y2="800" class="w-power24"/>
+    <text x="170" y="816" text-anchor="middle" class="small">24 V (red) common to all sensor V+. Interface</text>
+    <text x="170" y="830" text-anchor="middle" class="small">to MCP via 10 kΩ pull-down to 3.3 V or opto.</text>
+  </g>
+
+  <!-- ====================== TFT + TOUCH ====================== -->
+  <g id="display">
+    <rect x="1140" y="90" width="380" height="370" rx="10" class="block-disp"/>
+    <text x="1330" y="115" text-anchor="middle" class="block-title">3.5" ILI9488 TFT + XPT2046 touch</text>
+    <text x="1330" y="132" text-anchor="middle" class="small">480×320, landscape. Shared SPI bus, dedicated CS lines.</text>
+
+    <!-- pins -->
+    <text x="1160" y="180" class="pin">SCK</text>
+    <text x="1160" y="200" class="pin">MOSI</text>
+    <text x="1160" y="220" class="pin">MISO</text>
+    <text x="1160" y="240" class="pin">TFT_CS</text>
+    <text x="1160" y="260" class="pin">TFT_DC</text>
+    <text x="1160" y="280" class="pin">TFT_RST</text>
+    <text x="1160" y="310" class="pin">T_CS</text>
+    <text x="1160" y="330" class="pin">T_IRQ</text>
+    <text x="1160" y="360" class="pin">5 V backlight (LED-A)</text>
+    <text x="1160" y="380" class="pin">3.3 V (VCC)</text>
+    <text x="1160" y="400" class="pin">GND</text>
+
+    <!-- backlight + power -->
+    <line x1="1280" y1="356" x2="1140" y2="356" class="w-power5"/>
+    <line x1="1280" y1="376" x2="1140" y2="376" class="w-power33"/>
+    <line x1="1280" y1="396" x2="1140" y2="396" class="w-gnd"/>
+
+    <text x="1330" y="430" text-anchor="middle" class="small" font-style="italic">
+      User_Setup_loaded=1 via build_flags;
+    </text>
+    <text x="1330" y="446" text-anchor="middle" class="small" font-style="italic">
+      ILI9488 driver, all SPI pins configured.
+    </text>
+  </g>
+
+  <!-- ====================== DM542 + MOTOR ====================== -->
+  <g id="driver">
+    <rect x="1140" y="490" width="380" height="280" rx="10" class="block-drv"/>
+    <text x="1330" y="515" text-anchor="middle" class="block-title">DM542 stepper driver + NEMA 23</text>
+    <text x="1330" y="532" text-anchor="middle" class="small">Microsteps: 1000 step/rev (match Mech::DEFAULT_STEPS_PER_REV).</text>
+
+    <!-- Control inputs -->
+    <text x="1160" y="565" class="pin">PUL+</text>
+    <text x="1160" y="585" class="pin">PUL−  → GND</text>
+    <text x="1160" y="610" class="pin">DIR+</text>
+    <text x="1160" y="630" class="pin">DIR−  → GND</text>
+    <text x="1160" y="655" class="pin">ENA+</text>
+    <text x="1160" y="675" class="pin">ENA−  → GND</text>
+
+    <line x1="1300" y1="565" x2="1140" y2="565" class="w-sig"/>
+    <line x1="1300" y1="610" x2="1140" y2="610" class="w-sig"/>
+    <line x1="1300" y1="655" x2="1140" y2="655" class="w-sig"/>
+
+    <!-- Power -->
+    <text x="1380" y="565" class="pin">V+   24 V</text>
+    <text x="1380" y="585" class="pin">V−   GND</text>
+    <line x1="1380" y1="558" x2="1500" y2="558" class="w-power24"/>
+    <line x1="1380" y1="592" x2="1500" y2="592" class="w-gnd"/>
+
+    <!-- Motor coils -->
+    <text x="1380" y="630" class="pin">A+  ─┐</text>
+    <text x="1380" y="650" class="pin">A−  ─┤  Coil A</text>
+    <text x="1380" y="675" class="pin">B+  ─┐</text>
+    <text x="1380" y="695" class="pin">B−  ─┤  Coil B</text>
+
+    <rect x="1380" y="715" width="120" height="40" rx="4" fill="#fff" stroke="#6e2c00"/>
+    <text x="1440" y="740" text-anchor="middle" class="pin">NEMA 23 motor</text>
+    <line x1="1440" y1="700" x2="1440" y2="715" class="w-stepper"/>
+  </g>
+
+  <!-- ====================== MPG + PC817 OPTO ====================== -->
+  <g id="mpg">
+    <rect x="320" y="900" width="380" height="240" rx="10" class="block-io"/>
+    <text x="510" y="922" text-anchor="middle" class="block-title">MPG handwheel (5 V, 100 PPR) — via PC817 ×2</text>
+    <text x="510" y="939" text-anchor="middle" class="small">Opto-isolated: protects ESP32 from workshop ground bounce. Signals are inverted at the opto — MPG::SIGNALS_INVERTED = true.</text>
+
+    <!-- MPG box -->
+    <rect x="340" y="960" width="120" height="100" rx="6" fill="#fff" stroke="#5b3aa6"/>
+    <text x="400" y="982" text-anchor="middle" class="pin">MPG wheel</text>
+    <text x="400" y="998" text-anchor="middle" class="small">100 PPR quad</text>
+    <text x="350" y="1018" class="pin">+V   (5 V)</text>
+    <text x="350" y="1034" class="pin">GND</text>
+    <text x="350" y="1050" class="pin">A out (5 V)</text>
+    <text x="350" y="1066" class="pin">B out (5 V)</text>
+
+    <!-- PC817 A -->
+    <rect x="490" y="960" width="120" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="550" y="980" text-anchor="middle" class="pin">PC817 (channel A)</text>
+    <text x="550" y="995" text-anchor="middle" class="small">LED + transistor</text>
+
+    <!-- PC817 B -->
+    <rect x="490" y="1020" width="120" height="50" rx="4" fill="#fff" stroke="#5b3aa6"/>
+    <text x="550" y="1040" text-anchor="middle" class="pin">PC817 (channel B)</text>
+    <text x="550" y="1055" text-anchor="middle" class="small">LED + transistor</text>
+
+    <!-- wires -->
+    <line x1="460" y1="1050" x2="490" y2="985"  class="w-sig"/>
+    <line x1="460" y1="1066" x2="490" y2="1045" class="w-sig"/>
+
+    <line x1="610" y1="985"  x2="660" y2="985"  class="w-sig"/>
+    <text x="618" y="978" class="small">→ ESP32 GPIO 32</text>
+    <line x1="610" y1="1045" x2="660" y2="1045" class="w-sig"/>
+    <text x="618" y="1038" class="small">→ ESP32 GPIO 33</text>
+
+    <!-- detail box -->
+    <text x="510" y="1100" text-anchor="middle" class="small" font-style="italic">
+      Per channel: 330 Ω series in MPG-side LED loop;
+    </text>
+    <text x="510" y="1115" text-anchor="middle" class="small" font-style="italic">
+      10 kΩ pull-up from collector to 3V3 on ESP32 side.
+    </text>
+  </g>
+
+  <!-- ====================== RATE SWITCH ====================== -->
+  <g id="rate">
+    <rect x="40" y="900" width="260" height="240" rx="8" class="block-io"/>
+    <text x="170" y="922" text-anchor="middle" class="block-title">Rate switch (SP3T)</text>
+    <text x="170" y="939" text-anchor="middle" class="small">Common to GND, throws pull MCP B4/B5/B6 LOW.</text>
+
+    <line x1="60" y1="970" x2="60" y2="1100" class="w-gnd"/>
+    <text x="46" y="975" class="small">GND</text>
+    <line x1="60" y1="985" x2="120" y2="985"  class="w-gnd"/>
+    <text x="125" y="989" class="pin">Common</text>
+
+    <line x1="200" y1="1010" x2="280" y2="1010" class="w-sig"/>
+    <text x="288" y="1014" class="pin">B.4 ×1</text>
+    <line x1="200" y1="1040" x2="280" y2="1040" class="w-sig"/>
+    <text x="288" y="1044" class="pin">B.5 ×10</text>
+    <line x1="200" y1="1070" x2="280" y2="1070" class="w-sig"/>
+    <text x="288" y="1074" class="pin">B.6 ×100</text>
+
+    <circle cx="200" cy="1010" r="3" class="dot"/>
+    <circle cx="200" cy="1040" r="3" class="dot"/>
+    <circle cx="200" cy="1070" r="3" class="dot"/>
+
+    <!-- mechanical hint -->
+    <line x1="120" y1="985" x2="200" y2="1040" class="w-gnd"/>
+    <text x="170" y="1108" text-anchor="middle" class="small" font-style="italic">
+      IOExpander::readRateMultiplier() returns 1/10/100 or 0
+    </text>
+  </g>
+
+  <!-- ====================== SSR + ROUTER ====================== -->
+  <g id="ssr">
+    <rect x="730" y="900" width="380" height="240" rx="10" class="block-drv"/>
+    <text x="920" y="922" text-anchor="middle" class="block-title">SSR + router (mains-switched load)</text>
+    <text x="920" y="939" text-anchor="middle" class="small">Plunge gated on Relay.isReady() — startup delay enforces spindle-at-speed.</text>
+
+    <!-- SSR control side -->
+    <rect x="750" y="960" width="150" height="80" rx="6" fill="#fff" stroke="#8b1b1b"/>
+    <text x="825" y="982" text-anchor="middle" class="pin">SSR (3-32 V DC ctl)</text>
+    <line x1="750" y1="1000" x2="710" y2="1000" class="w-sig"/>
+    <text x="704" y="998" class="pin-r">ctl+  ← GPIO 16</text>
+    <line x1="750" y1="1020" x2="710" y2="1020" class="w-gnd"/>
+    <text x="704" y="1018" class="pin-r">ctl−  GND</text>
+
+    <!-- Load side -->
+    <line x1="900" y1="980"  x2="980" y2="980"  class="w-mains"/>
+    <line x1="900" y1="1020" x2="980" y2="1020" class="w-mains"/>
+    <rect x="980" y="960" width="110" height="80" rx="6" fill="#fff" stroke="#5e1a1a"/>
+    <text x="1035" y="985" text-anchor="middle" class="pin">Router</text>
+    <text x="1035" y="1003" text-anchor="middle" class="small">(mains AC,</text>
+    <text x="1035" y="1018" text-anchor="middle" class="small">lowest speed</text>
+    <text x="1035" y="1033" text-anchor="middle" class="small">until stage 8)</text>
+
+    <text x="920" y="1075" text-anchor="middle" class="small">Mains hot/neutral broken on hot leg by SSR; neutral passes through.</text>
+    <text x="920" y="1090" text-anchor="middle" class="small" font-style="italic">RC snubber across the SSR load contacts for inductive load suppression.</text>
+    <text x="920" y="1118" text-anchor="middle" class="note">⚠ Mains wiring must be in an enclosed, earthed metal box. Hardware E-stop on the 24 V rail is mandatory from bench stage 5 onward.</text>
+  </g>
+
+  <!-- ====================== LIFT MECHANICS (informational) ====================== -->
+  <g id="lift">
+    <rect x="1140" y="800" width="380" height="160" rx="10" class="block-mech"/>
+    <text x="1330" y="822" text-anchor="middle" class="block-title">Lift mechanics</text>
+    <text x="1160" y="848" class="small">• 4 mm-lead ball-screw spindle (match Mech::DEFAULT_SPINDLE_PITCH_MM)</text>
+    <text x="1160" y="866" class="small">• 698 RS bearing between motor shaft and screw — eliminates axial play</text>
+    <text x="1160" y="884" class="small">• 1.8°/step NEMA 23 → 200 native × 5 microsteps = 1000 step/rev</text>
+    <text x="1160" y="902" class="small">• Effective resolution: 4 mm / 1000 = 4 µm per microstep</text>
+    <text x="1160" y="924" class="small">• Soft limits enforced by MotorControl::moveToMm() before any step issued</text>
+    <text x="1160" y="942" class="small">• Hardware endstops back up soft limits — both must agree at start of homing</text>
+  </g>
+
+  <!-- ====================== CONNECTING WIRES ====================== -->
+
+  <!-- ESP32 I2C → MCP -->
+  <path d="M 680 220 L 660 220 L 660 500 L 660 500" class="w-i2c"/>
+  <path d="M 680 240 L 645 240 L 645 520 L 660 520" class="w-i2c"/>
+
+  <!-- ESP32 → SSR ctl (GPIO 16) -->
+  <path d="M 680 340 L 720 340 L 720 870 L 660 870 L 660 1000 L 710 1000" class="w-sig"/>
+  <rect x="690" y="858" width="80" height="14" class="wire-lbl-bg"/>
+  <text x="730" y="868" text-anchor="end" class="wire-lbl">GPIO 16 → SSR ctl+</text>
+
+  <!-- ESP32 → MPG opto (GPIO 32/33) -->
+  <path d="M 680 280 L 670 280 L 670 985  L 660 985"  class="w-sig"/>
+  <path d="M 680 300 L 655 300 L 655 1045 L 660 1045" class="w-sig"/>
+
+  <!-- ESP32 → Stepper driver -->
+  <path d="M 1100 380 L 1140 565" class="w-sig"/>
+  <path d="M 1100 400 L 1140 610" class="w-sig"/>
+  <path d="M 1100 420 L 1140 655" class="w-sig"/>
+
+  <!-- ESP32 → TFT SPI -->
+  <line x1="1100" y1="180" x2="1140" y2="180" class="w-spi"/>
+  <line x1="1100" y1="200" x2="1140" y2="200" class="w-spi"/>
+  <line x1="1100" y1="220" x2="1140" y2="220" class="w-spi"/>
+  <line x1="1100" y1="240" x2="1140" y2="240" class="w-spi"/>
+  <line x1="1100" y1="260" x2="1140" y2="260" class="w-spi"/>
+  <line x1="1100" y1="280" x2="1140" y2="280" class="w-spi"/>
+  <line x1="1100" y1="310" x2="1140" y2="310" class="w-spi"/>
+  <line x1="1100" y1="330" x2="1140" y2="330" class="w-spi"/>
+
+  <!-- Rate switch → MCP B4/5/6 -->
+  <path d="M 360 1010 L 320 1010 L 320 700 L 500 700" class="w-sig"/>
+  <path d="M 360 1040 L 310 1040 L 310 690 L 500 690" class="w-sig"/>
+  <path d="M 360 1070 L 300 1070 L 300 680 L 500 680" class="w-sig"/>
+
+  <!-- Power supply lines into ESP32 / TFT / MCP / Driver -->
+  <path d="M 300 100 L 700 100 L 700 155" class="w-power33"/>
+  <path d="M 300 100 L 1140 376 " class="w-power33" opacity="0.4"/>
+  <path d="M 280 342 L 1140 356 " class="w-power5"  opacity="0.4"/>
+  <path d="M 280 250 L 320 250 L 320 410 L 320 410" class="w-power24" opacity="0.4"/>
+
+  <!-- 24V → DM542 V+ already drawn (red bus from DM542 side) -->
+
+  <!-- ====================== LEGEND ====================== -->
+  <g id="legend" transform="translate(40, 1160)">
+    <rect x="0" y="0" width="1720" height="120" rx="10" fill="#fff" stroke="#333"/>
+    <text x="14" y="22" class="block-title">Legend</text>
+
+    <g transform="translate(14, 36)">
+      <line x1="0" y1="10" x2="40" y2="10" class="w-power24"/>
+      <text x="50" y="14" class="small">24 V (stepper + sensor supply)</text>
+
+      <line x1="280" y1="10" x2="320" y2="10" class="w-power5"/>
+      <text x="330" y="14" class="small">5 V (MPG, opto LED side, TFT backlight)</text>
+
+      <line x1="640" y1="10" x2="680" y2="10" class="w-power33"/>
+      <text x="690" y="14" class="small">3.3 V (ESP32, MCP, opto Tx side, XPT2046)</text>
+
+      <line x1="1010" y1="10" x2="1050" y2="10" class="w-gnd"/>
+      <text x="1060" y="14" class="small">GND (single star point at PSU)</text>
+
+      <line x1="1310" y1="10" x2="1350" y2="10" class="w-mains"/>
+      <text x="1360" y="14" class="small">Mains (enclosed/earthed only)</text>
+    </g>
+
+    <g transform="translate(14, 66)">
+      <line x1="0" y1="10" x2="40" y2="10" class="w-sig"/>
+      <text x="50" y="14" class="small">Logic signal (3.3 V GPIO / MCP I/O)</text>
+
+      <line x1="280" y1="10" x2="320" y2="10" class="w-i2c"/>
+      <text x="330" y="14" class="small">I²C bus (SDA / SCL, shared)</text>
+
+      <line x1="640" y1="10" x2="680" y2="10" class="w-spi"/>
+      <text x="690" y="14" class="small">SPI bus (shared SCK/MOSI/MISO; per-device CS)</text>
+
+      <line x1="1010" y1="10" x2="1050" y2="10" class="w-stepper"/>
+      <text x="1060" y="14" class="small">Stepper coil pair (motor leads)</text>
+    </g>
+
+    <text x="14" y="106" class="small" font-style="italic">Cross-references: docs/HARDWARE.md (pin tables, BOM, MPG level-shift circuits) · docs/ARCHITECTURE.md (module + state machine) · include/config.h (Pins:: / Mech:: / Safety:: / MPGCfg:: / UI::).</text>
+  </g>
+</svg>
