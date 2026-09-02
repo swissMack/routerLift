@@ -66,7 +66,7 @@ routerLift/
 
 ---
 
-## Phase 2 — `firmware/config.yaml` (FluidNC)
+## Phase 2 — `firmware/config.yaml` (FluidNC)  ✅ WRITTEN (steps_per_mm provisional)
 
 Stock FluidNC binary; all machine definition is config. Pin numbers come from
 `docs/superseded-wiring_diagram.svg` (Annex B.9), with MPG A/B (GPIO 34/35) now freed because the handwheel

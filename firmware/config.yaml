@@ -1,0 +1,178 @@
+# routerLift — FluidNC machine definition
+#
+# Target: stock FluidNC on a classic ESP32 (NOT ESP32-S3 — FluidNC does not run on it).
+# This file is the entire motion-side implementation. No C++ is written for this board.
+#
+# Companion documents:
+#   docs/SCHEMATIC-RevH.svg    terminal-level wiring
+#   docs/PINOUT.svg            pin assignment for both controllers
+#   docs/UART-PROTOCOL.md      how the HMI talks to this board
+#   docs/DESIGN-QA.md          where every value below was decided
+#
+# ##########################################################################
+# #  steps_per_mm IS A PLACEHOLDER. IT IS NOT A MEASUREMENT.               #
+# #  See the axes: z: block. Measure before cutting anything.             #
+# ##########################################################################
+
+name: routerLift
+board: ESP32 devkit v1
+
+# --------------------------------------------------------------------------
+# Stepping
+# --------------------------------------------------------------------------
+stepping:
+  engine: RMT
+  idle_ms: 255          # 255 = never de-energise (Q17).
+                        # Chosen for maximum holding stiffness. The self-locking
+                        # ACME screw holds unpowered anyway, so this is
+                        # belt-and-braces — but it means 2.8 A/phase continuously.
+                        # ENV-03 risk: measure motor and driver temperature during
+                        # the ACC-04 ten-minute loaded drift test. If it runs hot,
+                        # change this to e.g. 30000 — the ENA wire on GPIO 14
+                        # exists precisely so this stays a config decision.
+  pulse_us: 4           # TB6600 needs a wide pulse; 4 µs is safe. Do not drop to 1.
+  dir_delay_us: 5       # TB6600 direction setup time.
+  disable_delay_us: 0
+
+# --------------------------------------------------------------------------
+# Second GRBL channel — the HMI link
+# --------------------------------------------------------------------------
+# ⚠ VERIFY these key names against the installed FluidNC release before
+#   flashing. If this release has no second channel, the HMI must share the
+#   USB serial port, which costs the debug console during bring-up.
+uart1:
+  txd_pin: gpio.17      # → HMI GPIO 17 (RX)
+  rxd_pin: gpio.16      # ← HMI GPIO 18 (TX)
+  baud: 115200
+  mode: 8N1
+
+uart_channel1:
+  uart_num: 1
+  report_interval_ms: 100    # ~10 Hz auto status. The HMI's whole display is
+                             # driven by this; without it the HMI must poll '?'.
+  message_level: Info
+
+# --------------------------------------------------------------------------
+# Z axis — the lift
+# --------------------------------------------------------------------------
+axes:
+  z:
+    # ######################################################################
+    # #  PLACEHOLDER — MEASURE BEFORE TRUSTING ANY DEPTH FIGURE            #
+    # #                                                                    #
+    # #  800 assumes 1/8 microstepping (1600 pulse/rev) on a 2 mm lead     #
+    # #  screw. That lead came from RevG §2.1, which described a machine   #
+    # #  that was never built. A commercial lift body uses whatever lead   #
+    # #  its maker chose — commonly coarser.                               #
+    # #                                                                    #
+    # #  To measure: fit a dial indicator against the carriage, command a  #
+    # #  known number of motor revolutions, read the actual travel.        #
+    # #    steps_per_mm = 1600 / (mm travelled per motor revolution)       #
+    # #                                                                    #
+    # #  Every depth in this machine is wrong until this is done, and      #
+    # #  wrong in a way nothing detects — DEV-01 means there is no stall   #
+    # #  sensing to contradict a bad number.                               #
+    # ######################################################################
+    steps_per_mm: 800
+
+    max_rate_mm_per_min: 720        # 12 mm/s rapid (Q14). MOT-08 wants ≥10 mm/s.
+    acceleration_mm_per_sec2: 100   # conservative (Q16)
+    max_travel_mm: 90               # PROVISIONAL — set by the lift body (MEC-01
+                                    # wants ≥75 mm). Confirm actual usable travel.
+    soft_limits: true               # MOT-09. Commissioning-only — the operator
+                                    # cannot widen this from the panel, by design.
+
+    homing:
+      cycle: 1
+      positive_direction: false     # home DOWNWARD to the bottom switch.
+                                    # Positive Z = bit rising (Q19), so the
+                                    # display reads bit height above the table.
+      mpos_mm: 0                    # bottom switch = machine zero (MOT-04)
+      seek_mm_per_min: 600          # 10 mm/s fast find
+      feed_mm_per_min: 60           # 1 mm/s slow confirm — this second, slow
+                                    # approach is what delivers MOT-06 accuracy
+      settle_ms: 250
+      # ⚠ VERIFY the soft-limit envelope convention. FluidNC derives the range
+      #   from mpos_mm, max_travel_mm and the homing direction, and the sign
+      #   convention differs between homing positive and homing negative. We
+      #   home negative and work positive, which is the less common orientation.
+      #   Prove it with $J= moves at BOTH ends before trusting it.
+
+    motor0:
+      limit_neg_pin: gpio.33:pu     # bottom — home reference AND negative limit
+      limit_pos_pin: gpio.25:pu     # top — bounds the bit-change rapid (MOT-05)
+      hard_limits: true
+      pulloff_mm: 2.0               # increase to ~3.0 if inductive sensors are
+                                    # fitted — larger release hysteresis
+
+      # NOTE ON POLARITY — this is not the usual CNC convention.
+      # Switches are wired NORMALLY CLOSED for fail-safe:
+      #   idle (not at limit) → contact closed → pin pulled to GND → LOW
+      #   at limit            → contact opens  → pull-up → HIGH
+      #   broken wire         → floats         → pull-up → HIGH = triggered ✓
+      # So the asserted state is HIGH, i.e. active-high, i.e. NO ':low'.
+      # A cut wire faults the machine rather than silently disabling the limit.
+      # An inductive NPN NC sensor presents identically — same pin string,
+      # no config change. See docs/SCHEMATIC-RevH.svg block E.
+
+      stepstick:
+        step_pin: gpio.26           # → TB6600 PUL−
+        direction_pin: gpio.27      # → TB6600 DIR−
+        disable_pin: gpio.14        # → TB6600 ENA−
+        # ⚠ TB6600 common anode (PUL+/DIR+/ENA+) goes to +3.3 V, NOT +5 V.
+        #   At 5 V the ESP32's logic high leaves 1.7 V across the input
+        #   optocoupler — above its ~1.2 V LED drop — so it never fully turns
+        #   off. Result: missed steps at rapid, which under DEV-01 is silent
+        #   depth error. See docs/BOM.md block D.
+
+# --------------------------------------------------------------------------
+# Touch-off probe
+# --------------------------------------------------------------------------
+probe:
+  pin: gpio.32:low:pu   # plate to GND, croc clip to the bit → LOW when touching
+  check_mode_start: true # FLT-02 self-check. A probe reading shorted at cycle
+                         # start refuses the cycle — no override (Q24). A shorted
+                         # probe would set Z0 wherever the bit happens to be,
+                         # giving a plausible-looking cut at the wrong depth.
+
+# --------------------------------------------------------------------------
+# Control inputs
+# --------------------------------------------------------------------------
+control:
+  feed_hold_pin: gpio.21:low:pu   # STOP button, momentary NO to GND.
+                                  # Deliberately on THIS board, not the HMI
+                                  # expander: a native control pin acts with no
+                                  # HMI involvement, so STOP halts motion even
+                                  # if the S3 has crashed or the UART dropped.
+                                  # NOT an E-stop — that is the mains mushroom.
+
+  macro0_pin: gpio.13:low:pu      # Foot switch, momentary NO to GND.
+                                  # ⚠ SEE firmware/README.md — the foot switch
+                                  #   needs BOTH edges (hold to plunge, release
+                                  #   to retract) and a macro pin may only fire
+                                  #   on assert. Unresolved until verified.
+
+# --------------------------------------------------------------------------
+# Router power
+# --------------------------------------------------------------------------
+relay_spindle:
+  output_pin: gpio.4      # → 5 V relay module → contactor coil.
+                          # The bit-change KEY SWITCH is in series with that
+                          # coil (SAF-02). Key out and the contactor cannot pull
+                          # in regardless of anything in this file.
+  spinup_ms: 2500         # router run-up. This is the SAF-03 gate: M3 does not
+                          # complete until the router is at speed, so a plunge
+                          # cannot start early.
+  spindown_ms: 1000
+  tool_num: 0
+  speed_map: 0=0% 1000=100%
+
+# --------------------------------------------------------------------------
+# Startup safety
+# --------------------------------------------------------------------------
+start:
+  must_home: true         # Q11 — nothing moves until homed. No exceptions.
+                          # Z0 validity is enforced separately by the HMI, which
+                          # blocks cycles until a successful probe.
+  check_limits: true
+  deactivate_parking: true
