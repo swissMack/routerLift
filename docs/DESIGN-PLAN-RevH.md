@@ -325,9 +325,9 @@ Also write `firmware/README.md`: which FluidNC release, how to flash it, how to 
 
 ---
 
-## Phase 3 — `docs/UART-PROTOCOL.md`
+## Phase 3 — `docs/UART-PROTOCOL.md`  ✅ COMPLETE
 
-Closes the §14 open item. GRBL/gcode over UART1, 115200, 3.3 V both sides, no level shifting.
+Written. Closes the §14 open item. GRBL/gcode over UART1, 115200, 3.3 V both sides, no level shifting.
 Document, with worked examples:
 
 - **Status:** HMI parses `<Idle|MPos:0.000,0.000,-12.345|FS:0,0>`. State, machine position, and
