@@ -10,8 +10,10 @@
 #   docs/DESIGN-QA.md          where every value below was decided
 #
 # ##########################################################################
-# #  steps_per_mm IS A PLACEHOLDER. IT IS NOT A MEASUREMENT.               #
-# #  See the axes: z: block. Measure before cutting anything.             #
+# #  steps_per_mm AND max_travel_mm COME FROM THE MANUFACTURER SPEC,      #
+# #  NOT FROM A MEASUREMENT. Host is a sauter Fraeslift FML-P (not yet    #
+# #  bought). Measure on the actual lift before cutting anything.         #
+# #  See docs/MECHANICS-RevH.md                                           #
 # ##########################################################################
 
 name: routerLift
@@ -23,13 +25,15 @@ board: ESP32 devkit v1
 stepping:
   engine: RMT
   idle_ms: 255          # 255 = never de-energise (Q17).
-                        # Chosen for maximum holding stiffness. The self-locking
-                        # ACME screw holds unpowered anyway, so this is
-                        # belt-and-braces — but it means 2.8 A/phase continuously.
-                        # ENV-03 risk: measure motor and driver temperature during
-                        # the ACC-04 ten-minute loaded drift test. If it runs hot,
-                        # change this to e.g. 30000 — the ENA wire on GPIO 14
-                        # exists precisely so this stays a config decision.
+                        # NOTE: the FML-P's 1.5 mm lead gives a ~2.3 deg lead
+                        # angle, well under the ~5.7 deg friction angle, so the
+                        # screw IS self-locking and MEC-02 holds. This setting is
+                        # therefore a preference, not a necessity - switching to a
+                        # timeout is safe if ACC-04 shows the motor running hot.
+                        # Also: set the TB6600 to 1.0-1.4 A/phase, NOT 2.8 A.
+                        # The motor has >10x the torque this lift needs, and with
+                        # no stall detection that is a hazard, not a comfort.
+                        # Lower current also cuts the heat this setting causes.
   pulse_us: 4           # TB6600 needs a wide pulse; 4 µs is safe. Do not drop to 1.
   dir_delay_us: 5       # TB6600 direction setup time.
   disable_delay_us: 0
@@ -58,26 +62,27 @@ uart_channel1:
 axes:
   z:
     # ######################################################################
-    # #  PLACEHOLDER — MEASURE BEFORE TRUSTING ANY DEPTH FIGURE            #
+    # #  PROVISIONAL - from the manufacturer spec, NOT yet measured.       #
     # #                                                                    #
-    # #  800 assumes 1/8 microstepping (1600 pulse/rev) on a 2 mm lead     #
-    # #  screw. That lead came from RevG §2.1, which described a machine   #
-    # #  that was never built. A commercial lift body uses whatever lead   #
-    # #  its maker chose — commonly coarser.                               #
+    # #  sauter Frae-slift FML-P: 1.5 mm travel per revolution.            #
+    # #    1600 pulse/rev (1/8 ustep) / 1.5 mm = 1066.67 steps/mm          #
     # #                                                                    #
-    # #  To measure: fit a dial indicator against the carriage, command a  #
-    # #  known number of motor revolutions, read the actual travel.        #
+    # #  Better than the old 800, which assumed a 2 mm lead on a machine   #
+    # #  that was never built. But a datasheet is not a measurement.       #
+    # #                                                                    #
+    # #  MEASURE ON THE ACTUAL LIFT before cutting anything:               #
+    # #    dial indicator, known number of motor revolutions,              #
     # #    steps_per_mm = 1600 / (mm travelled per motor revolution)       #
     # #                                                                    #
-    # #  Every depth in this machine is wrong until this is done, and      #
-    # #  wrong in a way nothing detects — DEV-01 means there is no stall   #
-    # #  sensing to contradict a bad number.                               #
+    # #  Full-step resolution at 1.5 mm lead = 0.0075 mm, which BEATS      #
+    # #  MOT-01's <=0.01 mm requirement.                                   #
+    # #  See docs/MECHANICS-RevH.md                                        #
     # ######################################################################
-    steps_per_mm: 800
+    steps_per_mm: 1066.67
 
     max_rate_mm_per_min: 720        # 12 mm/s rapid (Q14). MOT-08 wants ≥10 mm/s.
     acceleration_mm_per_sec2: 100   # conservative (Q16)
-    max_travel_mm: 90               # PROVISIONAL — set by the lift body (MEC-01
+    max_travel_mm: 65               # PROVISIONAL — set by the lift body (MEC-01
                                     # wants ≥75 mm). Confirm actual usable travel.
     soft_limits: true               # MOT-09. Commissioning-only — the operator
                                     # cannot widen this from the panel, by design.

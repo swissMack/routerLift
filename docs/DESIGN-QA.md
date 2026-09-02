@@ -14,7 +14,7 @@ affects what you order.
 | --- | --- | --- |
 | — | Existing machine? | **None. Greenfield build.** The FXBB is reference only, never a retrofit target |
 | — | Work the lift must do | **All four**: repeatable depth, grooves/dados/rebates, dovetails/joinery, keyhole slots |
-| — | Mechanics approach | **Motorise a commercial manual lift body.** Rigidity and guides bought in, not built |
+| — | Mechanics approach | **Motorise a commercial manual lift body.** Host selected: **sauter Fräslift FML-P** — see `docs/MECHANICS-RevH.md`. JoinTech SmartLift inspected and **rejected** (nylon pinion drivetrain, known failure point, manufacturer defunct) |
 | — | v1 scope | **Full spec as written** — all four canned cycles, full Z0 machinery |
 | 17 | Motor idle current | **Stay energised always.** `$Stepper/IdleTime = 255`. ENA still wired to GPIO 14 so this stays changeable. Measure temperature at ACC-04 |
 | 25 | Always-on-screen | **All four**: large height, Z0 validity, machine + router state, MPG scale + link status. Layout ~3:1 — dominant numeral over a slim status strip |
@@ -139,13 +139,17 @@ calibration, diagnostics, fault detail.
 
 ### Consequences to carry forward
 
-- **`steps_per_mm: 800` is provisional and must be measured.** It followed from the spec's assumed
-  T8 2 mm lead. A commercial lift body uses whatever lead its maker chose, commonly coarser.
-  Measure with a dial indicator over a known number of motor revolutions before trusting any depth
-  figure. MOT-01's 0.01 mm per full step is contingent on the lift you buy.
-- **Travel (MEC-01) is now set by the lift body**, not by choice. Confirm it reaches 75 mm minimum.
-- **Motor is comfortably oversized** — the 57HS76 at ~1.9–2.2 N·m will not be the limiting factor,
-  so mechanical selection can be driven by rigidity and lead rather than torque.
+- **`steps_per_mm` is now 1066.67**, from the FML-P's published 1.5 mm/rev. Still provisional —
+  a datasheet is not a measurement. Full-step resolution 0.0075 mm **beats MOT-01's 0.01 mm**.
+- **⚠️ MEC-01 conflict: the FML-P gives 65 mm travel against the specified ≥75 mm.** Every model in
+  the sauter range shares 65 mm, so this cannot be solved by picking a different one. MEC-01 was
+  written for an imaginary machine and probably needs revising down — **but that must be a
+  deliberate Rev H decision, not a silent absorption.** Open item.
+- **The motor is oversized to the point of being a hazard.** The lift needs ~0.15 N·m; the 57HS76
+  delivers ~2 N·m. **Set the TB6600 to 1.0–1.4 A/phase, not 2.8 A** — with no stall detection an
+  oversized motor destroys the mechanism rather than stalling harmlessly.
+- **MEC-02 confirmed:** a 1.5 mm lead gives ~2.3° lead angle against a ~5.7° friction angle, so the
+  screw is self-locking. `idle_ms: 255` becomes a preference rather than a necessity.
 - **`legacy/src/IOExpander.cpp` is reusable after all.** Previously written off as dropped; the
   MCP23017 returns on the HMI's I²C bus. Port the polling and debounce, drop the board-ID logic.
 - **Pin pressure is relieved.** Moving rough/fine and cycle start onto the expander frees `G10` and

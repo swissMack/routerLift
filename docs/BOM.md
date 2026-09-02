@@ -41,9 +41,13 @@ schematic blocks exactly.
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Stepper driver | **HLTNC TB6600** | ✅ | DIP: 1/8 µstep, 1600 pulse/rev, 2.8 A/phase → **800 steps/mm** at 2 mm lead |
+| 1 | Stepper driver | **HLTNC TB6600** | ✅ | DIP: 1/8 µstep, 1600 pulse/rev. ⚠️ **Set 1.0–1.4 A/phase, NOT 2.8 A** — see below. → **1066.67 steps/mm** at the FML-P's 1.5 mm lead |
 | 1 | Stepper motor | **NEMA 23 57HS76-3004A08**, 3.0 A/phase | ✅ | Coils RED/GRN/YEL/BLU → A+/A−/B+/B− |
-| 1 | Lead screw | **T8 ACME, 2 mm lead**, self-locking, anti-backlash nut | 🛒 | MEC-02, MEC-03. Ball screw only with a brake per MEC-07 |
+| 1 | **Router lift body** | **sauter Fräslift FML-P** — 1.5 mm/rev, 65 mm travel, Ø43 mm neck | 🛒 | **€329 B-stock** (`II-SA-FML-P`) / €378 new. Self-locking (~2.3° lead angle). See `docs/MECHANICS-RevH.md` |
+| 1 | Shaft coupling | **Zero-backlash jaw (spider) or Oldham**, motor shaft → hex stub | 🛒 | Backlash goes straight into MOT-02. **No universal joints** |
+| 1 | Drive stub | Hex bit stock to suit the lift's lower socket | 🛒 | ⚠️ **Measure it** — the published 5 mm is the *upper* socket |
+| 1 | Motor bracket | Rigid, below the lift, coaxial with the spindle | 🛒 | Fabricated. The coupling absorbs residual misalignment, not a bad bracket |
+| 1 | Spindle motor | Ø43 mm neck, ≤5 kg, ≤1,100 W — AMB, Suhner or Mafell | 🛒 | Continuous-duty with soft start, unlike a handheld router |
 | — | Motor cable | Shielded, 4-core, ≥0.75 mm² | 🛒 | Route **away** from limit wiring |
 
 > ⚠️ **Tie `PUL+`/`DIR+`/`ENA+` to +3.3 V, not +5 V.** With a 5 V common, the ESP32's
@@ -51,6 +55,12 @@ schematic blocks exactly.
 > drop — so it never fully turns off. Result is missed steps at rapid, which under
 > DEV-01 is *silent depth error*. Fallback if bench test 3 shows missed steps:
 > 1× **74HCT245** buffer driving the inputs at a proper 5 V.
+
+> ⚠️ **Set the driver to 1.0–1.4 A/phase, not 2.8 A.** The lift needs about
+> 0.15 N·m; the 57HS76 delivers ~2 N·m. That >10× margin is a *hazard* — with no
+> stall detection (DEV-01) an oversized motor will destroy the lift if it drives
+> into a hard stop. Lower current also cuts the heat caused by `idle_ms: 255`.
+> This supersedes Annex B.5's 2.8 A, chosen when the mechanics were unknown.
 
 > ⚠️ **Wire `ENA−` to GPIO 14.** The RevG diagram marks `ENA±` n/c, which leaves the
 > motor at 2.8 A/phase permanently with no idle reduction — an ENV-03 thermal risk

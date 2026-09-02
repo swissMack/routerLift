@@ -67,13 +67,13 @@ constexpr uint32_t COALESCE_MS = 30;
 constexpr float LOOKAHEAD_LIMIT_REV = 1.0f;
 
 // ###################################################################
-// #  PROVISIONAL - must match the real lift body's screw lead.      #
-// #  2.0 assumes the T8 screw RevG described for a machine that was #
-// #  never built. Same measurement that fixes steps_per_mm in       #
-// #  firmware/config.yaml fixes this. Too large and the clamp does  #
-// #  nothing; too small and the wheel feels like it is dragging.    #
+// #  PROVISIONAL - sauter FML-P published spec, not yet measured.   #
+// #  1.5 mm travel per revolution. Was 2.0, which assumed a screw   #
+// #  on a machine that was never built.                             #
+// #  Too large and the clamp does nothing; too small and the wheel  #
+// #  feels like it is dragging. See docs/MECHANICS-RevH.md          #
 // ###################################################################
-constexpr float SCREW_LEAD_MM = 2.0f;
+constexpr float SCREW_LEAD_MM = 1.5f;
 
 // 3. Cancel on direction reversal - send 0x85 and start fresh, rather than
 //    waiting for queued motion in the old direction to finish.
