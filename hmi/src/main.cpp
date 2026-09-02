@@ -1,10 +1,9 @@
 // routerLift HMI — ESP32-S3 operator panel.
 //
-// INCREMENT 1: headless bring-up. Link, handwheel and buttons, with a serial
-// console for diagnostics. No LVGL yet - the display driver needs the vendor
-// demo's exact panel constructor, which is the next increment.
+// INCREMENT 2: link, handwheel, buttons, and the display.
 //
-// This build is enough to pass bench-test steps 1, 4 and 5:
+// Enough to pass bench-test steps 1, 2, 4 and 5:
+//   - the panel renders and touch tracks
 //   - the link comes up and status is parsed
 //   - one detent moves the axis exactly 0.01 / 0.10 mm
 //   - buttons and the rough/fine selector read correctly
@@ -19,6 +18,8 @@
 #include "Link.h"
 #include "Wheel.h"
 #include "Buttons.h"
+#include "Display.h"
+#include "Ui.h"
 
 static uint32_t lastPrint = 0;
 static bool     wasConnected = false;
@@ -31,12 +32,15 @@ static void onLinkLost() {
     Motion.feedHold();
     Handwheel.inhibit(true);
     z0Valid = false;
+    Screens.setZ0Valid(false);
+    Screens.showMessage("LINK LOST");
     Serial.println("[LINK] LOST - feed hold sent, Z0 invalidated");
 }
 
 static void onLinkUp() {
     Handwheel.syncTo(Motion.positionMm());
     Handwheel.inhibit(false);
+    Screens.showMessage("");
     Serial.println("[LINK] up");
 }
 
@@ -54,6 +58,13 @@ void setup() {
         Serial.println("[MCP] ok");
     }
 
+    if (!Screen.begin()) {
+        Serial.println("[LVGL] display unavailable - continuing headless");
+    } else {
+        Screens.begin();
+        Serial.println("[LVGL] ok");
+    }
+
     Handwheel.begin(Pins::MPG_A, Pins::MPG_B);
     Motion.begin(Serial1, Pins::UART_RX, Pins::UART_TX);
 
@@ -67,6 +78,8 @@ void setup() {
 
 void loop() {
     Motion.update();
+    Screen.update();
+    Screens.update();
     Panel.update();
     Handwheel.setRough(Panel.roughSelected());
     Handwheel.update();
@@ -90,6 +103,8 @@ void loop() {
             // ':0' means no contact was made. A failed touch-off must leave
             // Z0 invalid - never assume the surface was where we expected.
             z0Valid = false;
+            Screens.setZ0Valid(false);
+            Screens.showMessage("PROBE: NO CONTACT");
             Serial.println("[PROBE] NO CONTACT - touch-off failed, Z0 invalid");
         }
     }
