@@ -40,3 +40,6 @@ docs/*.zip
 
 # Office lock/temp files
 ~$*
+
+# Derived diagram renders (rebuild with docs/build-review-doc.sh)
+docs/.render/
