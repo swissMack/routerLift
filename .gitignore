@@ -34,3 +34,6 @@ Thumbs.db
 *.local
 secrets.h
 .claude/ # optional — skip if you want it tracked
+
+# Vendor hardware packs (too large for git; keep locally)
+docs/*.zip

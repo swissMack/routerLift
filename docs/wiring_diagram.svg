@@ -1,0 +1,172 @@
+<svg width="1360" height="1800" viewBox="0 0 680 900" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<rect x="0" y="0" width="680" height="900" fill="#ffffff"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<!-- Legend -->
+<g font-size="9" fill="#555555">
+  <text x="20" y="16">Wire colours = physical wire colours. Grey = signal/logic. Thick dark = mains. GPIO pins are proposed FluidNC assignments — set in config.yaml.</text>
+</g>
+
+<!-- MPG -->
+<rect x="20" y="40" width="140" height="112" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="30" y="58" font-size="11" font-weight="600" fill="#1a1a1a">MPG handwheel</text>
+<text x="30" y="72" font-size="8.5" fill="#555555">ZS61 · 100 PPR · 5 V</text>
+<g font-size="9" fill="#1a1a1a">
+  <text x="115" y="88" text-anchor="end">VCC</text><text x="115" y="106" text-anchor="end">0V</text><text x="115" y="124" text-anchor="end">A</text><text x="115" y="142" text-anchor="end">B</text>
+</g>
+<line x1="120" y1="85" x2="160" y2="85" stroke="#c0392b" stroke-width="1.8"/><text x="126" y="81" font-size="8" fill="#c0392b">RED</text>
+<line x1="120" y1="103" x2="160" y2="103" stroke="#333333" stroke-width="1.8"/><text x="126" y="99" font-size="8" fill="#333333">BLK</text>
+<line x1="120" y1="121" x2="160" y2="121" stroke="#2a8f3c" stroke-width="1.8"/><text x="126" y="117" font-size="8" fill="#2a8f3c">GRN</text>
+<line x1="120" y1="139" x2="160" y2="139" stroke="#9a9a9a" stroke-width="1.8"/><text x="126" y="135" font-size="8" fill="#767676">WHT</text>
+
+<!-- Buck -->
+<rect x="355" y="40" width="130" height="60" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="420" y="60" font-size="11" font-weight="600" fill="#1a1a1a" text-anchor="middle">DC-DC buck</text>
+<text x="420" y="76" font-size="8.5" fill="#555555" text-anchor="middle">24–36 V → 5 V</text>
+<text x="420" y="90" font-size="8.5" fill="#555555" text-anchor="middle">5V / 0V out ↓</text>
+
+<!-- PSU -->
+<rect x="520" y="40" width="140" height="60" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="590" y="60" font-size="11" font-weight="600" fill="#1a1a1a" text-anchor="middle">PSU 24–36 V DC</text>
+<text x="590" y="76" font-size="8.5" fill="#555555" text-anchor="middle">fused · AC in via E-stop</text>
+<text x="590" y="90" font-size="8.5" fill="#555555" text-anchor="middle">V+ / V− out ↓</text>
+<line x1="520" y1="70" x2="485" y2="70" stroke="#444444" stroke-width="1.5"/><text x="487" y="65" font-size="8" fill="#555555">24–36 V</text>
+
+<!-- 5V and 0V buses -->
+<line x1="50" y1="190" x2="640" y2="190" stroke="#c0392b" stroke-width="2"/>
+<text x="52" y="185" font-size="9" fill="#c0392b" font-weight="600">+5 V rail</text>
+<line x1="50" y1="212" x2="640" y2="212" stroke="#333333" stroke-width="2"/>
+<text x="52" y="226" font-size="9" fill="#333333" font-weight="600">0 V common</text>
+<!-- buck to buses -->
+<line x1="390" y1="100" x2="390" y2="190" stroke="#c0392b" stroke-width="1.8"/>
+<path d="M420 100 L420 110 L530 110 L530 212" fill="none" stroke="#333333" stroke-width="1.8"/>
+
+<!-- Touch HMI -->
+<rect x="400" y="118" width="120" height="55" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="460" y="136" font-size="10" font-weight="600" fill="#1a1a1a" text-anchor="middle">Touch HMI</text>
+<text x="460" y="150" font-size="8.5" fill="#555555" text-anchor="middle">JC4827W543C · 5 V</text>
+<text x="460" y="163" font-size="8.5" fill="#555555" text-anchor="middle">UART · 260 mA</text>
+<line x1="430" y1="173" x2="430" y2="190" stroke="#c0392b" stroke-width="1.8"/>
+<line x1="450" y1="173" x2="450" y2="212" stroke="#333333" stroke-width="1.8"/>
+<path d="M400 135 L334 135 L334 490 L300 490" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M400 155 L340 155 L340 510 L300 510" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- MPG to buses -->
+<path d="M160 85 L172 85 L172 190" fill="none" stroke="#c0392b" stroke-width="1.8"/>
+<path d="M160 103 L182 103 L182 212" fill="none" stroke="#333333" stroke-width="1.8"/>
+
+<!-- Level shifter -->
+<rect x="195" y="118" width="115" height="56" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="252" y="136" font-size="10" font-weight="600" fill="#1a1a1a" text-anchor="middle">Level shift 5→3.3 V</text>
+<text x="252" y="150" font-size="8.5" fill="#555555" text-anchor="middle">divider or 74LVC buffer</text>
+<text x="252" y="164" font-size="8.5" fill="#b3502c" text-anchor="middle">ESP32 pins not 5 V tolerant</text>
+<!-- MPG A/B into shifter -->
+<path d="M160 121 L178 121 L178 132 L195 132" fill="none" stroke="#2a8f3c" stroke-width="1.8"/>
+<path d="M160 139 L172 139 L172 160 L195 160" fill="none" stroke="#9a9a9a" stroke-width="1.8"/>
+<!-- shifter outputs to ESP32 -->
+<path d="M310 132 L322 132 L322 445 L300 445" fill="none" stroke="#2a8f3c" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M310 160 L332 160 L332 465 L300 465" fill="none" stroke="#9a9a9a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- ESP32 controller -->
+<rect x="20" y="250" width="260" height="300" rx="8" fill="#f4f2ef" stroke="#6b6560" stroke-width="1.5"/>
+<text x="150" y="274" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">ESP32 controller — FluidNC</text>
+<text x="150" y="290" font-size="8.5" fill="#555555" text-anchor="middle">panel buttons (jog · rough/fine · cycle) → spare GPIOs 21/22/13/14</text>
+<g font-size="9" fill="#1a1a1a">
+  <text x="274" y="308" text-anchor="end">5V in</text>
+  <text x="274" y="328" text-anchor="end">GND</text>
+  <text x="274" y="358" text-anchor="end">STEP · GPIO26</text>
+  <text x="274" y="378" text-anchor="end">DIR · GPIO27</text>
+  <text x="274" y="408" text-anchor="end">RELAY · GPIO4</text>
+  <text x="274" y="448" text-anchor="end">MPG A · GPIO34</text>
+  <text x="274" y="468" text-anchor="end">MPG B · GPIO35</text>
+  <text x="274" y="493" text-anchor="end">HMI RX · GPIO16</text>
+  <text x="274" y="513" text-anchor="end">HMI TX · GPIO17</text>
+  <text x="100" y="540" text-anchor="middle" font-size="8.5">PROBE·G32</text>
+  <text x="180" y="540" text-anchor="middle" font-size="8.5">HOME·G33</text>
+  <text x="248" y="540" text-anchor="middle" font-size="8.5">TOP·G25</text>
+</g>
+<!-- ESP32 power stubs to buses -->
+<path d="M280 305 L310 305 L310 190" fill="none" stroke="#c0392b" stroke-width="1.8"/>
+<path d="M280 325 L318 325 L318 212" fill="none" stroke="#333333" stroke-width="1.8"/>
+
+<!-- TB6600 -->
+<rect x="380" y="250" width="140" height="200" rx="8" fill="#f4f2ef" stroke="#6b6560" stroke-width="1.5"/>
+<text x="450" y="270" font-size="12" font-weight="600" fill="#1a1a1a" text-anchor="middle">TB6600</text>
+<text x="450" y="284" font-size="8.5" fill="#555555" text-anchor="middle">1/8 µstep · 2.8 A</text>
+<g font-size="9" fill="#1a1a1a">
+  <text x="388" y="308">PUL+</text><text x="388" y="328">PUL−</text>
+  <text x="388" y="348">DIR+</text><text x="388" y="368">DIR−</text>
+  <text x="388" y="392">ENA± n/c</text>
+  <text x="512" y="308" text-anchor="end">A+</text><text x="512" y="332" text-anchor="end">A−</text>
+  <text x="512" y="356" text-anchor="end">B+</text><text x="512" y="380" text-anchor="end">B−</text>
+  <text x="430" y="440" text-anchor="middle" font-size="8.5">VCC</text><text x="475" y="440" text-anchor="middle" font-size="8.5">GND</text>
+</g>
+<!-- PUL+/DIR+ to 5V bus (common anode) -->
+<path d="M380 305 L352 305 L352 190" fill="none" stroke="#c0392b" stroke-width="1.8"/>
+<path d="M380 345 L362 345 L362 190" fill="none" stroke="#c0392b" stroke-width="1.8"/>
+<text x="338" y="240" font-size="8" fill="#c0392b">common +5 V</text>
+<!-- STEP / DIR -->
+<path d="M280 355 L342 355 L342 325 L380 325" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M280 375 L350 375 L350 365 L380 365" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- PSU to TB6600 VCC/GND -->
+<path d="M560 100 L560 235 L430 235 L430 250" fill="none" stroke="#8a4b12" stroke-width="2"/>
+<text x="566" y="150" font-size="8.5" fill="#8a4b12">V+ 24–36 V</text>
+<path d="M600 100 L600 232 L475 232 L475 250" fill="none" stroke="#333333" stroke-width="2"/>
+<!-- note: VCC/GND enter top edge -->
+<line x1="430" y1="250" x2="430" y2="258" stroke="#8a4b12" stroke-width="2"/>
+<line x1="475" y1="250" x2="475" y2="258" stroke="#333333" stroke-width="2"/>
+
+<!-- Motor -->
+<rect x="560" y="270" width="100" height="130" rx="8" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="610" y="292" font-size="11" font-weight="600" fill="#1a1a1a" text-anchor="middle">NEMA 23</text>
+<text x="610" y="306" font-size="8.5" fill="#555555" text-anchor="middle">57HS76-3004A08</text>
+<text x="610" y="320" font-size="8.5" fill="#555555" text-anchor="middle">3.0 A/phase</text>
+<!-- coil wires (straight, parallel) -->
+<line x1="520" y1="305" x2="560" y2="305" stroke="#c0392b" stroke-width="2"/><text x="524" y="300" font-size="8" fill="#c0392b">RED</text>
+<line x1="520" y1="329" x2="560" y2="329" stroke="#2a8f3c" stroke-width="2"/><text x="524" y="324" font-size="8" fill="#2a8f3c">GRN</text>
+<line x1="520" y1="353" x2="560" y2="353" stroke="#d4a017" stroke-width="2"/><text x="524" y="348" font-size="8" fill="#b08210">YEL</text>
+<line x1="520" y1="377" x2="560" y2="377" stroke="#2563c9" stroke-width="2"/><text x="524" y="372" font-size="8" fill="#2563c9">BLU</text>
+
+<!-- Relay module -->
+<rect x="330" y="490" width="130" height="52" rx="6" fill="#ffffff" stroke="#b3502c" stroke-width="1.2"/>
+<text x="395" y="510" font-size="10" font-weight="600" fill="#b3502c" text-anchor="middle">Relay module (5 V)</text>
+<text x="395" y="524" font-size="8.5" fill="#555555" text-anchor="middle">drives contactor coil</text>
+<path d="M280 405 L315 405 L315 516 L330 516" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Sensors -->
+<rect x="20" y="610" width="140" height="40" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/><text x="30" y="634" font-size="10" fill="#1a1a1a">Touch-off probe plate</text>
+<rect x="20" y="660" width="140" height="40" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/><text x="30" y="684" font-size="10" fill="#1a1a1a">Home switch (bottom)</text>
+<rect x="20" y="710" width="140" height="40" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/><text x="30" y="734" font-size="10" fill="#1a1a1a">Top limit switch</text>
+<text x="20" y="768" font-size="8.5" fill="#555555">shielded twisted pair · debounced (ELE-04)</text>
+<path d="M160 630 L200 630 L200 570 L100 570 L100 550" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M160 680 L210 680 L210 578 L180 578 L180 550" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M160 730 L248 730 L248 550" fill="none" stroke="#444444" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Mains section -->
+<text x="20" y="800" font-size="11" font-weight="600" fill="#1a1a1a">Mains 230 V</text>
+<rect x="20" y="808" width="110" height="70" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<g font-size="9" fill="#1a1a1a"><text x="30" y="826">L</text><text x="30" y="846">N</text><text x="30" y="866">PE</text></g>
+<text x="60" y="826" font-size="8.5" fill="#555555">via RCD</text>
+<rect x="160" y="810" width="90" height="46" rx="6" fill="#ffffff" stroke="#b3502c" stroke-width="1.5"/>
+<text x="205" y="830" font-size="10" font-weight="600" fill="#b3502c" text-anchor="middle">E-STOP</text>
+<text x="205" y="844" font-size="8" fill="#555555" text-anchor="middle">NC · breaks L</text>
+<rect x="290" y="808" width="130" height="70" rx="6" fill="#ffffff" stroke="#b3502c" stroke-width="1.5"/>
+<text x="355" y="828" font-size="10" font-weight="600" fill="#b3502c" text-anchor="middle">Router contactor</text>
+<text x="355" y="842" font-size="8.5" fill="#555555" text-anchor="middle">coil A1/A2 ← relay</text>
+<text x="355" y="856" font-size="8.5" fill="#555555" text-anchor="middle">contact L1 → T1</text>
+<rect x="460" y="808" width="130" height="70" rx="6" fill="#f4f2ef" stroke="#b5b0a8"/>
+<text x="525" y="830" font-size="10" font-weight="600" fill="#1a1a1a" text-anchor="middle">Router socket</text>
+<text x="525" y="845" font-size="8.5" fill="#555555" text-anchor="middle">L · N · PE</text>
+<!-- mains wires -->
+<line x1="40" y1="822" x2="160" y2="822" stroke="#1a1a1a" stroke-width="2.5"/>
+<line x1="250" y1="822" x2="290" y2="822" stroke="#1a1a1a" stroke-width="2.5"/>
+<path d="M268 822 L268 792" fill="none" stroke="#1a1a1a" stroke-width="2" marker-end="url(#arr)"/>
+<text x="264" y="786" font-size="8.5" fill="#555555" text-anchor="end">to PSU AC input (fused)</text>
+<line x1="420" y1="822" x2="460" y2="822" stroke="#1a1a1a" stroke-width="2.5"/>
+<path d="M40 842 L48 890 L520 890 L525 878" fill="none" stroke="#2563c9" stroke-width="2"/>
+<text x="260" y="887" font-size="8" fill="#2563c9">N (also to PSU)</text>
+<path d="M40 862 L44 872" fill="none" stroke="#2a8f3c" stroke-width="2"/>
+<text x="52" y="874" font-size="8" fill="#2a8f3c">PE → enclosure · lift frame · router socket</text>
+<!-- relay to contactor coil -->
+<path d="M395 542 L395 780 L370 780 L370 808" fill="none" stroke="#b3502c" stroke-width="1.5" marker-end="url(#arr)"/>
+<text x="400" y="700" font-size="8.5" fill="#b3502c">coil circuit (ELE-05 interlock)</text>
+</svg>
