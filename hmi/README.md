@@ -23,16 +23,17 @@ command vocabulary in `docs/UART-PROTOCOL.md` §4 exhaustive rather than aspirat
 | # | Scope | State |
 | --- | --- | --- |
 | 1 | Link, handwheel, buttons, headless serial diagnostics | Built |
-| **2** | Display: Arduino_GFX RGB panel + GT911 touch + LVGL + main screen | **Built and compiling** |
-| 3 | Zero / Z0 validity, named presets in NVS | Not started |
+| 2 | Display: Arduino_GFX RGB panel + GT911 touch + LVGL + main screen | Built |
+| **3** | Z0 validity, two-touch probe sequencing, named presets in NVS | **Built and compiling** |
 | 4 | Cycles: standard → bit-change → dovetail → keyhole | Not started |
 | 5 | Fault log, diagnostics screen, runtime hours | Not started |
 
-Increment 2 is enough to pass bench-test steps 1, 2, 4 and 5: the panel renders and touch
-tracks, the link comes up and status is parsed, one detent moves the axis exactly 0.01 / 0.10 mm,
-and the buttons and rough/fine selector read correctly.
+Increment 3 is enough to pass bench-test steps 1, 2, 4, 5 and the probe half of 7: the panel
+renders and touch tracks, the link comes up and status is parsed, one detent moves the axis
+exactly 0.01 / 0.10 mm, the buttons and rough/fine selector read correctly, and a two-touch probe
+sets Z0 while a failed probe leaves it invalid.
 
-RAM 22.4%, flash 21.4% of 4 MB.
+RAM 22.5%, flash 21.8% of 4 MB.
 
 ## Modules
 
@@ -42,7 +43,9 @@ RAM 22.4%, flash 21.4% of 4 MB.
 | `Wheel.{h,cpp}` | MPG decode via PCNT, coalescing, look-ahead clamp, cancel-on-reversal |
 | `Buttons.{h,cpp}` | MCP23017 polling, debounce, short/long press, ROUTER LED |
 | `Display.{h,cpp}` | RGB panel, GT911 touch, LVGL plumbing, backlight dimming |
-| `Ui.{h,cpp}` | LVGL screens. Increment 2 builds the main screen only |
+| `Ui.{h,cpp}` | LVGL screens. Increment 3 still builds the main screen only |
+| `Zero.{h,cpp}` | Two-touch probe sequencing and Z0 validity - the most safety-relevant logic here |
+| `Store.{h,cpp}` | NVS: named presets, plate thickness, teachable ceiling |
 | `../include/lv_conf.h` | LVGL config - minimal, `lv_conf_internal.h` defaults the rest |
 | `main.cpp` | Bring-up and the loop |
 | `../include/pins.h` | **The only place GPIO numbers appear** |
@@ -91,7 +94,32 @@ demo's literal constructor works as written.
 
 The zip is gitignored (112 MB, over GitHub's file limit) and exists only on the build machine.
 
-## Next: increment 3
+## Z0 validity — the rules
 
-Zero / Z0-validity tracking and named presets in NVS. Then the cycles, in the order set by Q37:
-standard → bit-change → dovetail → keyhole.
+Z0 is the reference every cut depth is measured from, and **FluidNC has no concept of it**. This
+board owns it entirely, which makes the FW-09 invalidation rules the most safety-relevant logic
+in the HMI.
+
+Invalidated by: link loss, alarm, bit-change entry, a failed probe, and never-set at boot.
+Homing loss and E-stop arrive as an alarm and are covered by that.
+
+**There is no override anywhere.** Not on the probe self-check, not on the re-probe after a bit
+change, not on preset recall with an invalid Z0. That is deliberate: with no stall detection
+(DEV-01), a wrong reference does not fail visibly — it produces a plausible-looking cut at the
+wrong depth. Every override is a place to trust a number the machine cannot verify.
+
+Two paths deliberately kept separate:
+
+- `start()` runs the two-touch probe. The slow second touch is what delivers MOT-06's ±0.02 mm;
+  the fast first touch only finds roughly where the surface is.
+- `setHereUnprobed()` is the ZERO long-press. Never routed through the probe path, so it cannot
+  be mistaken for a measured touch-off.
+
+FLT-02's probe self-check is enforced by FluidNC via `probe: check_mode_start`, not here. If the
+probe is already triggered — a trapped croc clip, a chip bridging the plate — `G38.2` returns an
+error rather than instantly "succeeding" and setting Z0 wherever the bit happens to be.
+
+## Next: increment 4
+
+The cycles, in the order set by Q37: standard → bit-change → dovetail → keyhole. Keyhole last —
+it is the only cycle where the cutter moves under power while engaged.
