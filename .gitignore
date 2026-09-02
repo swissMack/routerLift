@@ -37,3 +37,6 @@ secrets.h
 
 # Vendor hardware packs (too large for git; keep locally)
 docs/*.zip
+
+# Office lock/temp files
+~$*

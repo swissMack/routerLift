@@ -25,7 +25,7 @@
 
 <!-- ================= TITLE ================= -->
 <text x="40" y="34" class="hdr" font-size="20">routerLift — Complete Schematic, Rev H (as-designed)</text>
-<text x="40" y="52" class="sub">Split architecture: stock FluidNC on ESP32 (motion) + ESP32-4827S043 ESP32-S3 (operator HMI) over UART. Supersedes docs/wiring_diagram.svg.</text>
+<text x="40" y="52" class="sub">Split architecture: stock FluidNC on ESP32 (motion) + ESP32-4827S043 ESP32-S3 (operator HMI) over UART. Supersedes docs/superseded-wiring_diagram.svg.</text>
 
 <!-- legend -->
 <g transform="translate(1180,26)">

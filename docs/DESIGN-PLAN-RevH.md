@@ -69,7 +69,7 @@ routerLift/
 ## Phase 2 — `firmware/config.yaml` (FluidNC)
 
 Stock FluidNC binary; all machine definition is config. Pin numbers come from
-`docs/wiring_diagram.svg` (Annex B.9), with MPG A/B (GPIO 34/35) now freed because the handwheel
+`docs/superseded-wiring_diagram.svg` (Annex B.9), with MPG A/B (GPIO 34/35) now freed because the handwheel
 moved to the S3.
 
 | Signal | GPIO | Notes |
@@ -99,7 +99,7 @@ moved to the S3.
 | UART, HMI ↔ FluidNC | 3.3 V both ends | No (B.10) |
 | Relay module input | 3.3 V into a 5 V board | Usually fine — **verify at bench test 3** |
 
-**Change the TB6600 common anode from +5 V to +3.3 V.** `docs/wiring_diagram.svg` currently says
+**Change the TB6600 common anode from +5 V to +3.3 V.** `docs/superseded-wiring_diagram.svg` currently says
 "common +5 V". With common-anode wiring the ESP32 sinks `PUL−`/`DIR−`, and in the *off* state
 drives the pin to 3.3 V — leaving 5 − 3.3 = 1.7 V across the input optocoupler, above its ~1.2 V
 LED forward drop. The opto never cleanly turns off. This is the classic ESP32↔TB6600 failure and
@@ -280,7 +280,7 @@ contactor. Not a logic-level button.
 Three things to settle before wiring, in priority order:
 
 1. **Confirm the ordered inductive sensors are NPN NC** (see part-number suffixes above) before
-   anything is powered. `docs/wiring_diagram.svg` says only "shielded twisted pair · debounced
+   anything is powered. `docs/superseded-wiring_diagram.svg` says only "shielded twisted pair · debounced
    (ELE-04)" and never states the type; the pre-RevG `CLAUDE.md` assumed NPN with a 24 V common.
    Record the actual as-built type and the conditioning circuit in Rev H rather than inheriting.
 2. **Wire NC, not NO.** A broken wire or pulled connector then reads as triggered and faults the
@@ -480,7 +480,7 @@ than silent drift:
 - New **Annex A.7** changelog row, revision history row for H.
 
 Three existing docs describe the retired architecture and must be rewritten or marked superseded:
-`docs/ARCHITECTURE.md`, `docs/HARDWARE.md`, `docs/SCHEMATIC.svg`. `docs/BENCH-TEST.md` needs a full
+`docs/ARCHITECTURE.md`, `docs/HARDWARE.md`, `docs/superseded-SCHEMATIC.svg`. `docs/BENCH-TEST.md` needs a full
 rewrite — its 9-step ladder is built around the MCP23017 and the bespoke firmware.
 
 Note `DEV-01` is untouched by all of this: the TB6600 still cannot do stall detection, so FLT-01
