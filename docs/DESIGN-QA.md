@@ -22,6 +22,87 @@ affects what you order.
 | 39 | Foot switch | **Hold to plunge, release to retract.** Dead-man behaviour, gated on relay ready |
 | 43 | Link loss mid-cycle | **Feed hold immediately.** Z0 invalidated, re-home and re-probe required. No auto-resume |
 | — | Physical buttons | **Six.** STOP on FluidNC's native `feed_hold_pin`; the other five on an MCP23017 I²C expander. LED on ROUTER only. All in the same panel as the display |
+| 11 | Homing at power-up | **Unconditional.** No motion of any kind until homed, then no cycle until Z0 probed (MOT-04 + SAF-05 as written) |
+| 14–16 | Motion rates | **Rapid 12 mm/s · plunge 2 mm/s · accel 100 mm/s²**; homing seek 10 mm/s, feed 1 mm/s. Conservative start — silent step loss under DEV-01 makes pushing rates a poor first move |
+| 19 | Positive Z | **Bit rising = positive.** Home at bottom = machine zero. Display reads bit height above the table |
+| 21 | Z0 reference | **Table top.** Depth = bit projection above the table, independent of stock thickness |
+| 22 | Re-probe after bit change | **Mandatory, no override.** Every bit differs in length; a stale Z0 is simply wrong. *"Return to previous height" deliberately not included — addable later without weakening the rule* |
+| 24 | Probe reads shorted | **Refuse to start, no override.** A shorted probe would set Z0 at whatever height the bit is at, giving a plausible but wrong depth |
+| 26 | Presets | **Named, with an on-screen keyboard** (FW-08 as written). e.g. "6mm groove", "dovetail rough" |
+| 27 | Target Set ceiling | **Long-press PRESET.** Keeps every height-memory function on one button |
+| 34 | Pass advance | **Always require confirmation.** Lift holds after each pass until CYCLE START |
+| 35 | Pass defaults | **Rough 2.0 mm, finish 0.3 mm.** Inside FW-03's ≤3 mm, at FW-04's default allowance |
+| 41–42 | Diagnostics | **All four**: 20-event fault log, 30-min re-touch-off reminder, live diagnostics screen, runtime hours counter |
+| 44 | Bit-change interlock | **Key switch in series with the contactor coil.** Key removable only when off — the contactor physically cannot pull in regardless of firmware |
+| 8 | First switch type | **Mechanical roller lever.** Two wires, no 24 V near the GPIO, no PNP risk. Inductive fitted later as a proven upgrade |
+| 13 | Top limit in bit-change | **Controlled stop, announced as normal.** "AT TOP — change bit", not a fault. The same switch in any other context stays a hard alarm |
+| 18 | Microstepping | **Stay at 1/8.** Accuracy is full-step based (MOT-03), so finer buys smoothness not precision. Most timing headroom on an untested build |
+| 23 | Probe feeds | **Find 5 mm/s, confirm 0.5 mm/s**, 1 mm retract between. The slow second touch delivers the repeatability |
+| 28/29/32 | Display conventions | **mm, 2 decimals, English.** Matches ELE-08; English keeps status-strip labels short |
+| 30/31 | Screen behaviour | **All four**: dim backlight when idle (never blank), splash with version + calibration date, link and FluidNC version at startup, persist last screen |
+| 36 | Scribe pass | **On by default**, toggled per job |
+| 37/38 | Cycle build order | **Standard → bit-change → dovetail → keyhole.** Dependency order; keyhole last as the only cycle cutting under power |
+| 45 | Build sequence | **Full bench test before mounting.** Steps 1–6 on the desk, motor unmounted, router unplugged |
+| 46/47 | Equipment | **All four**: dial indicator 0.01 mm, DIN rail enclosure, multimeter, current-limited bench PSU |
+| 49 | First job | **A through dado or groove.** Exercises the full standard cycle and is directly measurable with calipers |
+| 50 | Spec Rev H timing | **After bench testing**, so Rev H records what was verified rather than intended |
+
+### Settled configuration values
+
+Everything below goes straight into `firmware/config.yaml` or the HMI defaults. Only
+`steps_per_mm` remains provisional.
+
+| Parameter | Value | Source |
+| --- | --- | --- |
+| `steps_per_mm` | **800 — PROVISIONAL** | 1/8 µstep at an *assumed* 2 mm lead. **Measure on the real lift** |
+| Positive direction | Bit rising; home at bottom = machine zero | Q19 |
+| Rapid | 12 mm/s (720 mm/min) | Q14–16 |
+| Plunge | 2 mm/s (120 mm/min) | Q14–16 |
+| Acceleration | 100 mm/s² | Q14–16 |
+| Homing seek / feed | 10 mm/s / 1 mm/s | Q14–16 |
+| Probe find / confirm | 5 mm/s / 0.5 mm/s, 1 mm retract | Q23 |
+| `$Stepper/IdleTime` | 255 (never disable) | Q17 |
+| Microstepping | 1/8 — 1600 pulse/rev | Q18 |
+| Rough depth / finish allowance | 2.0 mm / 0.3 mm | Q35 |
+| Scribe pass | On, 0.3 mm | Q36 |
+| Z0 reference | Table top | Q21 |
+| Units / decimals | mm, 2 dp | Q28–29 |
+
+### Behavioural rules settled
+
+- **Nothing moves until homed; no cycle until Z0 is probed.** No exceptions, no override (Q11).
+- **Every bit change forces a re-probe.** No override (Q22).
+- **A shorted probe refuses the cycle.** No override (Q24).
+- **Each pass holds until CYCLE START.** No auto-advance (Q34).
+- **Link loss is an immediate feed hold**, Z0 invalidated, re-home and re-probe (Q43).
+- **Foot switch is dead-man**: hold to plunge, release retracts (Q39).
+
+Note the pattern — five of these deliberately have no override. That is a coherent stance for a
+machine with no stall detection, where a wrong reference produces a plausible-looking cut at the
+wrong depth rather than an obvious failure.
+
+
+### Worked example — the pass scheduler with these defaults
+
+A 10 mm groove, scribe on, rough 2.0 mm, finish 0.3 mm:
+
+| Pass | Depth | Note |
+| --- | --- | --- |
+| scribe | 0.30 mm | FW-05, clean shoulder in ply or veneer |
+| rough 1 | 2.72 mm | equalised across 4 roughs to reach 9.70 |
+| rough 2 | 5.13 mm | |
+| rough 3 | 7.55 mm | |
+| finish | 10.00 mm | FW-04 allowance, full depth |
+
+Each pass holds at depth until CYCLE START is pressed (Q34).
+
+### New hardware consequence
+
+The **key switch** (Q44) is a new BOM line and changes schematic block A: it goes in series with
+the contactor coil, between the relay contact and A2. With the key out the router cannot be
+energised no matter what FluidNC or the HMI does — a genuine hardware interlock satisfying SAF-02,
+rather than a software promise.
+
 
 ### Physical control panel (new — supersedes parts of Q25/Q27)
 

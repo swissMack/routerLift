@@ -18,6 +18,7 @@ schematic blocks exactly.
 | 1 | RCD / GFCI | To suit local installation | 🛒 | PWR-02 |
 | 1 | Mains fuse + holder | Sized for PSU + router | 🛒 | In L, after the E-stop |
 | 1 | Router socket | Switched, PE-bonded | 🛒 | Fed from contactor T1 |
+| 1 | **Bit-change key switch** | Keyed, 2-position, key removable in OFF only | 🛒 | **SAF-02 hardware interlock.** In series with the contactor coil, between the relay contact and A2. Key out = contactor physically cannot pull in, regardless of firmware |
 | — | Mains cable, 3-core | To local code | 🛒 | PE to enclosure, lift frame **and** router socket |
 
 ## B · Power supply and rails
@@ -149,6 +150,15 @@ port the polling and debounce, drop the board-ID logic.
 | — | Connectors | Keyed, distinct types for LV vs mains | 🛒 | PWR-04 — segregation, and impossible to cross-plug |
 | — | Cable gland set | To suit IP rating | 🛒 | |
 | — | Ferrites | On motor and sensor runs | 🛒 | Helps ACC-07's zero-phantom-trigger test |
+| 1 | DIN rail + terminal blocks | To suit enclosure | 🛒 | PSU, buck, ESP32, TB6600 and conditioning board on rail; terminals make the cable schedule practical |
+
+## Test equipment
+
+| Qty | Item | Specification | Status | Notes |
+| --- | --- | --- | --- | --- |
+| 1 | **Dial indicator** | 0.01 mm resolution + magnetic base | 🛒 | **The most important item still to buy.** Required for ACC-01–04, and the only way to measure the real screw lead and confirm `steps_per_mm`. Without it every depth figure stays an assumption |
+| 1 | Bench PSU | Adjustable, **current-limited** | 🛒 | Set the limit low during bring-up so a wiring error trips it rather than destroying a board — relevant given the PNP hazard and the 24 V rail |
+| 1 | Multimeter | Continuity + DC volts | 🛒 | Bench test 4: confirm the conditioning circuit swings 0–3.3 V and never exceeds it with the inductive sensor on 24 V |
 
 ## 🔭 Future — closing DEV-01
 
