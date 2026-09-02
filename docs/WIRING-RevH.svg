@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 1120" width="1560" height="1120" font-family="Helvetica, Arial, sans-serif">
+<style>
+  .bg{fill:#fbfbf9}
+  .box{fill:#fff;stroke:#333;stroke-width:1.8;rx:8}
+  .encl{fill:#f6f7f5;stroke:#555;stroke-width:2;stroke-dasharray:8 5;rx:10}
+  .ttl{font-size:20px;font-weight:700;fill:#111}
+  .hdr{font-size:14px;font-weight:700;fill:#111}
+  .sub{font-size:11px;fill:#666}
+  .it{font-size:12px;fill:#111}
+  .tiny{font-size:10.5px;fill:#777}
+  .note{font-size:11px;fill:#444}
+  .warn{font-size:11.5px;fill:#b3261e;font-weight:700}
+  .ok{font-size:11.5px;fill:#166534;font-weight:700}
+  .lbl{font-size:10.5px;fill:#475569;font-family:ui-monospace,Menlo,monospace}
+  .mains{stroke:#111;stroke-width:3.4;fill:none}
+  .dc{stroke:#dc2626;stroke-width:2.4;fill:none}
+  .v5{stroke:#f59e0b;stroke-width:2.4;fill:none}
+  .sig{stroke:#2563eb;stroke-width:2;fill:none}
+  .shield{stroke:#2563eb;stroke-width:2;fill:none;stroke-dasharray:6 3}
+  .mot{stroke:#7c3aed;stroke-width:3;fill:none}
+</style>
+<rect class="bg" x="0" y="0" width="1560" height="1120"/>
+<text x="40" y="40" class="ttl">routerLift — General Wiring, Rev H</text>
+<text x="40" y="60" class="sub">Physical interconnect: what runs where, core counts, and which runs must be shielded. Terminal detail is in SCHEMATIC-RevH.svg.</text>
+
+<g transform="translate(1050,26)">
+  <line class="mains" x1="0" y1="8" x2="26" y2="8"/><text x="32" y="12" class="tiny">mains 230 V</text>
+  <line class="dc" x1="120" y1="8" x2="146" y2="8"/><text x="152" y="12" class="tiny">24–36 V DC</text>
+  <line class="v5" x1="240" y1="8" x2="266" y2="8"/><text x="272" y="12" class="tiny">+5 V</text>
+  <line class="sig" x1="0" y1="26" x2="26" y2="26"/><text x="32" y="30" class="tiny">signal</text>
+  <line class="shield" x1="120" y1="26" x2="146" y2="26"/><text x="152" y="30" class="tiny">shielded pair</text>
+  <line class="mot" x1="240" y1="26" x2="266" y2="26"/><text x="272" y="30" class="tiny">motor 4-core</text>
+</g>
+
+<!-- ============ MAINS SIDE ============ -->
+<rect class="box" x="40" y="96" width="330" height="250"/>
+<text x="56" y="118" class="hdr">MAINS INLET</text>
+<text x="56" y="142" class="it">230 V via RCD</text>
+<text x="56" y="166" class="it">E-STOP — panel mounted</text>
+<text x="66" y="182" class="tiny">red mushroom on yellow, NC, latching</text>
+<text x="56" y="206" class="it">Fuse</text>
+<text x="56" y="238" class="warn">Mains-rated cable and glands only.</text>
+<text x="56" y="256" class="note">Segregate from every LV run (PWR-04).</text>
+<text x="56" y="278" class="note">Keyed connectors, distinct type from LV,</text>
+<text x="56" y="294" class="note">so LV and mains cannot be cross-plugged.</text>
+<text x="56" y="322" class="note">PE → enclosure · lift frame · router socket.</text>
+
+<line class="mains" x1="370" y1="180" x2="440" y2="180"/>
+<text x="376" y="172" class="lbl">L, N, PE</text>
+
+<!-- ============ CONTROL ENCLOSURE ============ -->
+<rect class="encl" x="440" y="90" width="700" height="700"/>
+<text x="456" y="114" class="hdr">CONTROL ENCLOSURE — ≥IP54, mounted outside the router cabinet (MEC-06, ENV-02)</text>
+
+<rect class="box" x="464" y="132" width="300" height="120"/>
+<text x="480" y="154" class="hdr">POWER</text>
+<text x="480" y="176" class="it">PSU 24–36 V DC</text>
+<text x="480" y="196" class="it">Buck → +5 V, ≥2 A</text>
+<text x="480" y="216" class="tiny">+3.3 V from the ESP32's onboard LDO</text>
+<text x="480" y="238" class="warn">Not 48 V — TB6600 max ≈40–42 V</text>
+
+<rect class="box" x="796" y="132" width="320" height="120"/>
+<text x="812" y="154" class="hdr">ROUTER SWITCHING</text>
+<text x="812" y="176" class="it">5 V relay module ← GPIO 4</text>
+<text x="812" y="196" class="it">Contactor, ≥2× nameplate</text>
+<text x="812" y="216" class="tiny">RC snubber across contacts (PWR-03)</text>
+<text x="812" y="238" class="note">Coil A1/A2 from relay; L1→T1 to socket</text>
+
+<rect class="box" x="464" y="276" width="300" height="180"/>
+<text x="480" y="298" class="hdr">MOTION — ESP32 + FluidNC</text>
+<text x="480" y="320" class="it">ESP32 devkit</text>
+<text x="480" y="342" class="it">TB6600 driver</text>
+<text x="480" y="362" class="tiny">1/8 µstep · 2.8 A/phase</text>
+<text x="480" y="386" class="note">Common anode PUL+/DIR+/ENA+</text>
+<text x="480" y="402" class="warn">to +3.3 V, NOT +5 V</text>
+<text x="480" y="428" class="note">STOP button lands here — G21,</text>
+<text x="480" y="444" class="ok">works with no HMI involvement</text>
+
+<rect class="box" x="796" y="276" width="320" height="180"/>
+<text x="812" y="298" class="hdr">SENSOR CONDITIONING</text>
+<text x="812" y="320" class="it">×5 — HOME, TOP, PROBE,</text>
+<text x="812" y="336" class="it">FOOT, DRV_ALM</text>
+<text x="812" y="360" class="tiny">10 k series · 4k7 pull-up to 3V3</text>
+<text x="812" y="376" class="tiny">BAT54S clamp · 100 nF to GND</text>
+<text x="812" y="400" class="ok">≈1 ms RC — ELE-04 in hardware</text>
+<text x="812" y="424" class="note">Survives a mis-wired PNP sensor</text>
+<text x="812" y="440" class="note">and accepts either switch type</text>
+
+<rect class="box" x="464" y="480" width="652" height="140"/>
+<text x="480" y="502" class="hdr">EARTHING AND SEGREGATION</text>
+<text x="480" y="526" class="it">Star ground at the PSU — one reference point, not a daisy chain</text>
+<text x="480" y="548" class="it">All sensor shields grounded at the controller end ONLY</text>
+<text x="480" y="570" class="it">Motor cable routed on the opposite side of the enclosure from sensor runs</text>
+<text x="480" y="594" class="note">ACC-07 is a 5-minute run with the router live and zero phantom triggers. Layout is what passes it, not software debounce.</text>
+
+<rect class="box" x="464" y="644" width="652" height="126"/>
+<text x="480" y="666" class="hdr">CABLE SCHEDULE OUT OF THE ENCLOSURE</text>
+<text x="480" y="690" class="lbl">to lift    motor 4-core shielded  ·  home 2-core shielded  ·  top 2-core shielded  ·  probe 2-core shielded</text>
+<text x="480" y="710" class="lbl">to panel   UART 2-core + GND  ·  I²C 2-core + GND  ·  MPG 4-core shielded  ·  +5 V / 0 V</text>
+<text x="480" y="730" class="lbl">to floor   foot switch 2-core</text>
+<text x="480" y="750" class="lbl">to mains   router socket L/N/PE  ·  inlet L/N/PE</text>
+
+<!-- ============ OPERATOR PANEL ============ -->
+<rect class="box" x="1180" y="96" width="340" height="420"/>
+<text x="1196" y="118" class="hdr">OPERATOR PANEL</text>
+<text x="1196" y="134" class="sub">single assembly, display + buttons together</text>
+
+<text x="1196" y="162" class="it">ESP32-4827S043 — 4.3" touch</text>
+<text x="1206" y="178" class="tiny">120 × 70 mm module, panel cutout</text>
+
+<text x="1196" y="204" class="it">MCP23017 @ 0x20</text>
+<text x="1206" y="220" class="tiny">on the display's own I²C bus</text>
+
+<text x="1196" y="246" class="it">6 buttons</text>
+<text x="1206" y="264" class="lbl">STOP*  CYCLE START  ROUTER</text>
+<text x="1206" y="280" class="lbl">BIT CHANGE  ZERO  PRESET</text>
+<text x="1206" y="298" class="tiny">* STOP wires back to FluidNC G21, not to the expander</text>
+
+<text x="1196" y="326" class="it">Rough/fine selector</text>
+<text x="1196" y="350" class="it">ROUTER indicator LED</text>
+<text x="1206" y="366" class="tiny">lit = live · blinking = warming</text>
+
+<text x="1196" y="394" class="it">MPG handwheel — ZS80</text>
+<text x="1206" y="410" class="tiny">80 mm dial, 100 PPR, 5 V</text>
+<text x="1196" y="434" class="it">74HCT14 level shifter</text>
+<text x="1206" y="450" class="warn">5 V → 3.3 V, required</text>
+<text x="1206" y="466" class="tiny">two stages per channel = non-inverting</text>
+<text x="1206" y="482" class="tiny">SIGNALS_INVERTED = false</text>
+<text x="1196" y="506" class="note">Mount the handwheel where your hand rests.</text>
+
+<line class="sig" x1="1140" y1="240" x2="1180" y2="240"/>
+<text x="1092" y="232" class="lbl">UART</text>
+<line class="sig" x1="1140" y1="270" x2="1180" y2="270"/>
+<text x="1092" y="290" class="lbl">I²C</text>
+<line class="v5" x1="1140" y1="300" x2="1180" y2="300"/>
+
+<!-- ============ LIFT ASSEMBLY ============ -->
+<rect class="box" x="1180" y="548" width="340" height="360"/>
+<text x="1196" y="570" class="hdr">LIFT ASSEMBLY</text>
+<text x="1196" y="586" class="sub">commercial manual lift body, motorised</text>
+
+<text x="1196" y="614" class="it">NEMA 23 57HS76-3004A08</text>
+<text x="1206" y="630" class="tiny">coupled to the lift's own screw</text>
+<text x="1196" y="654" class="it">Lead screw — lead TBC</text>
+<text x="1206" y="672" class="warn">measure before setting steps_per_mm</text>
+
+<text x="1196" y="700" class="it">Bottom switch — home + neg limit</text>
+<text x="1196" y="722" class="it">Top switch — pos limit</text>
+<text x="1206" y="738" class="tiny">mechanical roller lever NC, or inductive NPN NC</text>
+<text x="1206" y="754" class="tiny">both wired NC, identical config either way</text>
+
+<text x="1196" y="782" class="warn">Hard mechanical stop beyond each switch</text>
+<text x="1206" y="798" class="tiny">the switch asks the controller to stop;</text>
+<text x="1206" y="814" class="tiny">the stop guarantees it. DEV-01 insurance.</text>
+
+<text x="1196" y="842" class="it">Touch-off probe plate</text>
+<text x="1206" y="858" class="tiny">plate to G32, croc clip to the bit</text>
+<text x="1196" y="884" class="it">Router — held in the lift</text>
+
+<line class="mot" x1="1116" y1="600" x2="1180" y2="600"/>
+<text x="1120" y="592" class="lbl">motor</text>
+<line class="shield" x1="1116" y1="700" x2="1180" y2="700"/>
+<text x="1120" y="722" class="lbl">sensors</text>
+
+<!-- ============ FOOT SWITCH ============ -->
+<rect class="box" x="40" y="400" width="330" height="130"/>
+<text x="56" y="422" class="hdr">FOOT SWITCH</text>
+<text x="56" y="446" class="it">Momentary NO, on the floor</text>
+<text x="56" y="468" class="note">Hold to plunge, release to retract.</text>
+<text x="56" y="486" class="note">Dead-man: step off and the cutter returns.</text>
+<text x="56" y="510" class="tiny">Lands on FluidNC G13 (macro0_pin) — it initiates</text>
+<text x="56" y="524" class="tiny">motion, so it must not cross the UART link.</text>
+<line class="sig" x1="370" y1="450" x2="440" y2="450"/>
+
+<!-- ============ COMMISSIONING NOTES ============ -->
+<rect class="box" x="40" y="570" width="330" height="340"/>
+<text x="56" y="592" class="hdr">BEFORE FIRST POWER-UP</text>
+<text x="56" y="618" class="warn">1 · Confirm sensor type</text>
+<text x="56" y="634" class="note">NPN only. Any /A suffix is PNP and</text>
+<text x="56" y="650" class="note">sources 24 V into the GPIO.</text>
+
+<text x="56" y="678" class="warn">2 · Confirm PSU voltage</text>
+<text x="56" y="694" class="note">24–36 V. A 48 V supply destroys</text>
+<text x="56" y="710" class="note">the TB6600 instantly.</text>
+
+<text x="56" y="738" class="warn">3 · Confirm common anode is 3.3 V</text>
+<text x="56" y="754" class="note">Not 5 V. Silent missed steps otherwise.</text>
+
+<text x="56" y="782" class="warn">4 · Measure the screw lead</text>
+<text x="56" y="798" class="note">Dial indicator over a known number of</text>
+<text x="56" y="814" class="note">motor revolutions. 800 steps/mm is an</text>
+<text x="56" y="830" class="note">assumption until you have done this.</text>
+
+<text x="56" y="858" class="warn">5 · Two red buttons, two meanings</text>
+<text x="56" y="874" class="note">E-stop mushroom kills mains. STOP is a</text>
+<text x="56" y="890" class="note">flush feed-hold button. Mount them apart.</text>
+
+<!-- ============ FOOTER ============ -->
+<rect class="box" x="40" y="940" width="1480" height="150"/>
+<text x="56" y="962" class="hdr">WHAT CROSSES WHICH BOUNDARY — AND WHY</text>
+<text x="56" y="988" class="note" font-weight="700">Stays on the motion board:</text>
+<text x="300" y="988" class="note">limits, probe, foot switch, STOP, router relay. Anything that initiates motion or protects the machine must work when the HMI does not.</text>
+<text x="56" y="1012" class="note" font-weight="700">Lives on the panel board:</text>
+<text x="300" y="1012" class="note">handwheel, five state-dependent buttons, touchscreen. These need NVS presets, Z0 validity and cycle state, none of which FluidNC holds.</text>
+<text x="56" y="1036" class="note" font-weight="700">Crosses the UART:</text>
+<text x="300" y="1036" class="note">jog commands, cycle commands, status reports. Nothing safety-critical — a dropped link causes a feed hold, never an unsafe move.</text>
+<text x="56" y="1060" class="note" font-weight="700">Crosses nothing:</text>
+<text x="300" y="1060" class="note">the E-stop. It is mains-rated hardware in series with the supply, invisible to both controllers, and cannot be overridden by either.</text>
+<text x="56" y="1082" class="tiny">Every cable leaving the enclosure is listed in the schedule above. Sensor and MPG runs are shielded twisted pair, shield grounded at the controller end only.</text>
+
+</svg>
