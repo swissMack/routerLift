@@ -40,6 +40,15 @@ out near an imperial number, say so — that changes `steps_per_mm` to a non-rou
 - [ ] Is there anything to bolt a motor bracket to — a flange, boss, tapped holes?
 - [ ] Photograph the drive end with the handle removed
 
+FML-P specifics (Sauter confirmed the lower hex is a supported drive input, see
+`MECHANICS-RevH.md` §4 and `reference/sauter-fml-p-lower-hex.png`):
+
+- [ ] Lower hex **across-flats**: `_______ mm`  (expect SW5 — verify, do not assume)
+- [ ] Lower hex **socket depth**: `_______ mm`  — sets the drive-stub engagement
+- [ ] Screw-end **protrusion** beyond the bearing block face: `_______ mm`
+- [ ] **Screw axis to guide-column surface**: `_______ mm`  — must exceed half the coupling OD
+- [ ] Bearing block face: flat area and any tapped holes usable for the bracket
+
 This decides the coupling and the motor mount, which are the only fabrication in the build.
 
 ## 4 · Travel

@@ -66,6 +66,25 @@ The nominal adjustment is a 5 mm hex through the insert plate from above, which 
 motor there would sit on the work surface. **But the lower end of the spindle carries its own hex
 socket**, visible in the manufacturer's underside photograph.
 
+**Confirmed by Sauter (2026-09-04):** the lift can be driven from the lower hex. Asked directly
+whether a motor may drive the screw there, they said yes and sent the photo at
+`reference/sauter-fml-p-lower-hex.png` — the screw's lower end passes through an aluminium bearing
+block and ends in a hex socket, sitting a few millimetres proud of the block face. So the lower
+socket is a manufacturer-sanctioned drive input, not an incidental feature.
+
+What the photo shows and does not show:
+
+| Seen | Consequence |
+| --- | --- |
+| Hex socket on the screw end, proud of the bearing block | The direct-coupled bracket in this section stands. No dismantling needed |
+| A guide column runs right beside the screw end | **Coupling and bracket must clear it** — a jaw coupling for a 6–8 mm bore is Ø 20–25 mm, so the screw-axis-to-column distance decides the coupling. Measure before buying |
+| Socket size not measurable from the photo | Visually consistent with the top's SW5; the manual ships one SW5 T-handle driver. **Still measure it** — item 2 below |
+| Socket depth unknown | Sets the stub engagement length. A shallow hex under reversing torque wears; use the full depth |
+
+The upper SW5 hex stays reachable through the insert plate. With the motor unpowered the screw is
+free to turn (§5.2 says it will not run away), so that hex is a **manual crank for bit changes and
+recovery** — cheap insurance against DEV-01. Never crank it against a powered motor.
+
 **The screw rotates in place; the nut travels with the carriage.** Confirmed two ways — the top
 hex is operated through the *fixed* insert plate, so the drive end cannot move vertically, and the
 underside photograph shows the screw driving the router mount up and down.
@@ -125,8 +144,9 @@ during the ACC-04 ten-minute drift test, switching to a timeout is now safe.
 
 | # | Item | Why it matters |
 | --- | --- | --- |
-| 1 | **Permissible spindle torque** — asked of Sauter | Sets the current limit and whether a torque limiter is needed |
-| 2 | **Is the lower hex also 5 mm?** — asked of Sauter | Sizes the drive stub |
+| 1 | **Permissible spindle torque** — asked of Sauter, still open | Sets the current limit and whether a torque limiter is needed. ⚠️ The manual's "Max. Drehmoment des Fräsmotors: 2 Nm" is the *router motor's* rating, not the lead screw's — it does not answer this |
+| 2 | **Lower hex size and depth** — Sauter confirmed adjustment from below (photo in §4); size not yet stated | Sizes the drive stub. Measure across-flats and socket depth on receipt |
+| 2a | **Screw-end to guide-column clearance** — new from the photo | Bounds the coupling OD and the bracket footprint |
 | 3 | **MEC-01 travel: 65 mm vs the specified ≥75 mm** | Every Sauter model shares 65 mm, so this is not avoidable by model choice. MEC-01 was written for an imaginary machine — the requirement probably needs revising down, but that must be a deliberate decision recorded in Rev H |
 | 4 | Motor bracket attachment point | Needs the lift in hand |
 | 5 | Endstop mounting and trip flag | Needs the lift in hand |
