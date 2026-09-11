@@ -4,6 +4,123 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Rev H split architecture
+
+The single-ESP32 design is superseded. Motion moves to stock FluidNC on a
+classic ESP32; a 4.3" ESP32-S3 touch panel becomes the operator interface and
+GRBL sender. FluidNC does not run on the S3, and the S3 cannot carry the full
+machine pin budget — hence two boards.
+
+**Nothing has been cut on this machine yet.** `steps_per_mm` is a placeholder
+and the lift body is not bought.
+
+### Added
+
+- `firmware/config.yaml` — the complete FluidNC machine definition: axis,
+  homing, soft limits, probe, `relay_spindle`, `macro0_pin`. No C++; the
+  motion board runs an unmodified FluidNC binary (`298aabf`)
+- `docs/UART-PROTOCOL.md` — HMI ↔ FluidNC command vocabulary, with `Link` as
+  the single writer so the vocabulary stays exhaustive (`0995735`)
+- `hmi/` — PlatformIO ESP32-S3 project for the ESP32-4827S043 panel
+  - Increment 1: `Link` GRBL sender with one-command-in-flight window,
+    `Wheel` PCNT quadrature decode with look-ahead clamp and
+    cancel-on-reversal, `Buttons` on MCP23017 with short/long press (`e450644`)
+  - Increment 2: Arduino_GFX RGB panel, GT911 touch, LVGL 8.4, main
+    screen (`39c20b0`)
+  - Increment 3: `Zero` two-touch probe sequencing and Z0 validity,
+    `Store` named presets in NVS (`efb3d2c`)
+- Rev H design set — four diagrams, BOM, design plan and Q&A (`e1b3230`),
+  42 of 50 Q&A answers recorded (`9e16441`), Word design review
+  document (`e80815e`)
+- `docs/Router_Lift_Requirement_Specification_RevG.md` and the as-built
+  wiring diagram (`d8e507a`)
+- Mechanics Rev A — lift body selection and stepper drive design (`383e996`),
+  workshop survey checklist (`e3b9cbf`)
+- Lift body investigation: Sauter confirms the FML-P drives from the lower
+  hex (`9189bf2`), full-size alternatives surveyed (`43da575`), the Wnew
+  manual rules that lift out as shipped (`cf2d94d`), and the four candidates
+  compared (`01c7596`, `f858ef2`)
+
+### Changed
+
+- **Soft limits are commissioning-only.** They live in `config.yaml` and are
+  no longer operator-editable. Per-job ceilings come from presets and a
+  teachable travel ceiling, both of which can only ever be *narrower* than the
+  commissioned envelope
+- **Rate switch is two positions (rough/fine)**, not the x1/x10/x100 bands
+- **The HMI has no motion authority.** Homing, limits and probing are enforced
+  by FluidNC. A bug in our firmware can produce a wrong depth, never an
+  unsafe move
+- Display board is the ESP32-4827S043 (RGB parallel), departing from spec
+  Annex B.10's JC4827W543C/NV3041A — B.10 is wrong and is corrected in Rev H
+- `README.md` rewritten for the two-board design (`1d0f235`)
+
+### Removed
+
+- Bespoke motion, homing, safety, relay and foot-switch firmware — all now
+  native FluidNC behaviour. Reimplementing the homing state machine would be
+  actively harmful
+- ILI9488 TFT, XPT2046 touch controller, FastAccelStepper
+- Function-board 4-bit ID. The MCP23017 remains in the HMI as the panel-button
+  expander, but no longer identifies a board
+
+### Deprecated
+
+- The v1.x firmware moved to `legacy/`, kept as a porting reference and
+  deliberately not built — no environment points at it (`01511d2`). The
+  original root layout is recoverable at tag `v1.1.0-bespoke`
+
+### Known issues
+
+- `steps_per_mm: 800` and `MpgCfg::SCREW_LEAD_MM = 2.0` are placeholders
+  assuming a 2 mm lead. Until measured against a dial indicator every depth is
+  wrong by an unknown factor, invisibly — there is no stall detection to
+  contradict a bad number
+- The foot switch needs both press and release edges for dead-man behaviour.
+  Whether `macro0_pin` fires on release is unverified; the mirrored-input plan
+  in `firmware/README.md` is not yet proven
+- Seven `config.yaml` items still to verify against the installed FluidNC
+  release
+- `docs/ARCHITECTURE.md` still describes the legacy module map
+- HMI increments 4 (cycles) and 5 (fault log, diagnostics) not started
+
+---
+
+## [1.1.0-bespoke] - 2026-09-02
+
+Tag only. The final state of the single-ESP32 firmware before the RevG pivot,
+preserving the original root layout with `src/` and `include/`.
+
+---
+
+## [1.1.0] - 2026-05-25
+
+### Added
+
+- `Settings` module — NVS-persisted calibration under namespace `rl-cfg`, so
+  motion, limit, relay and direction values survive a power cycle instead of
+  resetting to defaults on boot. Writes are debounced 2 s to reduce NVS
+  wear on rapid wheel turns (`ef13b68`)
+- `docs/BENCH-TEST.md` — staged bring-up plan, each step passing before the
+  next piece of hardware is fitted
+- `docs/SCHEMATIC.svg` — wiring schematic (`20e6411`)
+
+### Fixed
+
+- First clean compile of the v1.0 firmware (`dd7aca4`)
+
+---
+
+## [1.0.1] - 2026-05-25
+
+### Fixed
+
+- Dir-invert calibration row read and wrote the motor-enable flag instead of
+  the direction-inversion flag. Adds `MotorControl::dirInverted()` and uses it
+  in `Menu` and `Display` (`307f81f`)
+
+---
+
 ## [1.0.0] - 2026-05-24
 
 Initial release.
