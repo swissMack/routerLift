@@ -85,12 +85,17 @@ What fits each lift on 230 V:
 | Lift | Realistic 230 V router |
 | --- | --- |
 | FML-P (Ø 43) | AMB/Kress 1050 FME (1,050 W, ~1.7 kg), Suhner UAK 30, Mafell FM 1000. Continuous-duty spindle motors with soft start and speed control — the CNC-router class |
-| Wnew / ENJOYWOOD (107 + ring) | **Ø 80 mm VFD spindle** (1.5–2.2 kW, air- or water-cooled) with the 80 ring — the manual lists exactly this; or a Ø 65 mm trim router (Makita RT0700, Bosch GKF 600) with the 65 ring. No 43 mm ring exists |
-| SpeTool (65–107 clamp) | Same as above, and the clamp also takes odd diameters between |
+| Wnew / ENJOYWOOD (107 + ring) | **65 ring:** Makita RT0702, Bosch GKF 600, Katsu — 710 W trim routers. **69 ring:** DeWalt D26200 class, 900 W — verify the diameter, it is inferred from the DWP611. **88.9 ring:** only the Devon 1316-1, an obscure Chinese 230 V router. **80 ring:** a VFD spindle — **ruled out**, no inverter in this build. No 43 mm ring exists |
+| SpeTool (65–107 clamp) | Same as above — **dropped on price** |
 
-So the honest choice on 230 V is **Ø 43 mm spindle motor** versus **Ø 80 mm VFD spindle**.
-The VFD route gives 1.5–2.2 kW and true speed control, but adds an inverter (cost, a
-second mains device, EMI next to the FluidNC board) and a heavier carriage.
+Full-size European routers — Triton TRA001, Bosch GOF 1600, Makita RP2301, Festool OF —
+are plunge machines whose motors do not come out of the base. They cannot go in a
+carriage lift at all.
+
+So on 230 V without a VFD, **a Ø 107 lift carries a 710–900 W compact router.** That is
+*less* power than the FML-P's 1,100 W Ø 43 spindle motor, not more. The imports' one
+real gain over the FML-P is travel (100 mm) and the standard plate — the "full-size
+router" advantage does not exist on this mains supply.
 
 Other fit points:
 
@@ -115,21 +120,26 @@ drive below, self-locking, best documented, least fabrication, lightest. Costs: 
 travel (MEC-01 must be revised to ≥ 60 mm, deliberately), ≤ 1,100 W, no dust port, a
 non-standard plate.
 
-**Package B — SpeTool P01002 + Ø 80 mm VFD spindle.** Choose this only if bit size or
-power genuinely needs > 1,100 W. Gains 107 mm travel, standard plate, dust port, DE
-warehouse, warranty. Costs: belt drive redesign, holding current or brake for MEC-02,
-an unstated-then-measured lead, and a VFD in the enclosure. Among the imports the
-SpeTool beats the Wnew on specs, warranty, warehouse and price, and beats the ENJOYWOOD
-on being verifiable at all.
+**Package B — ENJOYWOOD Heavy Duty (US$290) + Ø 69 DeWalt D26200 class (900 W) or
+Ø 65 Makita RT0702 (710 W).** The cheapest 107 carriage, with a compact router in a ring.
+Gains 100 mm travel (~80 mm after the belt pulley) and the standard plate. Costs: belt
+drive redesign, holding current or brake for MEC-02, an unstated lead, a router with
+*less* power than Package A, and a lift nobody has reviewed. SpeTool is out on price; the
+Wnew is the same lift at nearly twice the money.
 
-**Recommendation: Package A**, unless the router power question decides otherwise. The
-spec was written for a machine that does not exist; Sauter is the one maker who has
-answered the drive question in writing. If Sauter's reply on screw torque is
-unfavourable, Package B is ready.
+**Package C — ENJOYWOOD GD7 PRO (~US$180, 65/69 mm, 684 reviews) + trim router.** The
+cheap route if 710 W and 60 mm travel are enough. Fails MEC-01 worse than the Sauter, and
+the "depth walking" thread is about exactly this model.
+
+**Recommendation: Package A.** With the VFD ruled out, the imports lose their only
+argument — router power — and keep only travel, which they then spend a fifth of on the
+belt pulley. The FML-P drives from below without a belt, holds without a brake, and takes
+the most powerful router of the three packages. If Sauter's reply on screw torque is
+unfavourable, Package B is the fallback.
 
 Open before either purchase:
 
 1. Sauter: permissible screw torque, lower hex size (asked 2026-09-04).
-2. Decide the router class: ≤ 1,100 W Ø 43 or 1.5–2.2 kW VFD. This decides the lift.
-3. If B: confirm the SpeTool lower screw end from its manual before ordering
-   (`spetools.com` hosts the PDF).
+2. **Is there a router already in hand?** If so its motor diameter decides this outright.
+   If not, Package A's AMB/Kress 1050 FME is the router to price.
+3. MEC-01: revise to ≥ 60 mm, deliberately, in Rev H.
