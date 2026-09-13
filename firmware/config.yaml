@@ -160,8 +160,10 @@ control:
 # --------------------------------------------------------------------------
 # Router power
 # --------------------------------------------------------------------------
-relay_spindle:
-  output_pin: gpio.4      # → 5 V relay module → contactor coil.
+# The spindle key is Relay. The old key relay_spindle is ignored at boot and
+# leaves the router unconfigured. Keep comments off section-header lines.
+Relay:
+  output_pin: gpio.4     # → 5 V relay module → contactor coil.
                           # The bit-change KEY SWITCH is in series with that
                           # coil (SAF-02). Key out and the contactor cannot pull
                           # in regardless of anything in this file.
