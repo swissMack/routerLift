@@ -162,7 +162,7 @@
 
 <rect class="grp" x="648" y="406" width="190" height="300"/>
 <text x="660" y="426" class="pin" font-weight="700">TB6600</text>
-<text x="660" y="442" class="tiny">1/8 µstep · 2.8 A/ph</text>
+<text x="660" y="442" class="tiny">1/8 µstep · 1.0–1.4 A/ph</text>
 <text x="660" y="470" class="pin">PUL+ ─┐</text>
 <text x="660" y="488" class="pin">DIR+ ─┼── +3.3 V</text>
 <text x="660" y="506" class="pin">ENA+ ─┘</text>
@@ -194,7 +194,7 @@
 <text x="900" y="590" class="note" font-weight="700">ENA is wired, not n/c</text>
 <text x="900" y="608" class="note">Gives FluidNC disable_pin and</text>
 <text x="900" y="624" class="note">$Stepper/IdleTime. Without it the</text>
-<text x="900" y="640" class="note">motor sits at 2.8 A forever —</text>
+<text x="900" y="640" class="note">motor stays energised forever —</text>
 <text x="900" y="656" class="note">ENV-03 thermal risk over 8 h.</text>
 <text x="900" y="680" class="tiny">Self-locking screw holds unpowered,</text>
 <text x="900" y="694" class="tiny">so disabling drops nothing.</text>

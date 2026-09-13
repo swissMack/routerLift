@@ -70,7 +70,7 @@
 <text x="480" y="298" class="hdr">MOTION — ESP32 + FluidNC</text>
 <text x="480" y="320" class="it">ESP32 devkit</text>
 <text x="480" y="342" class="it">TB6600 driver</text>
-<text x="480" y="362" class="tiny">1/8 µstep · 2.8 A/phase</text>
+<text x="480" y="362" class="tiny">1/8 µstep · 1.0–1.4 A/phase</text>
 <text x="480" y="386" class="note">Common anode PUL+/DIR+/ENA+</text>
 <text x="480" y="402" class="warn">to +3.3 V, NOT +5 V</text>
 <text x="480" y="428" class="note">STOP button lands here — G21,</text>
