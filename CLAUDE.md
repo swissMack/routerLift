@@ -9,10 +9,12 @@ ESP32-S3 touch panel (`hmi/`) over UART. See `README.md` and `docs/DESIGN-PLAN-R
 **Bench status and the resume checklist live in `docs/BRINGUP-LOG.md`.** In short:
 
 - FluidNC board: flashed (v4.1.0), config verified, bare-board acceptance passed.
-- Screen board: display and touch working on the corrected board; not yet linked to FluidNC.
-- Paused waiting for the MPG level shifters. **Check the part before wiring it** — the BOM's
+- Screen board: display and touch working on the corrected board.
+- UART link (Step B): passed — link up, link-loss detection and recovery verified.
+- Waiting for the MPG level shifters. **Check the part before wiring it** — the BOM's
   74HCT14 is unsafe into the S3; a 74LVC14 on 3.3 V is the right part.
-- Next: Step B, join the two boards over UART (wiring decided, in the log).
+- Next: MPG through the shifters on P3 (GPIO 6/7). FluidNC board needs a data USB cable
+  (it did not enumerate on the Mac during Step B).
 
 Build: `pio run -e hmi` (or `-e hmi-diag`). Screen port: `/dev/cu.usbmodem*`.
 FluidNC: `routerlift.local` / 192.168.1.82.

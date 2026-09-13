@@ -72,6 +72,16 @@ void Link::update() {
         }
     }
 
+    // Poll for status. FluidNC's report_interval_ms only reports on change, so
+    // an idle machine (e.g. sitting in Alarm before homing) sends nothing and
+    // the link would read as lost. '?' is a realtime byte: never queued, never
+    // acknowledged, and harmless alongside automatic reports.
+    static uint32_t lastPollMs = 0;
+    if (millis() - lastPollMs >= LinkCfg::POLL_MS) {
+        lastPollMs = millis();
+        statusQuery();
+    }
+
     // A command that never gets acknowledged would wedge the queue forever.
     if (inFlight_ && (millis() - sentAtMs_) > LinkCfg::ACK_TIMEOUT_MS) {
         inFlight_ = false;

@@ -5,6 +5,29 @@ the machine *should* be; this file says what has been *proven on the bench*.
 
 ---
 
+## 2026-09-13 (later) — Step B: UART link ✅ passed
+
+Supplied P4 lead wired as planned (red GND, blue IO17 → D17, black IO18 → D16, yellow
+insulated), D33/D25 jumpered to GND.
+
+| Check | Result |
+| --- | --- |
+| Link comes up | ✅ screen shows **LINK**, Z 0.00 mm, message "ALARM – re-home required"; log `[LINK] up`, `ALARM Z= 0.000 … LINK … Z0=INVALID(alarm)` |
+| Link loss | ✅ pressing FluidNC **EN** → immediate `[LINK] LOST - feed hold sent, Z0 invalidated` |
+| Recovery | ✅ link returns on its own; **Z0 stays INVALID(link lost)** until re-probed, as FW-09 requires |
+
+**Bug found and fixed:** the HMI never polled for status. `LinkCfg::POLL_MS` existed but was
+unused, and FluidNC's `report_interval_ms` only reports *on change* — so an idle machine sitting
+in Alarm sends nothing and the screen showed NO LINK with correct wiring. `Link::update()` now
+sends the `?` realtime byte every 100 ms. This also settles `firmware/README.md` item 2: the
+interval setting exists but is not a heartbeat; polling is required.
+
+**Loose end:** the FluidNC board did not enumerate on the Mac during this test (only the screen's
+`usbmodem` port appeared), though it was powered and linked. Likely a charge-only cable or a
+power-only port. Needs a data cable before the next FluidNC-side test.
+
+---
+
 ## 2026-09-13 — motion board and screen board, bare
 
 **Paused here for about a week, waiting on the MPG level shifters.**
@@ -17,8 +40,8 @@ the machine *should* be; this file says what has been *proven on the bench*.
    on 3.3 V** (5 V-tolerant inputs, same Schmitt hysteresis, two stages per channel stay
    non-inverting). If a 74HCT14 arrived, do not connect its outputs to the S3 until this is
    settled. Either way, `MPG::SIGNALS_INVERTED` must match the circuit.
-2. **Step B — join the two boards over UART.** Wiring is decided and the cable colours are
-   confirmed; nothing is connected yet. See *Step B wiring* below.
+2. ~~**Step B — join the two boards over UART.**~~ ✅ Passed later the same day — see the entry
+   above. Next is the MPG through the shifters on P3 (GPIO 6/7).
 3. **Push status:** everything below is committed and pushed.
 
 ### Motion controller — FluidNC ESP32 ✅ bare-board acceptance passed
