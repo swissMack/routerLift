@@ -19,8 +19,19 @@ FORMAT_VERSION = "20250114"
 DATE = "2026-09-13"
 GRID = 1.27
 STUB = 2.54
+# A power net's stub is longer than a signal net's: on a dense, multi-row connector
+# (a power net on every other pin, e.g. a GND return alongside each signal) the usual
+# STUB places the power symbol's Value text ("GND", "+5V", ...) right where the next
+# row's own pin number or label already lives - a short stub can't out-distance that
+# regardless of the field's own offset. See kisch.py Sheet._symbol for the matching
+# field placement, and test_kisch.py PowerNetLegibilityTest for the case this covers.
+POWER_STUB = STUB * 3
 POWER_NETS = {"+3V3": "power:+3V3", "+5V": "power:+5V", "+24V": "power:+24V", "GND": "power:GND"}
 POWER_POINTS_DOWN = {"power:GND"}
+# label()'s own angle -> reading-side mapping, reused so a power symbol's Value field
+# grows away from its pin (further out along the stub) instead of back toward the row
+# it came from, which is what collides with a neighbouring pin's number or label.
+_DIR_SIDE = {(1, 0): "left", (0, -1): "left", (-1, 0): "right", (0, 1): "right"}
 NS = uuid.UUID("5b0f5d6e-3c1a-4e8e-9b7a-2f6c1d0a9e42")
 
 Pin = collections.namedtuple("Pin", "number name etype x y angle")
@@ -287,15 +298,20 @@ class Sheet:
                                    [A("uuid"), self._next()]])
                 continue
             d = pin_outward(rot, pin)
-            end = (round(point[0] + d[0] * STUB, 4), round(point[1] + d[1] * STUB, 4))
+            stub = POWER_STUB if net in POWER_NETS else STUB
+            end = (round(point[0] + d[0] * stub, 4), round(point[1] + d[1] * stub, 4))
             self.wire(point, end)
             self.label(net, end, d)
             self._count(net)
 
-    def _add_part(self, lib_id, ref, value, at, rot, unit, footprint, dnp, fields, pins, power):
+    def _add_part(self, lib_id, ref, value, at, rot, unit, footprint, dnp, fields, pins, power,
+                 text_dir=None):
+        """text_dir, when given, is the outward pin direction the part was hung off of -
+        used only to keep a power symbol's Value field growing away from its pin instead
+        of back toward whatever else shares its row."""
         self.parts.append(dict(lib_id=lib_id, ref=ref, value=value, at=at, rot=rot, unit=unit,
                                footprint=footprint, dnp=dnp, fields=fields, pins=pins,
-                               power=power, uuid=self._next("part")))
+                               power=power, text_dir=text_dir, uuid=self._next("part")))
 
     def wire(self, a, b):
         self.items.append([A("wire"), [A("pts"), [A("xy"), a[0], a[1]], [A("xy"), b[0], b[1]]],
@@ -309,8 +325,18 @@ class Sheet:
         if net in POWER_NETS:
             lib_id = POWER_NETS[net]
             base = (0, 1) if lib_id in POWER_POINTS_DOWN else (0, -1)
+            # Keep aligning the symbol's graphic to point into the wire. Forcing rotation
+            # 0 regardless of wire direction was tried, to keep the Value field's angle
+            # horizontal - but the graphic then always points the same way regardless of
+            # wire direction, which for a horizontal connector pin walks the graphic
+            # itself (not just its text) into whichever neighbouring row is "below" in
+            # its unrotated orientation - confirmed on J1, where a GND forced to rotation
+            # 0 landed its arrow across the next pin's own label. text_dir (passed to
+            # _add_part below) is what _symbol() needs to keep the Value field legible at
+            # whatever rotation alignment actually produces, so alignment doesn't need to
+            # be sacrificed for it.
             self._add_part(lib_id, "#PWR?", net, point, _rotation(base, direction), 1, "",
-                           False, {}, ["1"], power=True)
+                           False, {}, ["1"], power=True, text_dir=direction)
         elif net in self.ports:
             self.items.append([A("hierarchical_label"), net, [A("shape"), A(self.ports[net])],
                                at, _font(justify=[side]), [A("uuid"), self._next()]])
@@ -365,23 +391,51 @@ class Sheet:
              [A("unit"), part["unit"]], [A("exclude_from_sim"), False],
              [A("in_bom"), not part["power"]], [A("on_board"), not part["power"]],
              [A("dnp"), part["dnp"]], [A("uuid"), part["uuid"]]]
-        # A power symbol's Value field ("GND", "+5V", ...) is auto-placed right at a
-        # net's wire stub, which on a dense 2.54mm-pitch connector row is only one row
-        # pitch from the next pin's own label. A regular part's Reference/Value uses a
-        # (2.54, 2.54) diagonal offset - the y half of that alone is a full row pitch,
-        # so it reliably lands a power net's Value text on top of the row next to it.
-        # Halving it to 1.27mm keeps it inside its own row for the common case (a power
-        # net a row or more away from its neighbours - e.g. two different power nets on
-        # a connector, or a passive's own power-net pin). On a connector with a power
-        # net on every other pin (e.g. a GND return alongside every signal) even that
-        # can still brush the neighbouring row's label at this pitch; there is no
-        # (dx, dy) that clears every case at 2.54mm pitch without a real layout change.
-        value_offset = (1.27, 1.27) if part["power"] else (2.54, 2.54)
-        props = [("Reference", instances[0][1], part["power"], (2.54, -2.54)),
-                 ("Value", part["value"], False, value_offset),
-                 ("Footprint", part["footprint"], True, (0, 0)),
-                 ("Datasheet", "", True, (0, 0))]
-        props += [(k, v, True, (0, 0)) for k, v in part["fields"].items()]
+        # A power symbol's Value field ("GND", "+5V", ...) sits at the end of its net's
+        # wire stub. A regular part's Reference/Value uses a fixed (2.54, -2.54)/(2.54,
+        # 2.54) diagonal offset from the part - fine for an isolated part, but on a
+        # multi-row connector with a power net on every other pin (a GND return beside
+        # each signal, say) that offset reliably lands the text on the neighbouring
+        # row's own pin number or label: the y half of it alone is a full row pitch at
+        # this design's 2.54mm grid. Three changes fix this together - each was checked
+        # in isolation against an actual dense connector (J4: +3V3 on every odd pin
+        # beside STEP/DIR/ENABLE) rendered through kicad-cli, and each one on its own
+        # left a real overlap:
+        #  - place() gives a power net a 3x-longer stub (POWER_STUB), so its symbol
+        #    sits well clear of the connector body and every row's own pin-number text,
+        #    which all sit close to the connector regardless of row. On its own this
+        #    does not stop the Value field reaching a neighbouring row, because -
+        #  - the Value field is offset *in the same direction the stub already runs*
+        #    (part["text_dir"], set by label() to the net's outward pin direction),
+        #    scaled by GRID * 2, instead of the regular fixed diagonal - so it moves
+        #    further from the row it came from, not back into a neighbour's. A smaller
+        #    offset (GRID) leaves the text still touching its own symbol's glyph; a
+        #    larger one (3 * GRID) overshoots it on some rotations - both confirmed by
+        #    rendering, not derived.
+        #  - the justify is the *outward* side only ("left" or "right", from
+        #    part["text_dir"] via _DIR_SIDE) with no vertical ("bottom") component.
+        #    Adding "bottom" - the same justify a plain label() text uses, and safe
+        #    there - reliably broke this: at some rotations a property with a "bottom"
+        #    vertical justify renders at a completely different position than the same
+        #    offset with no vertical justify, up to and including landing exactly on
+        #    top of an unrelated neighbour. This looks like a KiCad quirk specific to a
+        #    rotated symbol's property justify, not documented anywhere found; treat it
+        #    as load-bearing and re-check by rendering before changing it.
+        # See test_kisch.py PowerNetLegibilityTest, which renders an actual multi-row
+        # power-and-signal connector (not just an isolated part) through kicad-cli and
+        # asserts none of the resulting glyph boxes overlap.
+        if part["power"] and part["text_dir"] is not None:
+            tdx, tdy = part["text_dir"]
+            value_offset, value_justify = (tdx * 2.54, tdy * 2.54), [_DIR_SIDE[part["text_dir"]]]
+        elif part["power"]:
+            value_offset, value_justify = (1.27, 1.27), ["left"]
+        else:
+            value_offset, value_justify = (2.54, 2.54), ["left"]
+        props = [("Reference", instances[0][1], part["power"], (2.54, -2.54), ["left"]),
+                 ("Value", part["value"], False, value_offset, value_justify),
+                 ("Footprint", part["footprint"], True, (0, 0), ["left"]),
+                 ("Datasheet", "", True, (0, 0), ["left"])]
+        props += [(k, v, True, (0, 0), ["left"]) for k, v in part["fields"].items()]
         # KiCad renders a symbol property's stored angle combined with the parent
         # symbol's own rotation, but not by simple addition - determined empirically
         # (see hardware/tools/tests/test_kisch.py FieldRotationTest): a stored angle of
@@ -391,14 +445,13 @@ class Sheet:
         # "GND"/"+5V") ends up sideways or upside down, which is how two power nets a
         # few pins apart on a rotated connector row end up as overlapping garbled text.
         field_angle = 0 if part["rot"] % 180 == 0 else 90
-        for name, value, hidden, (dx, dy) in props:
-            # A smaller font for a power symbol's Value only reduces how far it reaches
-            # into a neighbouring row on a dense connector (see the offset comment above)
-            # - it doesn't change position, so it stacks with that half offset instead of
-            # replacing it.
+        for name, value, hidden, (dx, dy), justify in props:
+            # A smaller font for a power symbol's Value only tightens how far it reaches
+            # - it doesn't change position, so it stacks with the offset above instead
+            # of replacing it.
             size = 1.0 if (part["power"] and name == "Value") else 1.27
             e.append([A("property"), name, value, [A("at"), x + dx, y + dy, field_angle],
-                      _font(size=size, hide=hidden, justify=["left"])])
+                      _font(size=size, hide=hidden, justify=justify)])
         for number in part["pins"]:
             e.append([A("pin"), number, [A("uuid"), _uid(part["uuid"] + "/" + number)]])
         e.append([A("instances"), [A("project"), project] + [

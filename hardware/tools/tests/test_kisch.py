@@ -156,6 +156,109 @@ class FieldRotationTest(unittest.TestCase):
         self.assertEqual(self._value_angle(270), 90)
 
 
+def _text_bbox(x, y, text, size, justify):
+    """A conservative estimate of a single line of text's bounding box in mm, from the
+    same (x, y, justify, font size) kisch itself writes to the file - not a re-derivation
+    of how kisch picks them, so this catches a real placement regression regardless of
+    how the offset or justify is computed. Deliberately generous (assumes every
+    character is as wide as the font is tall, and a full line-height above and below
+    the anchor) so it only flags overlaps a human would actually see, not near misses."""
+    x, y, size = float(x), float(y), float(size)
+    width, height = len(text) * size, size * 1.6
+    if "right" in justify:
+        x0, x1 = x - width, x
+    elif "left" in justify:
+        x0, x1 = x, x + width
+    else:
+        x0, x1 = x - width / 2, x + width / 2
+    return (x0, y - height / 2, x1, y + height / 2)
+
+
+def _overlaps(a, b):
+    ax0, ay0, ax1, ay1 = a
+    bx0, by0, bx1, by1 = b
+    return ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1
+
+
+class PowerNetLegibilityTest(unittest.TestCase):
+    """The regression that prompted this: a 6-pin connector with a power net on every
+    other pin (J4 in the real design - +3V3 on pins 1/3/5, STEP/DIR/ENABLE on 2/4/6)
+    rendered its power nets' "+3V3" Value field directly on top of the neighbouring
+    row's own label - confirmed by rendering the real design through kicad-cli, reading
+    the PDF, and finding "STEP" and "+3V3" as literally overlapping glyphs. Reproduce
+    the same shape (a power net's pin sandwiched between two signal pins, on the kind of
+    pin-pointing-sideways connector every J1/J2/J4/J6/J7 in the real design uses) against
+    a small fixture connector, and check by bounding box - not just by eye - that the
+    power net's Value field does not overlap either neighbour's label. Also covers a
+    power net whose own pin has no neighbour, and both power-symbol orientations
+    (GND points "down" by default, +3V3/+5V/+24V point "up" - POWER_POINTS_DOWN)."""
+
+    def _render(self):
+        sym = kisch.box_symbol("J", ["1", "2", "3", "4"], [])
+        l = Library(symbol_dir=FIXTURES, extra={"routerlift:J": sym})
+        s = Sheet("p", "p", l)
+        # Pin 1 = GND (no neighbour above it, like J1 pin 13 is not - this covers the
+        # "last row" case too), pin 2 = a signal, pin 3 = +3V3 (sandwiched between two
+        # signals, the exact shape that broke on J4), pin 4 = a signal.
+        s.place("routerlift:J", "J1", "conn", (50.8, 50.8),
+                {"1": "GND", "2": "SIG_TOP", "3": "+3V3", "4": "SIG_BOTTOM"})
+        # Every signal net needs a second connection (validate() rejects a one-ended
+        # net) - a second small connector elsewhere on the sheet, far from J1, does
+        # that without adding anything near J1 that could itself cause an overlap.
+        s.place("routerlift:J", "J2", "far", (152.4, 50.8), {"1": "SIG_TOP", "2": None,
+                "3": "SIG_BOTTOM", "4": None})
+        with tempfile.TemporaryDirectory() as d:
+            Project("p", s, d).write()
+            return parse((Path(d) / "p.kicad_sch").read_text())
+
+    def test_power_value_field_does_not_overlap_a_neighbouring_row(self):
+        tree = self._render()
+        power_boxes = []
+        for sym in findall(tree, "symbol"):
+            lib_id = find(sym, "lib_id")[1]
+            if not lib_id.startswith("power:"):
+                continue
+            value_prop = [p for p in findall(sym, "property") if p[1] == "Value"][0]
+            at = find(value_prop, "at")
+            justify = find(find(value_prop, "effects"), "justify")[1:]
+            size = find(find(find(value_prop, "effects"), "font"), "size")[1]
+            power_boxes.append(_text_bbox(at[1], at[2], value_prop[2], size, justify))
+        label_boxes = []
+        for item in findall(tree, "label"):
+            at = find(item, "at")
+            justify = find(find(item, "effects"), "justify")[1:]
+            label_boxes.append(_text_bbox(at[1], at[2], item[1], 1.27, justify))
+        self.assertEqual(len(power_boxes), 2, "expected GND and +3V3 Value fields")
+        # 4, not 2: SIG_TOP and SIG_BOTTOM each get a label at J1 (near the power nets,
+        # what this test is about) and a second one at J2 (the far end, added only to
+        # satisfy validate()'s two-connections-per-net rule) - checking against both is
+        # harmless since the J2 ones are 100mm away and can never overlap anything here.
+        self.assertEqual(len(label_boxes), 4, "expected SIG_TOP and SIG_BOTTOM labels")
+        for pb in power_boxes:
+            for lb in label_boxes:
+                self.assertFalse(_overlaps(pb, lb),
+                                 "a power net's Value field overlaps a neighbouring "
+                                 "row's label: %r vs %r" % (pb, lb))
+
+    def test_power_value_field_has_no_vertical_justify(self):
+        """Complements the bounding-box check above, which cannot catch this: adding a
+        vertical ("top"/"bottom") justify component to a power symbol's Value field -
+        the same justify plain net labels use safely - was tried and, on the real J4
+        connector rendered through kicad-cli, placed the text at a visibly different
+        (and overlapping) position than the same offset with no vertical justify. This
+        isn't something derivable from the stored coordinates by any geometric model;
+        it was only found by actually rendering and reading the PDF, so it can only be
+        pinned here as a direct characterization of the stored justify, not re-derived."""
+        tree = self._render()
+        for sym in findall(tree, "symbol"):
+            if not find(sym, "lib_id")[1].startswith("power:"):
+                continue
+            value_prop = [p for p in findall(sym, "property") if p[1] == "Value"][0]
+            justify = find(find(value_prop, "effects"), "justify")[1:]
+            self.assertNotIn("top", justify)
+            self.assertNotIn("bottom", justify)
+
+
 class BoxSymbolTest(unittest.TestCase):
     def test_box_pins_on_grid(self):
         sym = kisch.box_symbol("PSU", ["L", "N", "PE"], ["V+", "V-"])

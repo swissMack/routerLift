@@ -1619,7 +1619,7 @@
 	(wire
 		(pts
 			(xy 71.12 114.3)
-			(xy 68.58 114.3))
+			(xy 63.5 114.3))
 		(stroke
 			(width 0)
 			(type default))
@@ -1642,7 +1642,7 @@
 	(wire
 		(pts
 			(xy 71.12 119.38)
-			(xy 68.58 119.38))
+			(xy 63.5 119.38))
 		(stroke
 			(width 0)
 			(type default))
@@ -1737,7 +1737,7 @@
 	(wire
 		(pts
 			(xy 134.62 116.84)
-			(xy 132.08 116.84))
+			(xy 127 116.84))
 		(stroke
 			(width 0)
 			(type default))
@@ -1745,7 +1745,7 @@
 	(wire
 		(pts
 			(xy 134.62 119.38)
-			(xy 132.08 119.38))
+			(xy 127 119.38))
 		(stroke
 			(width 0)
 			(type default))
@@ -1911,7 +1911,7 @@
 	(wire
 		(pts
 			(xy 325.12 38.1)
-			(xy 322.58 38.1))
+			(xy 317.5 38.1))
 		(stroke
 			(width 0)
 			(type default))
@@ -1919,7 +1919,7 @@
 	(wire
 		(pts
 			(xy 325.12 40.64)
-			(xy 322.58 40.64))
+			(xy 317.5 40.64))
 		(stroke
 			(width 0)
 			(type default))
@@ -1927,7 +1927,7 @@
 	(wire
 		(pts
 			(xy 325.12 71.12)
-			(xy 322.58 71.12))
+			(xy 317.5 71.12))
 		(stroke
 			(width 0)
 			(type default))
@@ -1950,7 +1950,7 @@
 	(wire
 		(pts
 			(xy 325.12 76.2)
-			(xy 322.58 76.2))
+			(xy 317.5 76.2))
 		(stroke
 			(width 0)
 			(type default))
@@ -1973,7 +1973,7 @@
 	(wire
 		(pts
 			(xy 325.12 81.28)
-			(xy 322.58 81.28))
+			(xy 317.5 81.28))
 		(stroke
 			(width 0)
 			(type default))
@@ -1996,7 +1996,7 @@
 	(wire
 		(pts
 			(xy 325.12 111.76)
-			(xy 322.58 111.76))
+			(xy 317.5 111.76))
 		(stroke
 			(width 0)
 			(type default))
@@ -2004,7 +2004,7 @@
 	(wire
 		(pts
 			(xy 325.12 114.3)
-			(xy 322.58 114.3))
+			(xy 317.5 114.3))
 		(stroke
 			(width 0)
 			(type default))
@@ -2042,7 +2042,7 @@
 	(wire
 		(pts
 			(xy 325.12 149.86)
-			(xy 322.58 149.86))
+			(xy 317.5 149.86))
 		(stroke
 			(width 0)
 			(type default))
@@ -2065,7 +2065,7 @@
 	(wire
 		(pts
 			(xy 325.12 154.94)
-			(xy 322.58 154.94))
+			(xy 317.5 154.94))
 		(stroke
 			(width 0)
 			(type default))
@@ -2088,7 +2088,7 @@
 	(wire
 		(pts
 			(xy 325.12 160.02)
-			(xy 322.58 160.02))
+			(xy 317.5 160.02))
 		(stroke
 			(width 0)
 			(type default))
@@ -2111,7 +2111,7 @@
 	(wire
 		(pts
 			(xy 325.12 200.66)
-			(xy 322.58 200.66))
+			(xy 317.5 200.66))
 		(stroke
 			(width 0)
 			(type default))
@@ -2134,7 +2134,7 @@
 	(wire
 		(pts
 			(xy 325.12 205.74)
-			(xy 322.58 205.74))
+			(xy 317.5 205.74))
 		(stroke
 			(width 0)
 			(type default))
@@ -2157,7 +2157,7 @@
 	(wire
 		(pts
 			(xy 325.12 210.82)
-			(xy 322.58 210.82))
+			(xy 317.5 210.82))
 		(stroke
 			(width 0)
 			(type default))
@@ -2165,7 +2165,7 @@
 	(wire
 		(pts
 			(xy 325.12 245.11)
-			(xy 322.58 245.11))
+			(xy 317.5 245.11))
 		(stroke
 			(width 0)
 			(type default))
@@ -2304,7 +2304,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 68.58 114.3 270)
+		(at 63.5 114.3 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2312,27 +2312,27 @@
 		(dnp no)
 		(uuid "37bbc03c-a73a-5d29-bcaf-1e8c41be8216")
 		(property "Reference" "#PWR1"
-			(at 71.12 111.76 90)
+			(at 66.04 111.76 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 69.85 115.57 90)
+			(at 60.96 114.3 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 68.58 114.3 90)
+			(at 63.5 114.3 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 68.58 114.3 90)
+			(at 63.5 114.3 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2347,7 +2347,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+5V")
-		(at 68.58 119.38 90)
+		(at 63.5 119.38 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2355,27 +2355,27 @@
 		(dnp no)
 		(uuid "02fde896-c057-5cd1-a35d-050ef744f5b1")
 		(property "Reference" "#PWR2"
-			(at 71.12 116.84 90)
+			(at 66.04 116.84 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 69.85 120.65 90)
+			(at 60.96 119.38 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 68.58 119.38 90)
+			(at 63.5 119.38 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 68.58 119.38 90)
+			(at 63.5 119.38 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2460,7 +2460,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 132.08 116.84 270)
+		(at 127 116.84 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2468,27 +2468,27 @@
 		(dnp no)
 		(uuid "cbd72db3-5f07-5b09-adfc-eb5b0e7f483d")
 		(property "Reference" "#PWR3"
-			(at 134.62 114.3 90)
+			(at 129.54 114.3 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 133.35 118.11 90)
+			(at 124.46 116.84 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 132.08 116.84 90)
+			(at 127 116.84 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 132.08 116.84 90)
+			(at 127 116.84 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2503,7 +2503,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+3V3")
-		(at 132.08 119.38 90)
+		(at 127 119.38 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2511,27 +2511,27 @@
 		(dnp no)
 		(uuid "1a8a3705-0b74-5df7-993f-8756b27e0413")
 		(property "Reference" "#PWR4"
-			(at 134.62 116.84 90)
+			(at 129.54 116.84 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 133.35 120.65 90)
+			(at 124.46 119.38 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 132.08 119.38 90)
+			(at 127 119.38 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 132.08 119.38 90)
+			(at 127 119.38 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2590,7 +2590,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+5V")
-		(at 322.58 38.1 90)
+		(at 317.5 38.1 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2598,27 +2598,27 @@
 		(dnp no)
 		(uuid "09373ba9-e3c7-5843-b754-776ce4d42dbe")
 		(property "Reference" "#PWR5"
-			(at 325.12 35.56 90)
+			(at 320.04 35.56 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 323.85 39.37 90)
+			(at 314.96 38.1 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 38.1 90)
+			(at 317.5 38.1 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 38.1 90)
+			(at 317.5 38.1 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2633,7 +2633,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 40.64 270)
+		(at 317.5 40.64 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2641,27 +2641,27 @@
 		(dnp no)
 		(uuid "dae7a434-33cd-5180-8228-5a42783c43f1")
 		(property "Reference" "#PWR6"
-			(at 325.12 38.1 90)
+			(at 320.04 38.1 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 41.91 90)
+			(at 314.96 40.64 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 40.64 90)
+			(at 317.5 40.64 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 40.64 90)
+			(at 317.5 40.64 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2728,7 +2728,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+3V3")
-		(at 322.58 71.12 90)
+		(at 317.5 71.12 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2736,27 +2736,27 @@
 		(dnp no)
 		(uuid "3c939412-d479-5e32-a007-5e53e0a17c26")
 		(property "Reference" "#PWR7"
-			(at 325.12 68.58 90)
+			(at 320.04 68.58 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 323.85 72.39 90)
+			(at 314.96 71.12 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 71.12 90)
+			(at 317.5 71.12 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 71.12 90)
+			(at 317.5 71.12 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2771,7 +2771,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+3V3")
-		(at 322.58 76.2 90)
+		(at 317.5 76.2 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2779,27 +2779,27 @@
 		(dnp no)
 		(uuid "7ca33c2d-2216-5d00-b69f-43867a47a19c")
 		(property "Reference" "#PWR8"
-			(at 325.12 73.66 90)
+			(at 320.04 73.66 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 323.85 77.47 90)
+			(at 314.96 76.2 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 76.2 90)
+			(at 317.5 76.2 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 76.2 90)
+			(at 317.5 76.2 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2814,7 +2814,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+3V3")
-		(at 322.58 81.28 90)
+		(at 317.5 81.28 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2822,27 +2822,27 @@
 		(dnp no)
 		(uuid "45f786e2-1157-5244-b666-b1a576239dc5")
 		(property "Reference" "#PWR9"
-			(at 325.12 78.74 90)
+			(at 320.04 78.74 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 323.85 82.55 90)
+			(at 314.96 81.28 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 81.28 90)
+			(at 317.5 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 81.28 90)
+			(at 317.5 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2903,7 +2903,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:+5V")
-		(at 322.58 111.76 90)
+		(at 317.5 111.76 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2911,27 +2911,27 @@
 		(dnp no)
 		(uuid "a2db7bf2-5dd0-5935-bd4e-ae990862995d")
 		(property "Reference" "#PWR10"
-			(at 325.12 109.22 90)
+			(at 320.04 109.22 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 323.85 113.03 90)
+			(at 314.96 111.76 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 111.76 90)
+			(at 317.5 111.76 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 111.76 90)
+			(at 317.5 111.76 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -2946,7 +2946,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 114.3 270)
+		(at 317.5 114.3 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -2954,27 +2954,27 @@
 		(dnp no)
 		(uuid "16a328af-76cb-55db-89d1-ef41f3c8e6b2")
 		(property "Reference" "#PWR11"
-			(at 325.12 111.76 90)
+			(at 320.04 111.76 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 115.57 90)
+			(at 314.96 114.3 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 114.3 90)
+			(at 317.5 114.3 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 114.3 90)
+			(at 317.5 114.3 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3041,7 +3041,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 149.86 270)
+		(at 317.5 149.86 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3049,27 +3049,27 @@
 		(dnp no)
 		(uuid "13d8d251-c000-57bf-bf0e-ddc3f20961cd")
 		(property "Reference" "#PWR12"
-			(at 325.12 147.32 90)
+			(at 320.04 147.32 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 151.13 90)
+			(at 314.96 149.86 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 149.86 90)
+			(at 317.5 149.86 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 149.86 90)
+			(at 317.5 149.86 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3084,7 +3084,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 154.94 270)
+		(at 317.5 154.94 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3092,27 +3092,27 @@
 		(dnp no)
 		(uuid "c94e4531-40cf-5b41-9eab-595660bb2de5")
 		(property "Reference" "#PWR13"
-			(at 325.12 152.4 90)
+			(at 320.04 152.4 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 156.21 90)
+			(at 314.96 154.94 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 154.94 90)
+			(at 317.5 154.94 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 154.94 90)
+			(at 317.5 154.94 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3127,7 +3127,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 160.02 270)
+		(at 317.5 160.02 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3135,27 +3135,27 @@
 		(dnp no)
 		(uuid "c52a4f06-2c67-5536-8905-74e739488874")
 		(property "Reference" "#PWR14"
-			(at 325.12 157.48 90)
+			(at 320.04 157.48 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 161.29 90)
+			(at 314.96 160.02 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 160.02 90)
+			(at 317.5 160.02 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 160.02 90)
+			(at 317.5 160.02 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3222,7 +3222,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 200.66 270)
+		(at 317.5 200.66 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3230,27 +3230,27 @@
 		(dnp no)
 		(uuid "7b0ab2d9-293f-588f-a06d-b5dc1810857f")
 		(property "Reference" "#PWR15"
-			(at 325.12 198.12 90)
+			(at 320.04 198.12 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 201.93 90)
+			(at 314.96 200.66 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 200.66 90)
+			(at 317.5 200.66 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 200.66 90)
+			(at 317.5 200.66 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3265,7 +3265,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 205.74 270)
+		(at 317.5 205.74 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3273,27 +3273,27 @@
 		(dnp no)
 		(uuid "ddfe80ca-b8a7-5492-b8cb-32229b28a487")
 		(property "Reference" "#PWR16"
-			(at 325.12 203.2 90)
+			(at 320.04 203.2 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 207.01 90)
+			(at 314.96 205.74 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 205.74 90)
+			(at 317.5 205.74 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 205.74 90)
+			(at 317.5 205.74 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3308,7 +3308,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 210.82 270)
+		(at 317.5 210.82 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3316,27 +3316,27 @@
 		(dnp no)
 		(uuid "c34b461d-a39d-5b3e-ba97-702fd5564688")
 		(property "Reference" "#PWR17"
-			(at 325.12 208.28 90)
+			(at 320.04 208.28 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 212.09 90)
+			(at 314.96 210.82 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 210.82 90)
+			(at 317.5 210.82 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 210.82 90)
+			(at 317.5 210.82 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3397,7 +3397,7 @@
 					(unit 1)))))
 	(symbol
 		(lib_id "power:GND")
-		(at 322.58 245.11 270)
+		(at 317.5 245.11 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -3405,27 +3405,27 @@
 		(dnp no)
 		(uuid "69c1241a-1381-5c39-b430-1eaec472844c")
 		(property "Reference" "#PWR18"
-			(at 325.12 242.57 90)
+			(at 320.04 242.57 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 323.85 246.38 90)
+			(at 314.96 245.11 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
-			(at 322.58 245.11 90)
+			(at 317.5 245.11 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 322.58 245.11 90)
+			(at 317.5 245.11 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -3498,11 +3498,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 39.37 257.81 0)
+			(at 38.1 259.08 0)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
 			(at 38.1 256.54 0)
 			(effects
@@ -3584,11 +3584,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 52.07 257.81 0)
+			(at 50.8 259.08 0)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
 			(at 50.8 256.54 0)
 			(effects
@@ -3670,11 +3670,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 64.77 257.81 0)
+			(at 63.5 259.08 0)
 			(effects
 				(font
 					(size 1 1))
-				(justify left)))
+				(justify right)))
 		(property "Footprint" ""
 			(at 63.5 256.54 0)
 			(effects
