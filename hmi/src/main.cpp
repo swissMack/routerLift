@@ -49,6 +49,14 @@ static void onLinkUp() {
 void setup() {
     Serial.begin(115200);
     delay(300);
+#ifdef HMI_DIAG_NO_I2C
+    // Give the Mac time to reopen the USB port so the boot log is not lost.
+    for (uint32_t t0 = millis(); !Serial && millis() - t0 < 5000;) delay(10);
+    Serial.println("\n[DIAG] build with HMI_DIAG_NO_I2C - touch and buttons disabled");
+    Serial.printf("[DIAG] PSRAM %u bytes, free %u; heap free %u\n",
+                  (unsigned)ESP.getPsramSize(), (unsigned)ESP.getFreePsram(),
+                  (unsigned)ESP.getFreeHeap());
+#endif
     Serial.println("\nrouterLift HMI - increment 3");
 
     if (!Panel.begin()) {

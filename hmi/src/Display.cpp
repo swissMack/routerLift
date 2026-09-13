@@ -8,33 +8,28 @@
 Display Screen;
 
 // ---------------------------------------------------------------------------
-// Panel. The TIMING VALUES are verbatim from the vendor demo at
-// docs/4.3inch_ESP32-4827S043.zip:
-//   1-Demo/Demo_Arduino/3_3-4_TFT-LVGL-Widgets/LvglWidgets/
+// Panel: Guition JC4827W543C - NV3041A controller over 4-bit QSPI.
 //
-// The API SHAPE differs: the demo targets an older Arduino_GFX, while 1.6.7
-// moved the timings into the panel constructor and renamed the display class
-// from Arduino_RPi_DPI_RGBPanel to Arduino_RGB_Display. Same numbers, new
-// arrangement. Do not re-derive the porch or pclk values from the datasheet -
-// getting them wrong gives a rolling or blank panel, not a clean error.
+// Drawn directly to the controller with no Arduino_Canvas in between, so
+// LVGL's flush writes straight to the panel and there is no second
+// framebuffer to keep in step. ips = true applies the colour inversion this
+// IPS panel needs; without it every colour comes out inverted.
+//
+// History: Rev H drove a Sunton ESP32-4827S043 RGB panel here. That firmware
+// boots cleanly on this board and shows nothing, because gfx->begin() on an
+// RGB bus has no way to notice that no panel is attached.
 // ---------------------------------------------------------------------------
-static Arduino_ESP32RGBPanel* panel = new Arduino_ESP32RGBPanel(
-    40 /* DE */, 41 /* VSYNC */, 39 /* HSYNC */, 42 /* PCLK */,
-    45 /* R0 */, 48 /* R1 */, 47 /* R2 */, 21 /* R3 */, 14 /* R4 */,
-    5  /* G0 */, 6  /* G1 */, 7  /* G2 */, 15 /* G3 */, 16 /* G4 */, 4 /* G5 */,
-    8  /* B0 */, 3  /* B1 */, 46 /* B2 */, 9  /* B3 */, 1 /* B4 */,
-    0 /* hsync_polarity */, 8 /* hsync_front_porch */,
-    4 /* hsync_pulse_width */, 43 /* hsync_back_porch */,
-    0 /* vsync_polarity */, 8 /* vsync_front_porch */,
-    4 /* vsync_pulse_width */, 12 /* vsync_back_porch */,
-    1 /* pclk_active_neg */, 9000000 /* prefer_speed */);
+static Arduino_DataBus* bus = new Arduino_ESP32QSPI(
+    Pins::LCD_CS, Pins::LCD_SCK,
+    Pins::LCD_D0, Pins::LCD_D1, Pins::LCD_D2, Pins::LCD_D3);
 
-static Arduino_RGB_Display* gfx = new Arduino_RGB_Display(
-    480 /* width */, 272 /* height */, panel, 0 /* rotation */, true /* auto_flush */);
+static Arduino_NV3041A* gfx = new Arduino_NV3041A(
+    bus, GFX_NOT_DEFINED /* RST - tied to EN on this board */,
+    0 /* rotation */, true /* IPS */);
 
 // GT911 on the same I2C bus as the MCP23017 expander (0x5D vs 0x20).
-// INT is unwired on this board, hence -1.
-static TAMC_GT911 ts(Pins::I2C_SDA, Pins::I2C_SCL, -1, 38, 480, 272);
+static TAMC_GT911 ts(Pins::I2C_SDA, Pins::I2C_SCL,
+                     Pins::TOUCH_INT, Pins::TOUCH_RST, 480, 272);
 
 // ---------------------------------------------------------------------------
 // LVGL plumbing
@@ -56,26 +51,64 @@ static void flush_cb(lv_disp_drv_t* d, const lv_area_t* area, lv_color_t* color_
 }
 
 static void touch_cb(lv_indev_drv_t*, lv_indev_data_t* data) {
+#ifdef HMI_DIAG_NO_I2C
+    data->state = LV_INDEV_STATE_REL;
+    return;
+#endif
     ts.read();
+    // Edge-logged so the serial console shows touch without flooding it at
+    // LVGL's poll rate. Nothing on the main screen reacts to a tap yet, so this
+    // is the only bench-visible proof that the GT911 is alive.
+    static bool wasDown = false;
     if (ts.isTouched && ts.touches > 0) {
+        // Both touch axes are mirrored against the panel at rotation 0 on the
+        // JC4827W543C: a top-left tap reads ~(460, 230). Measured on the bench
+        // 2026-09-13 with 14 taps. Flipped explicitly here rather than through
+        // TAMC_GT911::setRotation so the correction is visible in our code.
+        const int16_t x = (int16_t)(gfx->width()  - 1 - ts.points[0].x);
+        const int16_t y = (int16_t)(gfx->height() - 1 - ts.points[0].y);
         data->state   = LV_INDEV_STATE_PR;
-        data->point.x = ts.points[0].x;
-        data->point.y = ts.points[0].y;
+        data->point.x = x;
+        data->point.y = y;
         Screen.noteActivity();
+        if (!wasDown) Serial.printf("[TOUCH] down %d,%d\n", x, y);
+        wasDown = true;
     } else {
         data->state = LV_INDEV_STATE_REL;
+        if (wasDown) Serial.println("[TOUCH] up");
+        wasDown = false;
     }
 }
 
 // ---------------------------------------------------------------------------
 
 bool Display::begin() {
-    gfx->begin();
+#ifdef HMI_DIAG_NO_I2C
+    Serial.println("[DIAG] gfx->begin() ...");
+#endif
+    const bool gfxOk = gfx->begin();
+#ifdef HMI_DIAG_NO_I2C
+    Serial.printf("[DIAG] gfx->begin() returned %s, %dx%d\n",
+                  gfxOk ? "true" : "FALSE", gfx->width(), gfx->height());
+#else
+    (void)gfxOk;
+#endif
 
     // Backlight on LEDC so it can be dimmed rather than blanked (Q30).
     // Arduino-ESP32 core 3.x is pin-based; the 2.x channel API is gone.
-    ledcAttach(Pins::TFT_BL, 5000, 8);
+    const bool blOk = ledcAttach(Pins::TFT_BL, 5000, 8);
     setBacklight_(UiCfg::BACKLIGHT_ON);
+#ifdef HMI_DIAG_NO_I2C
+    Serial.printf("[DIAG] backlight GPIO %d attach %s, duty %u\n",
+                  Pins::TFT_BL, blOk ? "ok" : "FAILED", (unsigned)UiCfg::BACKLIGHT_ON);
+    // Same colour cycle as the vendor demo: proves panel + timings + backlight.
+    gfx->fillScreen(RGB565_RED);   delay(700);
+    gfx->fillScreen(RGB565_GREEN); delay(700);
+    gfx->fillScreen(RGB565_BLUE);  delay(700);
+    Serial.println("[DIAG] colour cycle done");
+#else
+    (void)blOk;
+#endif
 
     gfx->fillScreen(RGB565_BLACK);
     w_ = gfx->width();
@@ -85,8 +118,10 @@ bool Display::begin() {
 
     // Wire.begin() has already been called by Buttons::begin() for the
     // expander; TAMC_GT911 calls it again, which is harmless.
+#ifndef HMI_DIAG_NO_I2C
     ts.begin();
     ts.setRotation(ROTATION_NORMAL);
+#endif
 
     // Quarter-screen draw buffer in internal RAM, as the vendor demo does.
     // The 261 KB panel framebuffer lives in PSRAM and is Arduino_GFX's problem.

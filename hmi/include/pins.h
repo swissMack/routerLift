@@ -1,13 +1,18 @@
 #pragma once
 //
-// routerLift HMI — pin map for the ESP32-4827S043 (ESP32-S3-WROOM-1-N4R8).
+// routerLift HMI — pin map for the Guition JC4827W543C (ESP32-S3-WROOM-1-N4R8).
 //
 // THIS IS THE ONLY PLACE PIN NUMBERS APPEAR. Nothing else in hmi/ may hardcode
 // a GPIO. See docs/PINOUT.svg for the same map drawn out.
 //
-// The RGB parallel panel commits 20 GPIOs and the octal PSRAM takes 33-37,
-// which is why the panel buttons live on an I2C expander rather than on pins.
-// The TF card slot is sacrificed to free GPIO 10-13.
+// BOARD IDENTITY, confirmed on the bench 2026-09-13: the board in hand is the
+// Guition JC4827W543C (NV3041A over QSPI), NOT the Sunton ESP32-4827S043 (RGB
+// parallel) that Rev H recorded. The factory demo on it contained
+// guition.com and Arduino_ESP32QSPI. Firmware built for the RGB board runs
+// cleanly and shows nothing - gfx->begin() still returns true.
+//
+// The octal PSRAM takes 33-37. The panel buttons still live on an I2C
+// expander so the free connector pins stay available.
 
 #include <stdint.h>
 
@@ -15,6 +20,8 @@ namespace Pins {
 
 // ---------------------------------------------------------------- UART link
 // To the FluidNC ESP32. 3.3 V both ends - no level shifting.
+// Connector P4 "UART1": GND · 3.3V · IO17 · IO18 (JST 1.25 mm, 4-pin).
+// P5 carries the same four signals on a different plug - use one, not both.
 constexpr int8_t UART_TX = 18;   // -> FluidNC GPIO 16 (RX)
 constexpr int8_t UART_RX = 17;   // <- FluidNC GPIO 17 (TX)
 constexpr int    UART_NUM = 1;
@@ -26,31 +33,66 @@ constexpr int    UART_NUM = 1;
 // MPG::SIGNALS_INVERTED = true because it assumed PC817 optocouplers.
 // Getting this wrong makes the wheel count backwards - see SIGNALS_INVERTED
 // in hmi/include/config.h.
-constexpr int8_t MPG_A = 11;
-constexpr int8_t MPG_B = 12;
+// Connector P3: IO6 · IO7 · IO15 · IO16 (no power pins - take GND and the
+// shifter's 3.3 V from P4). Moved from 11/12, which on this board are TF-card
+// lines and reach no connector.
+constexpr int8_t MPG_A = 6;
+constexpr int8_t MPG_B = 7;
 
 // ---------------------------------------------------------------------- I2C
 // Shared bus: GT911 touch controller (0x5D) + MCP23017 expander (0x20).
-constexpr int8_t I2C_SCL = 20;
-constexpr int8_t I2C_SDA = 19;
+// On the JC4827W543 this bus is on 8/4, clear of the S3's native USB pins
+// (19/20) - so starting I2C no longer kills the serial console.
+constexpr int8_t I2C_SCL = 4;
+constexpr int8_t I2C_SDA = 8;
 constexpr uint8_t MCP_ADDR   = 0x20;
 constexpr uint8_t GT911_ADDR = 0x5D;
 
+// -------------------------------------------------------------- Touch GT911
+// INT also selects the GT911's I2C address during reset. GPIO 3 is a strap
+// pin (JTAG source select) - fine as the touch interrupt, never a button.
+constexpr int8_t TOUCH_INT = 3;
+constexpr int8_t TOUCH_RST = 38;
+
+// ------------------------------------------------------- Display (NV3041A)
+// 4-bit QSPI, 480x272 IPS. Values from the Guition vendor example, matched
+// by the ESPHome and profi-max configurations for this board.
+constexpr int8_t LCD_CS  = 45;
+constexpr int8_t LCD_SCK = 47;
+constexpr int8_t LCD_D0  = 21;
+constexpr int8_t LCD_D1  = 48;
+constexpr int8_t LCD_D2  = 40;
+constexpr int8_t LCD_D3  = 39;
+constexpr int8_t TFT_BL  = 1;
+
 // -------------------------------------------------------------------- Spare
-// Freed by moving rough/fine and cycle start onto the expander.
 // GPIO 0 is a boot strap - do NOT use it for a panel button. A leaning elbow
 // at power-up would prevent the board booting.
-constexpr int8_t SPARE_A = 10;
-constexpr int8_t SPARE_B = 13;
+//
+// Connector-exposed GPIOs, read off the board silkscreen 2026-09-13:
+//   P2  IO46 · IO9 · IO14 · IO5
+//   P3  IO6  · IO7 · IO15 · IO16
+//   P4  GND · 3.3V · IO17 · IO18   (P5 = same)
+//   P1  GND · RXD · TXD · +5V      (UART0 + 5 V in)
+// GPIO 46 is a boot strap - never drive it from outside at power-up.
+//
+// OPEN: the touch I2C bus (8/4) reaches no connector, so the MCP23017 cannot
+// share it as Rev H planned. Proposed: a second I2C bus on 15/16 (P3). Not
+// wired or coded yet - Buttons.cpp still starts Wire on I2C_SDA/I2C_SCL.
+constexpr int8_t SPARE_A = 5;
+constexpr int8_t SPARE_B = 9;
+constexpr int8_t SPARE_C = 14;
+constexpr int8_t SPARE_D = 15;
+constexpr int8_t SPARE_E = 16;
 
 // ------------------------------------------------- Committed by the board
 // Listed so nobody reassigns them by accident. Do not use.
-//   RGB bus     1, 3-9, 14, 15, 16, 21, 39-42, 45-48
-//   Backlight   2
-//   GT911 RST   38
+//   QSPI panel  21, 39, 40, 45, 47, 48
+//   Backlight   1
+//   Touch       3 (INT), 4 (SCL), 8 (SDA), 38 (RST)
 //   Octal PSRAM 33-37
-//   USB console 43, 44
-constexpr int8_t TFT_BL = 2;
+//   Native USB  19, 20
+//   UART0       43, 44
 
 } // namespace Pins
 

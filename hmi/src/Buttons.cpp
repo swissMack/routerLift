@@ -27,6 +27,12 @@ static bool rd(uint8_t reg, uint8_t& out) {
 }
 
 bool Buttons::begin() {
+#ifdef HMI_DIAG_NO_I2C
+    // Diagnostic build: I2C shares GPIO 19/20 with the S3's native USB, so
+    // starting it kills the serial log. Leave the expander absent.
+    present_ = false;
+    return false;
+#endif
     Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL, 400000);
 
     // Port A all inputs with pull-ups; buttons are NO to GND so pressed = LOW.
