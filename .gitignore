@@ -43,3 +43,11 @@ docs/*.zip
 
 # Derived diagram renders (rebuild with docs/build-review-doc.sh)
 docs/.render/
+
+# KiCad local state and reports
+hardware/**/*.kicad_prl
+hardware/**/*-backups/
+hardware/**/fp-info-cache
+hardware/**/*-erc.rpt
+hardware/**/_autosave-*
+__pycache__/
