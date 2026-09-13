@@ -5,7 +5,7 @@ Document: RTL-BOM-001 · Rev A · Companion to `SCHEMATIC-RevH.svg`
 Closes the §14 open item *"Produce the bill of materials."* Blocks A–H match the
 schematic blocks exactly.
 
-**Status key:** ✅ in hand · 🛒 to buy · 🔭 future / DEV-01 closure
+**Status key:** ✅ in hand · 📦 ordered · 🛒 to buy · 🔭 future / DEV-01 closure
 
 ---
 
@@ -75,7 +75,7 @@ schematic blocks exactly.
 | 4 | Limit switch, mechanical | Roller lever, **NC**, e.g. Omron SS-5GL2 | ✅ | 2 fitted + 2 spares. Roller lever chosen for **overtravel**, not repeatability |
 | 2 | Limit switch, inductive | **NPN NC** — `LJ12A3-4-Z/BY` | ✅ | ⚠️ Verify suffix. `/BX` = NPN NO, `/AY` and `/AX` are **PNP and source 24 V into the GPIO** |
 | 1 | Touch-off probe plate | Conductive plate + croc clip | 🛒 | MOT-06. Record plate thickness (FW-10) |
-| 1 | Foot switch | Momentary **NO**, industrial | 🛒 | FluidNC GPIO 13, `macro0_pin` |
+| 1 | Foot switch | Momentary **NO**, industrial | 📦 | FluidNC GPIO 13, `macro0_pin`. Ordered 2026-09-13 |
 | 2 | Hard mechanical stop | Shoulder / bolt the carriage cannot pass | 🛒 | One beyond each limit switch. Cheap insurance given DEV-01 |
 | — | Sensor cable | Shielded twisted pair | 🛒 | Shield grounded at the **controller end only** |
 

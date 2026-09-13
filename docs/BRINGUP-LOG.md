@@ -122,6 +122,6 @@ resetting FluidNC shows link lost then recovered.
 | 5 | ~~Panel cutout unchecked~~ ✅ 120 × 70.2 mm from the Guition spec — still measure the board in hand before cutting | `docs/BOM.md` block F |
 | 6 | ~~Pin table said "No MCP23017"~~ ✅ corrected: expander on its own I²C bus 1 (15/16) | `docs/DESIGN-PLAN-RevH.md` |
 | 7 | ~~TB6600 common anode +5 V in one place~~ ✅ +3.3 V everywhere | `docs/DESIGN-PLAN-RevH.md` |
-| 8 | Foot-switch release edge (dead-man retract) still unverified in FluidNC | `firmware/README.md` |
+| 8 | Foot-switch release edge (dead-man retract) still unverified in FluidNC. Pedal **ordered 2026-09-13**; the edge behaviour can be tested before it arrives with a jumper on GPIO 13 | `firmware/README.md` |
 | 9 | `steps_per_mm` 1066.67 is derived, not measured — needs a dial indicator | `firmware/README.md` |
 | 10 | ~~Published wiring-map artifact still shows the old board~~ ✅ republished 2026-09-13 (version 2) | claude.ai artifact |
