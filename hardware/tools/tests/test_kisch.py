@@ -259,6 +259,136 @@ class PowerNetLegibilityTest(unittest.TestCase):
             self.assertNotIn("bottom", justify)
 
 
+class FieldGapTest(unittest.TestCase):
+    """The regression that prompted field_gap: U2 (Interface_Expansion:MCP23017x-x-SO) in
+    the real panel-carrier design has a pin at local y=+2.54 (GPA7/INTB row) and another
+    at y=-2.54 (GPB0/RESET row) - exactly STUB either side of its origin, which is also
+    exactly where place()'s previous hardcoded Reference/Value offset landed. Rendered
+    through kicad-cli this put "U2" on top of "GPA7" and "MCP23017 @0x20" on top of
+    "GPB0", as literally overlapping glyphs. Reproduce the same shape (a part with a pin
+    exactly STUB above and below its origin) against a small fixture and check, by
+    bounding box, that a caller-supplied field_gap moves Reference/Value clear of both -
+    and that omitting field_gap reproduces the exact previous (pre-parameter) offset, so
+    every existing call site (motion_carrier.py and panel_carrier.py's other parts) is
+    provably unaffected."""
+
+    def _place(self, field_gap=None):
+        # A 2-pin fixture with one pin exactly STUB above the origin and one exactly
+        # STUB below it - the same shape that broke on U2, without needing the real
+        # 28-pin symbol.
+        sym = kisch.box_symbol("STRADDLE", ["TOP"], ["BOTTOM"])
+        # box_symbol spaces rows GRID apart starting at (rows-1)*GRID from centre; with
+        # one pin per side (rows=1) that puts both pins at y=0, so patch the fixture's
+        # own pin "at" to +/-STUB to match the real regression shape exactly.
+        for sub in findall(sym, "symbol"):
+            for pin in findall(sub, "pin"):
+                at = find(pin, "at")
+                at[2] = kisch.STUB if find(pin, "name")[1] == "TOP" else -kisch.STUB
+        l = Library(symbol_dir=FIXTURES, extra={"routerlift:STRADDLE": sym})
+        s = Sheet("p", "p", l)
+        kwargs = {} if field_gap is None else {"field_gap": field_gap}
+        s.place("routerlift:STRADDLE", "U1", "STRADDLE", (50.8, 50.8),
+                {"TOP": "A", "BOTTOM": "B"}, **kwargs)
+        s.place("routerlift:STRADDLE", "U2", "STRADDLE", (101.6, 50.8),
+                {"TOP": "A", "BOTTOM": "B"})
+        with tempfile.TemporaryDirectory() as d:
+            Project("p", s, d).write()
+            return parse((Path(d) / "p.kicad_sch").read_text())
+
+    def _field_box(self, tree, ref, name):
+        for sym in findall(tree, "symbol"):
+            props = {p[1]: p for p in findall(sym, "property")}
+            if props.get("Reference", [None, None, ""])[2] == ref:
+                p = props[name]
+                at = find(p, "at")
+                justify = find(find(p, "effects"), "justify")[1:]
+                size = find(find(find(p, "effects"), "font"), "size")[1]
+                return _text_bbox(at[1], at[2], p[2], size, justify)
+        raise AssertionError("no symbol with Reference %r" % ref)
+
+    def _pin_row_boxes(self, tree):
+        """Bounding boxes of every net label kisch wrote - a proxy for "the part's own
+        row", the same strategy PowerNetLegibilityTest uses, since kisch never writes a
+        pin's own name/number text itself (KiCad draws that from the library symbol)."""
+        boxes = []
+        for lbl in findall(tree, "label"):
+            at = find(lbl, "at")
+            justify = find(find(lbl, "effects"), "justify")[1:]
+            boxes.append(_text_bbox(at[1], at[2], lbl[1], 1.27, justify))
+        return boxes
+
+    def test_default_field_gap_matches_pre_parameter_offset(self):
+        tree = self._place(field_gap=None)
+        ref_box = self._field_box(tree, "U2", "Reference")
+        val_box = self._field_box(tree, "U2", "Value")
+        # Pre-parameter behaviour: Reference at (at.x+2.54, at.y-2.54), Value at
+        # (at.x+2.54, at.y+2.54), both left-justified size 1.27 - reproduced exactly.
+        self.assertEqual(ref_box, _text_bbox(104.14, 48.26, "U2", 1.27, ["left"]))
+        self.assertEqual(val_box, _text_bbox(104.14, 53.34, "STRADDLE", 1.27, ["left"]))
+
+    def test_field_gap_clears_the_parts_own_straddling_pins(self):
+        tree = self._place(field_gap=12.7)
+        ref_box = self._field_box(tree, "U1", "Reference")
+        val_box = self._field_box(tree, "U1", "Value")
+        for lb in self._pin_row_boxes(tree):
+            self.assertFalse(_overlaps(ref_box, lb),
+                             "Reference overlaps a pin row: %r vs %r" % (ref_box, lb))
+            self.assertFalse(_overlaps(val_box, lb),
+                             "Value overlaps a pin row: %r vs %r" % (val_box, lb))
+
+    def test_default_power_flag_offset_matches_pre_parameter_behaviour(self):
+        """A power net's flag (GND/+3V3/...) is a second, independent use of field_gap -
+        it sets how far the flag's own Value text sits from its own arrow graphic (see
+        place()'s docstring), not just the placed part's Reference/Value. Confirm the
+        default (no field_gap passed to place()) reproduces the exact pre-parameter
+        offset (tdx*STUB, tdy*STUB) for a power net's flag too."""
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "+3V3", "2": "GND"})
+        with tempfile.TemporaryDirectory() as d:
+            Project("t", s, d).write()
+            tree = parse((Path(d) / "t.kicad_sch").read_text())
+        flag = [sym for sym in findall(tree, "symbol")
+                if find(sym, "lib_id")[1] == "power:+3V3"][0]
+        value_prop = [p for p in findall(flag, "property") if p[1] == "Value"][0]
+        at = find(value_prop, "at")
+        # Pin 1 of Test:R2 points outward as (0, -1) (see
+        # LibraryTest.test_pin_geometry): text_dir is (0, -1), so the pre-parameter
+        # offset is (0*STUB, -1*STUB) from the flag's own wire-stub end.
+        flag_at = find(flag, "at")
+        self.assertEqual((float(at[1]), float(at[2])),
+                         (float(flag_at[1]), round(float(flag_at[2]) - kisch.STUB, 4)))
+
+    def test_field_gap_clears_a_power_flags_own_arrow(self):
+        """The regression that prompted extending field_gap to power flags: J2/J4/J5 in
+        the real panel-carrier design each put a +3V3 or +5V pin next to a GND pin on a
+        connector whose pins point left (direction (-1, 0)) - and at that rotation, a
+        +3V3/+5V flag's own Value text ("+3V3"/"+5V") overlaps its own arrow glyph's tip
+        (GND's flag does not, at the identical offset - confirmed by rendering the real
+        design through kicad-cli and reading the PDF, not derived). Reproduce the same
+        direction and check that a larger field_gap moves the +3V3 flag's Value field
+        further from its own origin than the default does, in the same outward
+        direction - the concrete lever this test's regression was fixed with."""
+        def value_pos(field_gap):
+            l = lib()
+            sym = kisch.box_symbol("H", ["1", "2"], [])
+            l.extra["routerlift:H"] = sym
+            s = Sheet("t", "t", l)
+            kwargs = {} if field_gap is None else {"field_gap": field_gap}
+            s.place("routerlift:H", "J1", "H", (50.8, 50.8), {"1": "+3V3", "2": "GND"},
+                    **kwargs)
+            with tempfile.TemporaryDirectory() as d:
+                Project("t", s, d).write()
+                tree = parse((Path(d) / "t.kicad_sch").read_text())
+            flag = [sym for sym in findall(tree, "symbol")
+                    if find(sym, "lib_id")[1] == "power:+3V3"][0]
+            value_prop = [p for p in findall(flag, "property") if p[1] == "Value"][0]
+            at = find(value_prop, "at")
+            flag_at = find(flag, "at")
+            return abs(float(at[1]) - float(flag_at[1])) + abs(float(at[2]) - float(flag_at[2]))
+        self.assertAlmostEqual(value_pos(None), kisch.STUB)
+        self.assertGreater(value_pos(5.08), value_pos(None))
+
+
 class BoxSymbolTest(unittest.TestCase):
     def test_box_pins_on_grid(self):
         sym = kisch.box_symbol("PSU", ["L", "N", "PE"], ["V+", "V-"])

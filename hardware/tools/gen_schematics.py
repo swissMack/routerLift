@@ -5,9 +5,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from kisch import Library
 import motion_carrier
+import panel_carrier
 
 HW = Path(__file__).resolve().parents[1]
-BUILDERS = {"motion-carrier": motion_carrier.build}
+BUILDERS = {"motion-carrier": motion_carrier.build, "panel-carrier": panel_carrier.build}
 
 
 def main(argv):

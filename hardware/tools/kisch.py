@@ -261,8 +261,30 @@ class Sheet:
         self.ports[name] = shape
 
     def place(self, lib_id, ref, value, at, nets, rot=0, unit=1, footprint="",
-              dnp=False, fields=None):
-        """nets maps pin number or unique pin name to a net name, or None for no-connect."""
+              dnp=False, fields=None, field_gap=None):
+        """nets maps pin number or unique pin name to a net name, or None for no-connect.
+
+        field_gap overrides how far the Reference/Value text sits from the part's
+        origin (default STUB, i.e. the behaviour before this parameter existed - every
+        existing caller that omits it is unaffected). Needed for a part whose own pins
+        land exactly STUB away from its origin on both sides (e.g. an IC with an even
+        number of rows per side and no centre pin): the default offset then lands the
+        Reference/Value text squarely on the part's own nearest pin row instead of clear
+        of it - confirmed on U2 (MCP23017x-x-SO), whose GPA7/INTB pins sit at local y
+        =+2.54 and GPB0/RESET at y=-2.54, exactly matching the default offset, rendering
+        "U2GPA7" and "MCP23017GPB0" as overlapping glyphs. Pass a value larger than the
+        part's own furthest pin so both fields clear the whole symbol instead of landing
+        on one row. See test_kisch.py FieldGapTest.
+
+        The same value also sets how far a POWER net's own flag symbol (GND/+3V3/+5V/
+        +24V, auto-added for any of this part's pins wired to one) keeps its Value text
+        from its own arrow graphic - default STUB is occasionally too tight there too:
+        confirmed on J4 in the real motion-carrier design (+3V3 on pins 1/3/5, pins
+        pointing left) and reproduced on J2/J4/J5 here, where a +3V3 or +5V flag's own
+        "+3V3"/"+5V" text overlaps its own arrow's tip at some rotations (GND's flag
+        clears fine at the same offset; +3V3/+5V's does not - a rendering quirk of the
+        stock symbols' geometry, not something derivable, only found by rendering). See
+        test_kisch.py FieldGapTest.test_field_gap_clears_a_power_flags_own_arrow."""
         if ref.endswith("?") and unit != 1:
             raise ValueError("%s: multi-unit parts need a fixed reference" % lib_id)
         pins = self.lib.pins(lib_id, unit)
@@ -287,9 +309,10 @@ class Sheet:
         if missing:
             raise ValueError("%s %s unit %d: unassigned pins %s (use None for no-connect)"
                              % (ref, lib_id, unit, ", ".join(missing)))
+        fg = STUB if field_gap is None else field_gap
         at = (_snap(at[0]), _snap(at[1]))
         self._add_part(lib_id, ref, value, at, rot, unit, footprint, dnp, fields or {},
-                       list(pins), power=False)
+                       list(pins), power=False, field_gap=fg)
         for number, net in resolved.items():
             pin = pins[number]
             point = pin_point(at, rot, pin)
@@ -301,24 +324,26 @@ class Sheet:
             stub = POWER_STUB if net in POWER_NETS else STUB
             end = (round(point[0] + d[0] * stub, 4), round(point[1] + d[1] * stub, 4))
             self.wire(point, end)
-            self.label(net, end, d)
+            self.label(net, end, d, field_gap=fg)
             self._count(net)
 
     def _add_part(self, lib_id, ref, value, at, rot, unit, footprint, dnp, fields, pins, power,
-                 text_dir=None):
+                 text_dir=None, field_gap=STUB):
         """text_dir, when given, is the outward pin direction the part was hung off of -
         used only to keep a power symbol's Value field growing away from its pin instead
-        of back toward whatever else shares its row."""
+        of back toward whatever else shares its row. field_gap is how far Reference/Value
+        sit from the part's origin - see place()."""
         self.parts.append(dict(lib_id=lib_id, ref=ref, value=value, at=at, rot=rot, unit=unit,
                                footprint=footprint, dnp=dnp, fields=fields, pins=pins,
-                               power=power, text_dir=text_dir, uuid=self._next("part")))
+                               power=power, text_dir=text_dir, field_gap=field_gap,
+                               uuid=self._next("part")))
 
     def wire(self, a, b):
         self.items.append([A("wire"), [A("pts"), [A("xy"), a[0], a[1]], [A("xy"), b[0], b[1]]],
                            [A("stroke"), [A("width"), 0], [A("type"), A("default")]],
                            [A("uuid"), self._next()]])
 
-    def label(self, net, point, direction):
+    def label(self, net, point, direction, field_gap=STUB):
         angle = {(1, 0): 0, (0, -1): 90, (-1, 0): 180, (0, 1): 270}[direction]
         side = "left" if angle in (0, 90) else "right"
         at = [A("at"), point[0], point[1], angle]
@@ -336,7 +361,8 @@ class Sheet:
             # whatever rotation alignment actually produces, so alignment doesn't need to
             # be sacrificed for it.
             self._add_part(lib_id, "#PWR?", net, point, _rotation(base, direction), 1, "",
-                           False, {}, ["1"], power=True, text_dir=direction)
+                           False, {}, ["1"], power=True, text_dir=direction,
+                           field_gap=field_gap)
         elif net in self.ports:
             self.items.append([A("hierarchical_label"), net, [A("shape"), A(self.ports[net])],
                                at, _font(justify=[side]), [A("uuid"), self._next()]])
@@ -424,14 +450,15 @@ class Sheet:
         # See test_kisch.py PowerNetLegibilityTest, which renders an actual multi-row
         # power-and-signal connector (not just an isolated part) through kicad-cli and
         # asserts none of the resulting glyph boxes overlap.
+        fg = part["field_gap"]
         if part["power"] and part["text_dir"] is not None:
             tdx, tdy = part["text_dir"]
-            value_offset, value_justify = (tdx * 2.54, tdy * 2.54), [_DIR_SIDE[part["text_dir"]]]
+            value_offset, value_justify = (tdx * fg, tdy * fg), [_DIR_SIDE[part["text_dir"]]]
         elif part["power"]:
             value_offset, value_justify = (1.27, 1.27), ["left"]
         else:
-            value_offset, value_justify = (2.54, 2.54), ["left"]
-        props = [("Reference", instances[0][1], part["power"], (2.54, -2.54), ["left"]),
+            value_offset, value_justify = (2.54, fg), ["left"]
+        props = [("Reference", instances[0][1], part["power"], (2.54, -fg), ["left"]),
                  ("Value", part["value"], False, value_offset, value_justify),
                  ("Footprint", part["footprint"], True, (0, 0), ["left"]),
                  ("Datasheet", "", True, (0, 0), ["left"])]
