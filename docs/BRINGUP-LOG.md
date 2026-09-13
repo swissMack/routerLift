@@ -26,8 +26,11 @@ interval setting exists but is not a heartbeat; polling is required.
 `routerlift.local`) but its USB serial port did not appear on the Mac — likely a charge-only
 cable. Not needed: FluidNC's **telnet console on port 23** gives the same `?`, `$` commands and
 messages over WiFi (`routerlift.local:23`). Queried that way it reported
-`<Alarm|MPos:0.000,0.000,0.000|FS:0,0|Pn:Z>` — the `Pn:Z` means a D33/D25 limit jumper had come
-loose during wiring; reseat before relying on limit state.
+`<Alarm|MPos:0.000,0.000,0.000|FS:0,0|Pn:Z>`. `$Limits` (exit with `!`, not any key — it
+otherwise keeps running) showed the **positive limit, GPIO 25**, active. Reseating did not clear
+it; **swapping the D25 and D33 jumper wires did** — status back to `<Alarm|…|FS:0,0>` with no
+active inputs. GPIO 25 is fine; the cause was a poor-contact jumper. Bench jumpers are unreliable
+for limit inputs; real sensors go through proper terminals.
 
 ---
 
