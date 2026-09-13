@@ -310,5 +310,5 @@ specific build in hand. Confirm before writing `config.yaml`:
 4. `$Macro0` length limits, and whether a macro can be conditioned on spindle-ready for the
    foot-switch plunge gate (SAF-03). If it cannot, that gate moves into the HMI and the macro
    stays a bare move.
-5. Whether `relay_spindle` reports a non-zero `S` value in the status report — the ROUTER LED
+5. Whether the `Relay` spindle reports a non-zero `S` value in the status report — the ROUTER LED
    depends on it.

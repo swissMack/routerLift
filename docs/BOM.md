@@ -35,7 +35,7 @@ schematic blocks exactly.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | ESP32 devkit | Classic ESP32 (**not** S3 — FluidNC does not run on S3) | 🛒 | Runs stock FluidNC; all machine definition in `config.yaml` |
-| 1 | Relay module | 5 V, opto-isolated, drives the contactor coil | 🛒 | GPIO 4 via `relay_spindle` (`M3`/`M5`). Verify it triggers reliably from 3.3 V logic at bench test 3 |
+| 1 | Relay module | 5 V, opto-isolated, drives the contactor coil | 🛒 | GPIO 4 via the `Relay` spindle (`M3`/`M5`). Verify it triggers reliably from 3.3 V logic at bench test 3 |
 
 ## D · Stepper drive
 

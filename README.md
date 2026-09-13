@@ -38,7 +38,7 @@ needs FluidNC source edits forfeits that.
 
 **Motion board** — classic ESP32 running unmodified FluidNC. TB6600 driver at
 1/8 microstepping (1600 pulse/rev), 24–36 V. NPN NC inductive limit switches,
-`G38.2` probe for tool zeroing, `relay_spindle` SSR for router power with a
+`G38.2` probe for tool zeroing, `Relay` spindle SSR for router power with a
 2500 ms spin-up gate.
 
 **Operator panel** — ESP32-4827S043 board (ESP32-S3-WROOM-1-N4R8, 4 MB flash,

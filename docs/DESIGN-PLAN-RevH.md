@@ -56,7 +56,7 @@ routerLift/
 |---|---|
 | `MotorControl`, `Homing`, `Safety` (limits/faults) | FluidNC `config.yaml` — native axes, homing, soft limits |
 | `Zeroing` (brass stamp) | FluidNC probe (`G38.2`) driven by HMI |
-| `Relay` | FluidNC `relay_spindle` (`M3`/`M5`) |
+| `Relay` | FluidNC `Relay` spindle (`M3`/`M5`) |
 | `FootSwitch` | FluidNC `macro0_pin` + `$Macro0` |
 | `RateSwitch` | HMI — rough/fine selector per ELE-09 (2 positions, not the old 3-band x1/x10/x100) |
 | `MPG` | HMI — ESP32-S3 PCNT quadrature |
@@ -77,7 +77,7 @@ moved to the S3.
 | STEP → TB6600 PUL− | 26 | common-anode: PUL+/DIR+ to +5 V, ESP32 sinks |
 | DIR → TB6600 DIR− | 27 | |
 | **`ENA` → TB6600 ENA−** | **14** | **Added — diagram marks ENA± n/c. See below** |
-| Router contactor | 4 | as `relay_spindle` so `M3`/`M5` owns router power |
+| Router contactor | 4 | as the `Relay` spindle so `M3`/`M5` owns router power |
 | Probe (touch-off plate) | 32 | |
 | Home / bottom limit | 33 | machine zero per MOT-04 |
 | Top limit | 25 | bounds bit-change rapid per MOT-05 |
@@ -336,7 +336,7 @@ Document, with worked examples:
   `0x85` jog-cancel is available and jogs never enter the queued motion buffer.
 - **Homing:** `$H`. **Probe:** `G38.2 Z-<max> F<slow>` then read `PRB:` report.
 - **Immediate:** `!` feed hold, `~` resume, `0x18` soft reset, `0x85` jog cancel.
-- **Router:** `M3`/`M5` via `relay_spindle`.
+- **Router:** `M3`/`M5` via the `Relay` spindle.
 - **Framing rules:** line-oriented, `\n`-terminated, one `ok`/`error:N` per line sent; the HMI
   keeps a bounded in-flight window and never sends a new line before the previous `ok`.
 - **Link-loss behaviour:** define explicitly. If the HMI stops receiving status for N ms it shows

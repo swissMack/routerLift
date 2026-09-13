@@ -89,7 +89,7 @@
 <text x="936" y="240" class="it">Hard limits</text><text x="1090" y="240" class="tiny">bottom + top, in the ISR</text>
 <text x="936" y="262" class="it">Soft limits</text><text x="1090" y="262" class="tiny">commissioning-only, checked pre-move</text>
 <text x="936" y="284" class="it">Probe</text><text x="1090" y="284" class="tiny">G38.2 two-touch</text>
-<text x="936" y="306" class="it">Spindle</text><text x="1090" y="306" class="tiny">relay_spindle → router contactor</text>
+<text x="936" y="306" class="it">Spindle</text><text x="1090" y="306" class="tiny">Relay spindle → router contactor</text>
 <text x="936" y="328" class="it">Control pins</text><text x="1090" y="328" class="tiny">STOP → feed_hold · FOOT → macro0</text>
 
 <text x="936" y="362" class="note" font-weight="700">Decides whether it MAY happen.</text>
