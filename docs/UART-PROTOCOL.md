@@ -1,6 +1,6 @@
 # HMI ↔ Motion Controller Protocol
 
-Document: RTL-PROTO-001 · Rev A · 2 September 2026
+Document: RTL-PROTO-001 · Rev B · 13 September 2026 (Rev A 2 September; Rev B records bench-verified status polling)
 
 Closes the RevG §14 open item *"HMI↔controller UART protocol definition."*
 
@@ -28,10 +28,9 @@ modification to FluidNC. Everything below is standard GRBL/FluidNC traffic.
 A common ground between the two boards is required and is easy to forget when they are fed from
 the same 5 V rail through separate leads.
 
-**Verify before writing `config.yaml`:** FluidNC exposes a secondary GRBL channel through a
-`uart1:` section plus a `uart_channel1:` block. Confirm the exact key names against the installed
-release. If the version in hand lacks a second channel, the HMI must share the USB serial port,
-which costs the debug console — a real loss during bring-up.
+**✅ Verified on FluidNC v4.1.0 (2026-09-13):** the secondary GRBL channel is a `uart1:` section
+plus a `uart_channel1:` block, and loads as written. The USB console stays free, and FluidNC's
+console is also reachable over WiFi telnet at `routerlift.local:23`.
 
 ---
 
@@ -90,9 +89,12 @@ The HMI's entire display is driven by the status report.
 | `MPos` | Machine position. The Z component is the height display |
 | `FS` | Feed and spindle. Spindle non-zero ⇒ router live, drives the ROUTER LED |
 
-**Preferred: FluidNC's automatic reporting** (`$Report/Interval`, target ~10 Hz) rather than the
-HMI polling `?`. Auto-reporting halves the link traffic and removes a timer from the HMI.
-**Verify this setting exists in the installed release**; fall back to polling `?` at 10 Hz if not.
+**The HMI polls `?` every 100 ms** (`LinkCfg::POLL_MS`). This is required, not a fallback.
+FluidNC's `report_interval_ms: 100` (in `uart_channel1:`) exists but **only reports on change** —
+an idle machine, for example one sitting in Alarm, sends nothing at all. Found on the bench
+2026-09-13: with correct wiring and no polling, the HMI showed NO LINK. Auto-reports are still
+enabled so motion is reported promptly, and the parser accepts both kinds of report the same way.
+Every status report, polled or pushed, resets the link-loss timer (§7.2).
 
 ### 3.1 Probe result
 
@@ -257,15 +259,20 @@ the way through (FW-09). There is no resume.
 
 ### 7.2 Link loss
 
-**Detection:** no status report for **500 ms** (five missed intervals at 10 Hz).
+**Detection:** no status report for **500 ms** (`LinkCfg::TIMEOUT_MS`) — five missed 100 ms polls.
 
 **Response, in order:**
 
 1. Send `!` (feed hold) — it may not arrive, and that is acceptable
 2. Show `LINK LOST` prominently
-3. Invalidate Z0
+3. Invalidate Z0 and inhibit the handwheel
 4. Refuse to originate any motion
-5. On reconnection: require `$X` if alarmed, then a full re-home and re-probe
+5. On reconnection: the link state recovers on its own as soon as status reports return, but
+   **Z0 stays invalid** until re-probed. Require `$X` if alarmed, then a full re-home and re-probe
+
+**✅ Bench-verified 2026-09-13:** link comes up; resetting FluidNC (EN) gives an immediate
+`LINK LOST - feed hold sent, Z0 invalidated`; the link recovers automatically with Z0 still
+`INVALID(link lost)`.
 
 **What link loss must never do**, per ELE-11:
 
@@ -292,7 +299,7 @@ Maps to bench-test steps 5 and 6.
 | 7 | Probe report | `G38.2` returns `[PRB:...]` and the HMI parses the Z value |
 | 8 | Probe miss | With no plate fitted, `:0` is reported and Z0 stays invalid |
 | 9 | Soft limit | A move beyond the envelope returns an error; **no motion occurs** |
-| 10 | **Link loss** | Pull the cable mid-jog: motion stops or completes safely, never starts; HMI shows `LINK LOST`; `$H` still works from USB |
+| 10 | **Link loss** | Pull the cable mid-jog: motion stops or completes safely, never starts; HMI shows `LINK LOST`; `$H` still works from USB. *Idle case (EN reset → LINK LOST → recovery, Z0 stays invalid) passed 2026-09-13; mid-jog case needs the motor* |
 
 Test 10 is the important one. It is the failure mode a single-board design cannot have, and the
 only proof that the boundary in section 7.2 holds in practice rather than on paper.
@@ -301,14 +308,21 @@ only proof that the boundary in section 7.2 holds in practice rather than on pap
 
 ## 9. Items to verify against the installed FluidNC release
 
-Everything here is from working knowledge of GRBL and FluidNC, not from reading the docs of the
-specific build in hand. Confirm before writing `config.yaml`:
+Originally written from working knowledge of GRBL and FluidNC. Status against FluidNC v4.1.0 on
+the bench, 2026-09-13:
 
-1. `uart1:` / `uart_channel1:` key names for the second GRBL channel.
-2. `$Report/Interval` for automatic status reporting, and whether ~10 Hz is achievable.
-3. Whether homing pull-off failure surfaces as a distinct alarm code the HMI can name.
-4. `$Macro0` length limits, and whether a macro can be conditioned on spindle-ready for the
-   foot-switch plunge gate (SAF-03). If it cannot, that gate moves into the HMI and the macro
-   stays a bare move.
-5. Whether the `Relay` spindle reports a non-zero `S` value in the status report — the ROUTER LED
-   depends on it.
+1. ✅ `uart1:` / `uart_channel1:` key names for the second GRBL channel — load as written.
+2. ✅ `report_interval_ms` exists, but reports **only on change**. Not usable as a heartbeat;
+   the HMI polls `?` every 100 ms (§3).
+3. ✅ The spindle key is `Relay:`, not `relay_spindle:`. The YAML parser also rejects comments
+   and quotes on section-header lines.
+4. ⏳ Whether homing pull-off failure surfaces as a distinct alarm code the HMI can name.
+5. ⏳ `$Macro0`: whether `macro0_pin` acts on the release edge (needed for dead-man retract),
+   length limits, rewriting it over the wire, and whether it can be conditioned on spindle-ready
+   for the foot-switch plunge gate (SAF-03). If it cannot, that gate moves into the HMI and the
+   macro stays a bare move.
+6. ⏳ Whether the `Relay` spindle reports a non-zero `S` value in the status report — the ROUTER
+   LED depends on it.
+7. ⏳ Soft-limit sign convention when homing toward negative (see `DESIGN-PLAN-RevH.md`).
+
+Useful on the bench: `$Limits` shows per-pin input state and is exited with `!`.

@@ -1,5 +1,11 @@
 # Bench-test plan
 
+> **SUPERSEDED — this is the bring-up ladder for the single-board v1 firmware** (ESP32 DevKit + ILI9488,
+> MCP23017 board-ID, DM542, `MotorControl`). **Do not follow it for the Rev H build.** What has actually
+> been proven on the bench is in `docs/BRINGUP-LOG.md`; the gated Rev H test plan is the Verification
+> section of `docs/DESIGN-PLAN-RevH.md` (and §8 of `docs/UART-PROTOCOL.md` for the link). Its safety
+> contract and "one new piece of hardware per stage" discipline still apply. See `docs/SUPERSEDED.md`.
+
 Incremental bring-up. Each stage must pass before adding the next piece of physical hardware. Do not skip ahead — every stage doubles as a fault-localisation tool for the next one. If stage N fails, the bug is in what stage N added, not what came before.
 
 ## Safety contract (applies to every stage)

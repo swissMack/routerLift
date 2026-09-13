@@ -24,10 +24,37 @@ B.10 was right; Rev H's "correction" of it was mistaken.
   on this board
 - `huge_app.csv` partitions — the stock 8 MB table boot-looped on 4 MB flash
 - `memory_type = qio_opi` confirmed: PSRAM is octal, quad fails the ID read
+- HMI now polls FluidNC with `?` every 100 ms (`LinkCfg::POLL_MS`, previously
+  unused). FluidNC's `report_interval_ms` only reports on change, so an idle
+  machine in Alarm sent nothing and the panel showed NO LINK with correct
+  wiring (`91aea06`)
+- MPG level shifter corrected to a **74LVC14 on 3.3 V**, two stages per
+  channel, non-inverting (`SIGNALS_INVERTED = false`). The 74HCT14 recorded
+  earlier needs a 5 V supply and would drive 5 V outputs into the ESP32-S3
+- FluidNC spindle section key is `Relay:` — `relay_spindle:` is silently
+  ignored; no comments or quotes on YAML section-header lines
+
+### Verified on the bench (2026-09-13)
+
+- FluidNC v4.1.0 (esp32-wifi) on a 30-pin ESP32-WROOM-32 devkit:
+  `config.yaml` parses; `uart1` / `uart_channel1` keys work; limits read
+  NC-correct (unwired → Hard Limit, jumpered → `ALARM:14` Unhomed); joins WiFi
+  as `routerlift.local`, falls back to AP `FluidNC`
+- Step B, UART link: link comes up, link loss sends feed hold and invalidates
+  Z0, link recovers on its own and Z0 stays invalid until re-probed
+- A stuck positive-limit reading traced to a poor-contact bench jumper, not
+  GPIO 25
 
 ### Added
 
 - `hmi-diag` PlatformIO environment for board bring-up
+- `docs/BRINGUP-LOG.md` — bench bring-up log, newest first, with a resume
+  checklist (`f65baf4`)
+- FluidNC telnet console on port 23 (`routerlift.local:23`) documented as the
+  console when USB serial is unavailable (`3f77855`); `$Limits` shows live
+  input state, exit with `!`
+- Input-conditioning pull-up placement documented: the 10 kΩ goes on the
+  sensor side, or a closed switch only pulls the GPIO to ~2.2 V
 
 ## [Unreleased] — Rev H split architecture
 

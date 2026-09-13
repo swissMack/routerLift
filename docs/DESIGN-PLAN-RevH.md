@@ -62,11 +62,12 @@ routerLift/
 | `MPG` | HMI — ESP32-S3 PCNT quadrature |
 | `Menu`, `Display`, `Touch` | HMI — LVGL screens |
 | `Presets`, `Settings` | HMI — NVS on the S3. **Except `softMinMm`/`softMaxMm`**, which become commissioning-only `config.yaml` values; their calibration rows are not ported |
-| `IOExpander`, `FunctionBoard` | **Dropped.** No MCP23017 in the new design |
+| `IOExpander` | HMI — MCP23017 at 0x20 on the S3's own I²C bus 1 (GPIO 15/16) for the five panel buttons, rough/fine and the ROUTER LED. Port the polling and debounce |
+| `FunctionBoard` | **Dropped.** The board-ID jumper logic has no equivalent |
 
 ---
 
-## Phase 2 — `firmware/config.yaml` (FluidNC)  ✅ WRITTEN (steps_per_mm provisional)
+## Phase 2 — `firmware/config.yaml` (FluidNC)  ✅ WRITTEN, bare-board verified 2026-09-13 (steps_per_mm derived, not measured)
 
 Stock FluidNC binary; all machine definition is config. Pin numbers come from
 `docs/superseded-wiring_diagram.svg` (Annex B.9), with MPG A/B (GPIO 34/35) now freed because the handwheel
@@ -74,7 +75,7 @@ moved to the S3.
 
 | Signal | GPIO | Notes |
 |---|---|---|
-| STEP → TB6600 PUL− | 26 | common-anode: PUL+/DIR+ to +5 V, ESP32 sinks |
+| STEP → TB6600 PUL− | 26 | common-anode: PUL+/DIR+/ENA+ to **+3.3 V**, ESP32 sinks (see below) |
 | DIR → TB6600 DIR− | 27 | |
 | **`ENA` → TB6600 ENA−** | **14** | **Added — diagram marks ENA± n/c. See below** |
 | Router contactor | 4 | as the `Relay` spindle so `M3`/`M5` owns router power |
@@ -110,16 +111,19 @@ Fallback if bench test 3 shows missed steps at rapid: a 74HCT245 buffer driving 
 
 **MPG conditioning.** A resistor divider is adequate on rate grounds — 100 PPR at a fast hand spin
 is well under 1 kHz against ELE-10's 5 kHz ceiling. Given the router alongside, prefer a
-**74HCT14 with two inverter stages per channel** for Schmitt hysteresis against EMI.
+**74LVC14 on 3.3 V with two inverter stages per channel** for Schmitt hysteresis against EMI.
+Its inputs are 5 V-tolerant and its outputs swing to 3.3 V. *Design correction 2026-09-13:* this
+previously said 74HCT14, which needs a 5 V supply and would then drive 5 V into the S3 (and is
+out of spec at 3.3 V). If a 74HCT14 has already been bought, do not connect its outputs.
 
 ⚠️ **`MPG::SIGNALS_INVERTED` flips to `false`.** The legacy constant is `true`, assuming PC817
-optocouplers. A divider, a 74LVC245, and a two-stage 74HCT14 are all **non-inverting**. Getting
+optocouplers. A divider, a 74LVC245, and a two-stage 74LVC14 are all **non-inverting**. Getting
 this wrong makes the handwheel count backwards.
 
 ### TB6600 `ENA` — wire it, do not leave n/c
 
-The diagram marks `ENA±` not connected, which means the motor is energised at 2.8 A/phase
-continuously with no idle-current reduction. Two costs: FluidNC cannot de-energise the motor at
+The diagram marks `ENA±` not connected, which means the motor is energised continuously (at the
+RevG diagram's 2.8 A/phase; Rev H sets the TB6600 to 1.0–1.4 A/phase) with no idle-current reduction. Two costs: FluidNC cannot de-energise the motor at
 all, and ENV-03's 8-hour session requirement comes under real thermal pressure in both motor and
 driver. The legacy firmware *had* software disable (`Pins::ENABLE`, used by `Safety::trigger()`);
 that capability is lost in the new wiring because GPIO 27 became DIR.
@@ -153,11 +157,14 @@ conditioning circuit as the limits so that both a driver fault and a broken wire
 machine. DEV-01 then closes as a `config.yaml` edit rather than a rewire. The pins freed by moving
 the MPG to the S3 (34/35) are exactly what feedback hardware wants — reserve them, do not reuse.
 
-Key values, from spec Annex B.5 and §2.1:
+Key values (as written in `firmware/config.yaml`):
 
-- `steps_per_mm: 800` — TB6600 at 1/8 microstepping = 1600 pulses/rev, T8 screw 2 mm lead.
-  **Note this contradicts `legacy/include/config.h`** (1000 steps/rev, 4 mm pitch); the spec wins.
-- `max_travel_mm: 90` (MEC-01 target), soft limits enabled (MOT-09).
+- `steps_per_mm: 1066.67` — TB6600 at 1/8 microstepping = 1600 pulses/rev over the sauter FML-P's
+  published 1.5 mm lead. **Derived from the datasheet, not measured** — confirm with a dial
+  indicator. (Earlier drafts used 800 from an assumed T8 2 mm lead; the legacy firmware used
+  1000 steps/rev at 4 mm pitch. Both are superseded.)
+- `max_travel_mm: 65` — the FML-P's travel, short of MEC-01's ≥75 mm (open Rev H item). Soft
+  limits enabled (MOT-09).
 - Rapid ≥10 mm/s, plunge 1–5 mm/s default 2–3 (MOT-08).
 - Two-stage homing (fast seek, back off, slow confirm) to satisfy MOT-06's ±0.02 mm.
 
@@ -170,7 +177,7 @@ appears in any of them — this is the core of ELE-11.
 |---|---|---|
 | **E-stop** | NC contact breaking mains L, feeding both the PSU and the router contactor | Hardware only. Not a GPIO, not visible to firmware (SAF-01) |
 | **Hard limits** | `limit_neg_pin: gpio.33` (bottom), `limit_pos_pin: gpio.25` (top) | FluidNC — alarm state, motion halted |
-| **Soft limits** | `$Limits/Soft`, envelope from `mpos_mm` + `max_travel_mm: 90` | FluidNC (MOT-09) |
+| **Soft limits** | `$Limits/Soft`, envelope from `mpos_mm` + `max_travel_mm: 65` | FluidNC (MOT-09) |
 
 **Three tiers of limit, and they must not be conflated:**
 
@@ -233,6 +240,9 @@ sensor out ──┬── 10k ──┬── GPIO 33
           4k7 to 3V3   ├── BAT54S clamp to 3V3 / GND
                        └── 100nF to GND
 ```
+
+The 4k7 pull-up sits on the **sensor side** of the 10 k series resistor, as drawn. On the GPIO
+side, a closed switch would only pull the pin down to ~2.2 V (a 4k7/10k divider) and never read LOW.
 
 - 10 k series + clamp means an accidental 24 V on the line delivers ~2 mA into the clamp instead
   of destroying the ESP32 — a live risk now that both sensor types share a drawer.
@@ -309,16 +319,24 @@ Three things to settle before wiring, in priority order:
   (already on the diagram), an RC filter at the controller end, limit wiring routed away from the
   motor cable, and shield grounded at one end only.
 
-Two further config areas need checking against the installed FluidNC version rather than assumed —
-confirm the exact keys in the FluidNC wiki before writing:
+Config areas checked against the installed FluidNC v4.1.0 at bench bring-up (2026-09-13):
 
-- **Second UART channel.** FluidNC exposes a secondary GRBL channel via a `uart1:` section plus a
-  `uart_channel1:` block carrying `report_interval_ms`. This is what makes "stock FluidNC, config
-  only" possible — verify the key names and that `report_interval_ms` gives the ~10 Hz push the
-  HMI wants, so it need not poll `?` continuously.
-- **`$Macro0`** for the foot-switch plunge cycle. Confirm macro length limits and whether the
-  macro can be made conditional on spindle-ready (SAF-03 / the legacy `Relay.isReady()` gate). If
-  it cannot, the readiness gate moves into the HMI and the macro stays a bare move.
+- **Second UART channel — ✅ verified.** `uart1:` plus `uart_channel1:` load as written, and this is
+  what makes "stock FluidNC, config only" possible. **`report_interval_ms` exists but reports only
+  on change** — an idle machine sends nothing, so it is not a heartbeat. The HMI therefore **polls
+  `?` every 100 ms** and treats 500 ms without a status report as link loss (see
+  `docs/UART-PROTOCOL.md` §3 and §7.2).
+- **Spindle key — ✅** it is `Relay:`, not `relay_spindle:` (the old key is silently ignored).
+- **YAML parser —** rejects comments and quotes on section-header lines.
+- **Console —** `$Limits` shows per-pin state and is exited with `!`; the console is also
+  reachable over WiFi telnet at `routerlift.local:23`.
+- **`$Macro0`** for the foot-switch plunge cycle — **still unverified**: whether `macro0_pin`
+  acts on the release edge (dead-man retract), macro length limits, rewriting `$Macro0` over the
+  wire, and whether it can be made conditional on spindle-ready (SAF-03 / the legacy
+  `Relay.isReady()` gate). If it cannot, the readiness gate moves into the HMI and the macro stays
+  a bare move.
+- Also still unverified: the homing pull-off alarm code, the soft-limit sign convention (item 4
+  above), and whether the `Relay` spindle reports non-zero `S`.
 
 Also write `firmware/README.md`: which FluidNC release, how to flash it, how to upload
 `config.yaml`, and the `$` settings that are not in the YAML.
@@ -339,15 +357,21 @@ Document, with worked examples:
 - **Router:** `M3`/`M5` via the `Relay` spindle.
 - **Framing rules:** line-oriented, `\n`-terminated, one `ok`/`error:N` per line sent; the HMI
   keeps a bounded in-flight window and never sends a new line before the previous `ok`.
-- **Link-loss behaviour:** define explicitly. If the HMI stops receiving status for N ms it shows
-  a disconnected state and refuses to originate motion. Critically — per ELE-11 — link loss must
+- **Link-loss behaviour:** defined and bench-verified. The HMI polls `?` every 100 ms; if no status
+  report arrives for 500 ms it sends `!`, shows LINK LOST, inhibits the handwheel, invalidates Z0
+  (which stays invalid after recovery until re-probed) and refuses to originate motion. Critically — per ELE-11 — link loss must
   **not** be able to start motion or block a stop, and the E-stop chain is hardware and is
   unaffected either way.
 - A short table mapping each §7 canned-cycle step to the exact command sequence.
 
 ---
 
-## Phase 4 — `hmi/` (ESP32-S3 firmware)
+## Phase 4 — `hmi/` (ESP32-S3 firmware)  ◐ increments 1–3 built
+
+Status 2026-09-13: increments 1–3 are built and bench-verified for **display, touch and the UART
+link** (including link loss and recovery). Buttons and MPG are coded against the pin map but not
+yet wired. Increments 4 (cycles) and 5 (fault log / diagnostics) are not started. HMI flash is
+~24 % of the 3 MB app partition.
 
 ### Pin map (the tight part)
 
@@ -359,7 +383,7 @@ The JC4827W543C brings only ten GPIOs out to its JST 1.25 mm connectors (P2 46/9
 |---|---|---|
 | UART TX → FluidNC RX(16) | 18 | P4 |
 | UART RX ← FluidNC TX(17) | 17 | P4 |
-| MPG A / B (**via level shifter — see below**) | 6 / 7 | P3 |
+| MPG A / B (**via 74LVC14 level shifter on 3.3 V**) | 6 / 7 | P3 |
 | I²C bus 1 SDA / SCL (**MCP23017 only**, external 4.7 kΩ pull-ups) | 15 / 16 | P3 |
 | Spare | 5, 9, 14 | P2 |
 | Avoid | 46 (boot strap — never drive at power-up) | P2 |
@@ -380,6 +404,7 @@ debounce from `legacy/src/IOExpander.cpp`; drop its board-ID logic.
 | A3 | ZERO — short: probe `G38.2`; long: set zero here without probing |
 | A4 | PRESET — short: recall active; long: save current height |
 | A5 | Rough/fine selector (ELE-09) |
+| A6 | Foot switch mirror (display only — the foot switch itself is FluidNC GPIO 13) |
 | B0 | ROUTER LED — lit = live, blinking = warming |
 
 **STOP is deliberately NOT here** — it lives on FluidNC GPIO 21 as `feed_hold_pin`, so it halts
@@ -405,6 +430,7 @@ SCL 4 / INT 3 / RST 38; native USB 19/20; console 43/44. Put this map in a singl
 ### Modules
 
 - `Link` — GRBL sender: TX queue with the `ok` window, status-report parser, connection state.
+  Polls `?` every 100 ms (`LinkCfg::POLL_MS`); link lost after 500 ms silence (`TIMEOUT_MS`).
 - `Wheel` — PCNT quadrature on 6/7, 4× decode, 100 PPR. Scale per ELE-09/B.8: fine
   0.01 mm/detent (1 rev = 1 mm), rough 0.1 mm/detent (1 rev = 10 mm). Emits jog commands via `Link`.
   Rate-limit so a fast spin cannot flood the UART.
@@ -483,8 +509,10 @@ than silent drift:
 - New **Annex A.7** changelog row, revision history row for H.
 
 Three existing docs describe the retired architecture and must be rewritten or marked superseded:
-`docs/ARCHITECTURE.md`, `docs/HARDWARE.md`, `docs/superseded-SCHEMATIC.svg`. `docs/BENCH-TEST.md` needs a full
-rewrite — its 9-step ladder is built around the MCP23017 and the bespoke firmware.
+`docs/ARCHITECTURE.md`, `docs/HARDWARE.md`, `docs/superseded-SCHEMATIC.svg`. `docs/BENCH-TEST.md`'s
+9-step ladder is built around the bespoke single-board firmware. `ARCHITECTURE.md`, `UX.md` and
+`BENCH-TEST.md` now carry superseded banners (listed in `docs/SUPERSEDED.md`); Rev H bench
+progress is recorded in `docs/BRINGUP-LOG.md` against the Verification section below.
 
 Note `DEV-01` is untouched by all of this: the TB6600 still cannot do stall detection, so FLT-01
 and the stall portion of ACC-09 stay deferred.
@@ -496,10 +524,12 @@ and the stall portion of ACC-09 stay deferred.
 Incremental, each step gating the next — no router, no bit, until the last steps.
 
 1. **Build.** `pio run -e hmi` compiles. `legacy/` is not built.
-2. **Panel bring-up.** Flash the HMI; LVGL widgets render at 480×272 and GT911 touch tracks. This
+2. **Panel bring-up.** ✅ *Display and touch verified 2026-09-13.* Flash the HMI; LVGL widgets render at 480×272 and GT911 touch tracks. This
    is the highest-risk step (panel driver, partitions, PSRAM mode) — if it fails, use the
    `hmi-diag` env and diff against the Guition vendor example before touching anything else.
-3. **FluidNC standalone.** Upload `config.yaml`, connect over USB, confirm `$$` reads back, `$H`
+3. **FluidNC standalone.** ◐ *Bare board verified 2026-09-13: config parses, limit inputs fault
+   when open and clear when jumpered, boot ends in `ALARM:14` (unhomed). `$H`, probe and relay not
+   yet exercised — no motor or switches fitted.* Upload `config.yaml`, connect over USB, confirm `$$` reads back, `$H`
    homes on the bottom switch, top limit faults, `G38.2` probes, `M3`/`M5` clicks the relay —
    all **with the motor on the bench, not mounted, and the router unplugged**.
 3b. **Both sensor types, before anything is mounted.** With the conditioning circuit built, meter
@@ -508,7 +538,8 @@ Incremental, each step gating the next — no router, no bit, until the last ste
    confirm the identical pin string works for both. Finally, **pull the signal wire mid-idle on
    each** and confirm it faults rather than going quiet — that is the fail-safe claim, and it is
    worth proving rather than trusting.
-4. **Link.** Cross-wire 17/18 ↔ 16/17, confirm the HMI's status bar tracks `MPos` live as the
+4. **Link.** ✅ *Link up, EN-reset → immediate LINK LOST, auto-recovery with Z0 still invalid —
+   verified 2026-09-13 (`docs/BRINGUP-LOG.md`). The MPG half is still to do.* Cross-wire 17/18 ↔ 16/17, confirm the HMI's status bar tracks `MPos` live as the
    axis is jogged from the USB console. Then confirm the reverse: MPG detents move the axis.
 5. **Pin-budget check.** Confirm MPG 6/7 and the expander bus on 15/16 read correctly with the
    panel running and touch active.
@@ -525,9 +556,9 @@ production cuts with an E-stop within arm's reach.
 
 - **The HMI board's ten connector GPIOs are the main pin constraint.** Three remain spare (5, 9,
   14); GPIO 46 is a boot strap. If more are needed, the MCP23017's ten spare I/O come first.
-- FluidNC's second-UART key names must be verified against the installed release; if the version
-  in hand lacks `uart_channel1`, the HMI has to share the USB serial channel, which costs the
-  debug console.
+- ~~FluidNC's second-UART key names must be verified~~ — verified on v4.1.0 (2026-09-13).
+  Remaining FluidNC unknowns: the foot-switch release edge, `$Macro0` rewrite over the wire, the
+  homing pull-off alarm code and the soft-limit sign convention.
 - The canned cycles and Z0-validity logic living in the HMI is a real consequence of the GRBL
   choice. It is acceptable because FluidNC independently enforces limits, homing, and probing —
   but it means an HMI bug can produce a *wrong depth*, just never an *unsafe move*.

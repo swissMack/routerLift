@@ -2,188 +2,107 @@
 
 ## ▶ Current state (2026-09-13) — read this first
 
-**The sections below describe the v1.0.0 single-board design and are historical.** The project
-is now Rev H: stock FluidNC on a classic ESP32 for motion, plus a **Guition JC4827W543C**
-ESP32-S3 touch panel (`hmi/`) over UART. See `README.md` and `docs/DESIGN-PLAN-RevH.md`.
+**Bench status and the resume checklist live in `docs/BRINGUP-LOG.md`.** Design detail lives in
+`docs/DESIGN-PLAN-RevH.md`. In short:
 
-**Bench status and the resume checklist live in `docs/BRINGUP-LOG.md`.** In short:
+- **FluidNC board:** FluidNC v4.1.0 (esp32-wifi) flashed, `firmware/config.yaml` parses and is
+  verified, bare-board acceptance passed (limits NC-correct, `uart1`/`uart_channel1` keys work).
+- **Screen board:** Guition JC4827W543C — display and touch working.
+- **UART link (Step B):** passed — link up, link-loss detection (feed hold + Z0 invalidated) and
+  recovery (Z0 stays invalid) verified. The HMI polls `?` every 100 ms because FluidNC's
+  `report_interval_ms` only reports on change.
+- **Waiting on the MPG level shifters.** The right part is a **74LVC14 on 3.3 V**; the BOM's
+  74HCT14 needs 5 V and would drive 5 V into the S3. Check the part before wiring it.
+- **Next:** MPG through the shifters on P3 (GPIO 6/7), then the MCP23017 buttons.
+- **Not yet done:** panel buttons and MPG unwired; HMI increments 4 and 5 not started; lift body
+  not bought; `steps_per_mm` 1066.67 is derived, not measured; foot-switch release edge unverified.
 
-- FluidNC board: flashed (v4.1.0), config verified, bare-board acceptance passed.
-- Screen board: display and touch working on the corrected board.
-- UART link (Step B): passed — link up, link-loss detection and recovery verified.
-- Waiting for the MPG level shifters. **Check the part before wiring it** — the BOM's
-  74HCT14 is unsafe into the S3; a 74LVC14 on 3.3 V is the right part.
-- Next: MPG through the shifters on P3 (GPIO 6/7).
-- FluidNC console over WiFi: telnet `routerlift.local:23` (same `?` / `$` commands as USB).
-  Its USB serial port did not appear on the Mac during Step B, so use this instead.
-
-Build: `pio run -e hmi` (or `-e hmi-diag`). Screen port: `/dev/cu.usbmodem*`.
-FluidNC: `routerlift.local` / 192.168.1.82.
+FluidNC: `routerlift.local` / 192.168.1.82 (AP fallback `FluidNC`). Screen: `/dev/cu.usbmodem*`.
 
 ---
 
-> This section was added at end of a previous session that did the v1.0.0
-> firmware design via MCP-only file editing. Below it, the original
-> context-mode routing rules apply unchanged.
-
 ## What this repo is
 
-ESP32-based open-firmware automated router lift. Built with PlatformIO +
-Arduino framework. Drives a DM542 stepper + ball-screw spindle, jogged by
-a CNC-style manual pulse generator (MPG), navigated by touch on a 3.5"
-ILI9488 TFT. Designed to replace a FXBB FräsLift V3 (original docs at
-`docs/reference/FXBB-original/`).
+Open-firmware automated router lift, **Rev H split architecture**:
+
+- **Motion** — stock, unmodified FluidNC on a classic ESP32-WROOM-32 devkit (30-pin, USB-C,
+  CH340). TB6600 driver at 1/8 step, NPN NC limits, `G38.2` touch plate, `Relay` spindle output.
+  Host lift: sauter FML-P (1.5 mm lead, 65 mm travel).
+- **HMI** — our C++ (PlatformIO, Arduino, LVGL 8.4) on a **Guition JC4827W543C** ESP32-S3 4.3"
+  panel (NV3041A QSPI, GT911 touch, 4 MB flash, 8 MB octal PSRAM). It is a GRBL sender over
+  UART, with a 100 PPR MPG handwheel and panel buttons on an MCP23017.
+
+The v1.x single-ESP32 design (DM542, ILI9488, `MotorControl`, …) is retired. It lives in
+`legacy/` (reference only, not built) and in git history (tag `v1.1.0-bespoke`).
 
 Repo: `git@github.com:swissMack/routerLift.git` (private).
-Tag at handoff: `v1.0.0` on `origin/main`.
 
-## State as of handoff
+## Key paths
 
-| What | Where |
+| Path | What |
 | --- | --- |
-| v1.0.0 baseline (29 source files, full docs) | Tagged + pushed to `origin/main` |
-| v1.0.1 fix patches | **Written locally, NOT yet committed.** See below |
-| Compile-test result | **Never run** — previous session's sandbox could not reach `registry.platformio.org` |
+| `docs/BRINGUP-LOG.md` | What has been proven on the bench — newest first |
+| `docs/DESIGN-PLAN-RevH.md` | The Rev H design, phase by phase |
+| `docs/UART-PROTOCOL.md` | HMI ↔ FluidNC command vocabulary |
+| `docs/BOM.md`, `docs/WIRING-RevH.*`, `docs/PINOUT.svg` | Parts and wiring |
+| `firmware/config.yaml` | The entire motion-side implementation (no source) |
+| `firmware/README.md` | Flashing, YAML gotchas, pre-power-up checks, commissioning |
+| `platformio.ini` | Root; builds `hmi/` only |
+| `hmi/include/pins.h` | The only place panel GPIO numbers appear |
+| `hmi/include/config.h` | Tunable constants, each citing its Q&A item |
+| `hmi/src/` | `Link`, `Wheel`, `Buttons`, `Display`, `Ui`, `Zero`, `Store`, `main` |
+| `legacy/` | Retired v1.x firmware, not built |
 
-The v1.0.1 patches fix a leftover bug: in the calibration UI, the Dir-invert
-toggle was reading/writing the motor-enable flag instead of the direction-
-inversion flag. Three files modified: `src/MotorControl.h` adds a
-`dirInverted()` getter; `src/Menu.cpp` and `src/Display.cpp` use that
-getter instead of `isEnabled()`.
+## Build, flash, console
 
-**First actions when you start:**
+HMI (from the repo root):
 
 ```sh
-# 1. Commit the pending fix and run a real compile
-git add src/MotorControl.h src/Menu.cpp src/Display.cpp
-git commit -m "fix: Dir invert toggle uses dirInverted() not isEnabled()"
-git push origin main
-git tag -a v1.0.1 -m "Patch: dir-invert toggle"
-git push --tags
-
-# 2. First real compile of the codebase
-pio run
+pio run -e hmi                 # build
+pio run -e hmi -t upload       # flash the panel (native USB, auto-resets)
+pio run -e hmi-diag -t upload  # bring-up build: skips I2C, waits for USB, logs display, colour cycle
+pio device monitor             # 115200
 ```
 
-If `pio run` succeeds, proceed to Step 2 (NVS persistence). If it fails,
-match symptoms to "Open compile risks" below and patch the smallest set
-of files needed.
+If the app has hung and upload cannot connect: hold **BOOT**, tap **RST**, upload again.
+Factory demo backup: `~/Documents/routerLift-firmware-backups/screen-original-dashboard.bin`.
 
-## Pending work (in priority order)
+FluidNC:
 
-### Step 2 — NVS persistence for calibration values
+- Flash with **installer.fluidnc.com** (Chrome/Edge, WiFi build).
+- Upload config: `$Xmodem/Receive=/localfs/config.yaml` from the installer terminal, check the
+  byte count, then **`$Bye`** to restart (`$CD` shows what loaded at last boot, not the file).
+- Console over WiFi: `telnet routerlift.local 23` — same `?` / `$` commands as USB.
+- `$Limits` shows live input state; exit with `!`.
 
-Currently only presets and the brass-stamp offset survive power cycles.
-Motion/limit/relay/direction settings are in-RAM only and reset on boot.
+## Architectural invariants (Rev H)
 
-- **New module:** `src/Settings.h/cpp` with global `extern Settings Config;`
-- **NVS namespace:** `"rl-cfg"` (matching the `"rl-presets"` convention)
-- **Fields to persist:** `stepsPerRev`, `spindlePitchMm`, `dirInverted`,
-  `maxSpeedMmS`, `accelMmS2`, `softMinMm`, `softMaxMm`, `stampOffsetMm`,
-  `relayStartupDelayMs`
-- **API:**
-  - `Config.begin()` reads from NVS, applies defaults if missing
-  - `Config.scheduleSave()` marks dirty; called from every menu edit
-  - `Config.update()` in `loop()`: if dirty AND >2 s since last edit, flush to NVS
-    (debounced to reduce NVS wear on rapid wheel turns)
-- **Integration points:**
-  - `main.cpp` `setup()`: call `Config.begin()` and apply values **before**
-    the existing `Motor.set*` default calls
-  - `Menu.cpp` calibration handlers: call `Config.scheduleSave()` after
-    every `Motor.set*`, `Zero.setStampOffsetMm`, `RouterRelay.setStartupDelayMs`
-  - `main.cpp` `loop()`: add `Config.update();` next to the other always-on services
-- **Acceptance test:** change a calibration value via touch UI, wait 3 s,
-  power-cycle the ESP32. Value persists.
-- **Bump version:** `v1.1.0` (minor — additive feature)
+Don't relitigate these:
 
-### Step 3 — Wiring schematic
+- **FluidNC owns motion safety.** Soft/hard limits, homing, probing and step generation are
+  FluidNC's. It stays **stock** — the machine is defined by `config.yaml` only. Any proposal that
+  needs FluidNC source edits forfeits this.
+- **The HMI has no motion authority (ELE-11).** A bug in `hmi/` may give a wrong depth, never an
+  unsafe move. Nothing in `hmi/` enforces a limit.
+- **`Link` is the only UART writer.** That keeps `docs/UART-PROTOCOL.md` exhaustive.
+- **STOP is FluidNC's `feed_hold_pin`** (GPIO 21), not an HMI input — it works if the HMI has
+  crashed. The E-stop mushroom kills mains and is separate.
+- **Foot-switch plunge is local on FluidNC** (`macro0_pin`, `$Macro0` rewritten by the HMI). The
+  release/retract half via an HMI mirror input is still unverified.
+- **Z0 belongs to the HMI, with no override anywhere.** Invalidated by link loss, alarm,
+  bit-change entry, failed probe, and never-set at boot; it stays invalid after link recovery
+  until re-probed (FW-09).
+- **Link loss** (no status for 500 ms) sends a feed hold and invalidates Z0.
+- **`hmi/include/pins.h` is the only place panel GPIOs appear.**
+- **MPG shifter is a 74LVC14, two stages per channel, non-inverting** → `SIGNALS_INVERTED = false`.
 
-- **Output file:** `docs/SCHEMATIC.svg` (rendered SVG, hand-drawn; no KiCad)
-- **Must show clearly:**
-  - ESP32 pinout (all pins used per `docs/HARDWARE.md` table)
-  - MCP23017 on I²C with full Port A and Port B map
-  - DM542 stepper driver wiring (PUL+, DIR+, ENA+, motor coils)
-  - MPG via 2× PC817 opto-isolators (preferred — `MPG::SIGNALS_INVERTED = true` is already wired for this)
-  - 3-position rate switch: common to GND, throws to MCP B4/B5/B6
-  - TFT + XPT2046 sharing SPI bus, different CS lines
-  - SSR for router with snubber if needed
-  - NPN endstops with 24 V common
-  - Foot switch (momentary, normally open, to MCP A.3)
-- **Power architecture box:** 24 V PSU → buck → 5 V → buck → 3.3 V; star-ground near PSU
-- Cross-reference `docs/HARDWARE.md` for pin/wiring tables — schematic is the visual companion
-
-### Step 4 — Bench-test plan
-
-- **Output file:** `docs/BENCH-TEST.md`
-- Each step must pass before adding the next piece of physical hardware:
-  1. **Bare ESP32** — no MCP, no motor, no router. Verify boot, serial banner at 115200, expected `"MCP23017 not found - degraded mode"` log.
-  2. **Add MCP23017** — verify board-ID detection (expect "Function board: Router Lift" if jumpers set, otherwise "Unknown function board"), endstop reads via temporary serial-debug print loop.
-  3. **Add display + touch** — verify 20 Hz rendering, tap calibration rows, adjust the touch ADC calibration constants in `Touch.cpp` if hit points are off.
-  4. **Add MPG via opto-isolators** — verify pulse counting (one full wheel turn = 100 pulses), rate switch reads (each position labelled correctly on status bar), velocity scaling visible in main-screen `mm/pulse` readout.
-  5. **Add stepper driver only (motor NOT yet mounted on the lift)** — verify motion, soft-limit rejection (try moving past `softMax` via serial debug command), endstop trigger forces a `FAULT` screen.
-  6. **Mount motor on the lift mechanics** — verify two-stage homing, brass-stamp zeroing (stamp offset calibrated with calipers first), jog feel across all three rate bands.
-  7. **Add SSR with the router unplugged from mains** — verify relay click on `POWER ON` tap, `isReady()` timing matches `RELAY_STARTUP_DELAY_MS` (status bar shows `WARMUP` → `ON`).
-  8. **Plug router in at lowest speed setting only, no bit in the collet** — verify foot-switch plunge cycle (target → park).
-  9. **Production cuts** only after all above pass and with a fresh emergency-stop button within arm's reach.
-
-## Architectural decisions to preserve
-
-Don't relitigate these — they're the result of multi-turn design discussion:
-
-- **One chokepoint for motion safety.** Every motion request goes through
-  `MotorControl::moveToMm()`, which enforces soft limits before any step
-  reaches the driver. Never bypass it. New code paths must call it.
-- **Three converging fault triggers.** Soft-limit violation in
-  `MotorControl`, endstop polling in `main::checkEndstops()`, hardware
-  watchdog in `SafetyMon`. All call `Safety::trigger()` which e-stops the
-  motor and turns the relay off. First fault wins (no override).
-- **MPG ↔ touch input separation.** MPG only jogs and edits values; touch
-  only navigates menus. Deliberate: accidental touch can't move the
-  cutter, accidental wheel-spin can't trigger a menu action.
-- **Foot-switch plunge gated on `Relay.isReady()`.** Prevents plunging
-  before the spindle reaches full speed. Do not remove this gate.
-- **MPG signals are inverted at the level shifter** (PC817 opto-isolator
-  assumption). `MPG::SIGNALS_INVERTED = true` is correct for that. If the
-  user moves to a 74HCT14 with two inverters per channel, flip it to false.
-- **Step size = `RateSwitch.baseStepMm() × velocity_scale`** where
-  velocity_scale ∈ [1.0, 10.0]. Don't change the curve without discussion.
-- **Function board ID via MCP23017 Port B0..B3** (4-bit jumpers). The
-  display unit is generic; the function board identifies itself at boot.
-  Future boards (dust collection, miter stop) reuse the same display.
-
-## Open compile risks
-
-The previous session never compiled the code. Apply only if `pio run` actually complains:
-
-| Symptom | Fix |
-| --- | --- |
-| `XPT2046_Touchscreen` hangs in `touched()` (display goes dark / loop blocked) | If T_IRQ is unwired, use `XPT2046_Touchscreen ts(Pins::TOUCH_CS)` (no IRQ arg) in `src/Touch.cpp` |
-| `'forceStop' is not a member of 'FastAccelStepper'` | Replace `stepper->forceStop()` with `stepper->forceStopAndNewPosition(stepper->getCurrentPosition())` in `src/MotorControl.cpp::emergencyStop()` |
-| `esp_task_wdt_init` signature mismatch | Arduino-ESP32 core 3.x uses an `esp_task_wdt_config_t` struct. Wrap the call in `#if ESP_ARDUINO_VERSION_MAJOR >= 3` |
-| `createSprite` returns false | RAM exhausted. Drop to `spr.setColorDepth(4);` in `Display::begin()`, or split into two half-height sprites and push them separately |
-
-## Working conventions for this project
+## Working conventions
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
-- One logical change per commit; safety-critical changes bench-tested first
-- Build before pushing (`pio run`)
-- User preferences: concise plain-language responses; show plan before changes; ask clarifying questions before destructive operations
-- Standing rule: never delete or overwrite files without explicit user approval
-
-## Key file references
-
-- `include/config.h` — pins, mechanical defaults, MPG and UI constants (start here)
-- `src/MotorControl.{h,cpp}` — motion API + soft limits (safety-critical)
-- `src/Safety.{h,cpp}` — fault state machine + watchdog
-- `src/MPG.{h,cpp}` — pulse decode + velocity scaling
-- `src/RateSwitch.{h,cpp}` — x1/x10/x100 band selector
-- `src/Touch.{h,cpp}` — XPT2046 with rectangular hit-testing
-- `src/Menu.{h,cpp}` + `src/Display.{h,cpp}` — UI layer; layout constants must agree
-- `src/main.cpp` — top-level state machine
-- `docs/HARDWARE.md` — BOM, pin map, level-shifter circuits
-- `docs/ARCHITECTURE.md` — module map and design rationale
-- `docs/UX.md` — screen-by-screen reference
-- `docs/reference/FXBB-original/` — original V3 documentation (PCB, schematic, software manual PDFs)
+- One logical change per commit; safety-relevant changes bench-tested first
+- Build before pushing (`pio run -e hmi`)
+- Concise plain-language responses; show the plan before changes; ask before destructive operations
+- Never delete or overwrite files without explicit user approval
 
 ---
 

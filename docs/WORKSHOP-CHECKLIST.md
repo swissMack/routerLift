@@ -28,8 +28,8 @@ Likely values: 2.0, 2.5, 3.0 mm, or imperial (1/8" = 3.175 mm, 1/10" = 2.54 mm).
 out near an imperial number, say so — that changes `steps_per_mm` to a non-round figure.
 
 > With 1/8 microstepping the motor gives 1600 pulses/rev, so
-> `steps_per_mm = 1600 ÷ lead_mm`. A 2 mm lead gives the 800 currently assumed;
-> a 3.175 mm lead would give 504.
+> `steps_per_mm = 1600 ÷ lead_mm`. The sauter FML-P's published 1.5 mm lead gives the
+> 1066.67 now in `config.yaml` — derived, not measured; a 3.175 mm lead would give 504.
 
 ## 3 · Drive interface — how the motor attaches
 

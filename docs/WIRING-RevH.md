@@ -244,9 +244,10 @@ bare board alarmed until GPIO 33 and 25 were jumpered to GND.
 **Probe and foot switch** use the same channel but are normally open: plate or pedal to the signal
 wire, other side to GND. Their FluidNC pins are set `:low`, so pressing reads as active.
 
-> ⚠️ **Pull-up placement is a drawing decision, not yet in the BOM.** The 4.7 kΩ pull-up sits on
-> the sensor side of the 10 kΩ series resistor. On the GPIO side, a closed switch would only pull
-> the input to about 2.2 V (a 10 k / 4.7 k divider), which may not read as LOW. Confirm on the bench.
+> ⚠️ **Pull-up on the sensor side, filter on the GPIO side.** The 4.7 kΩ pull-up goes on the
+> wire side of the 10 kΩ series resistor; the BAT54S clamp and 100 nF go on the GPIO side. Put the
+> pull-up on the GPIO side instead and a closed switch only pulls the input to about 2.2 V (a
+> 10 k / 4.7 k divider), which does not read as LOW. `docs/BOM.md` block E specifies the same.
 
 ## 5 · Mains and router switching
 
@@ -285,7 +286,8 @@ flowchart LR
   class PE,PE1,PE2,PE3 pe
 ```
 
-> ⚠️ **Check against your parts.** This drawing assumes a **230 V AC contactor coil**. For a 24 V
+> ⚠️ **Check against your parts.** This drawing assumes a **230 V AC contactor coil** — an
+> unverified assumption; no contactor has been chosen. For a 24 V
 > coil, feed the key switch and relay contact from the 24 V rail instead of mains L, and return A2
 > to 0 V. Size the contactor at twice the router's nameplate current or more. Mains cable and
 > connectors must be a different type from every low-voltage run, so they cannot be cross-plugged.
@@ -304,7 +306,9 @@ flowchart LR
   classDef field fill:#FFFFFF,stroke:#6B7570,color:#1C2321
   classDef warn fill:#FFE9A8,stroke:#B37400,color:#3A2600
 
-  MPG["MPG ZS80<br/>100 PPR, 5 V"] -->|"A, B at 5 V"| LS["Level shifter<br/>see warning below"]
+  MPG["MPG ZS80<br/>100 PPR, 5 V"] -->|"A, B at 5 V"| LS["74LVC14 at 3.3 V<br/>two stages per channel"]
+  P4P["P4 GND and 3.3V"] --> LS
+  P4P --> MCP
   B5["Buck 5 V"] --> MPG
   LS -->|"A to GPIO 6, P3"| S3
   LS -->|"B to GPIO 7, P3"| S3
@@ -329,10 +333,9 @@ flowchart LR
   STOP["STOP button"] -.->|"wires to motion GPIO 21,<br/>not to this board"| FST["Motion ESP32"]
 
   class S3,GT,MCP board
-  class BUS,TBUS,FRX,FTX,FST v33
+  class BUS,TBUS,FRX,FTX,FST,LS,P4P v33
   class MPG,B5 v5
   class A0,A1,A2,A3,A4,A5,A6,LED,STOP field
-  class LS warn
 ```
 
 | Panel pin | Signal | Notes |
@@ -341,14 +344,18 @@ flowchart LR
 | GPIO 17 (P4) | UART RX ← motion GPIO 17 | 115200 baud. P5 carries the same signals — use one, not both |
 | GPIO 6 · 7 (P3) | MPG A · B | Must arrive at 3.3 V |
 | GPIO 15 · 16 (P3) | I²C bus 1 SDA · SCL | MCP23017 only, 100 kHz, 4.7 kΩ pull-ups to 3.3 V |
-| P4 GND · 3.3V | Power for shifter and expander | P3 has no power pins |
+| P4 GND · 3.3V | Power for shifter and expander | P3 has no power pins. Never join this 3.3 V to the motion ESP32's 3.3 V — GND only |
+| P1 GND · +5V | Panel supply from the buck | 5 V, ≈260 mA (vendor spec) |
 | MCP A0–A5 | Buttons and selector | Dry contact to GND, internal pull-ups |
 | MCP A6 | Foot switch mirror | Plan still unverified — see `firmware/README.md` |
 | MCP B0 | ROUTER LED | Lit = live, blinking = warming up |
 | GPIO 5 · 9 · 14 (P2) | Spare | GPIO 46 (P2) is a boot strap: never drive it at power-up |
 | GPIO 8 · 4 | Touch I²C | On-board GT911 only; reaches no connector |
 
-> ⚠️ **Open design issue — MPG level shifter.** `docs/BOM.md` specifies a **74HCT14**. A 74HCT14
-> needs a 5 V supply, and then its outputs swing to 5 V, which can damage the S3's inputs. Use a
-> **74LVC14 powered from 3.3 V** instead: 5 V-tolerant inputs, same Schmitt hysteresis, and two
-> stages per channel stay non-inverting. Not yet changed in the BOM.
+Connectors are JST 1.25 mm (MX1.25). Only one lead ships with the board: buy single-ended
+**MX1.25 / Molex 51021-compatible 4-pin** leads for the rest (`docs/BOM.md` block F).
+
+> ⚠️ **MPG level shifter is a 74LVC14 powered from 3.3 V, not a 74HCT14.** A 74HCT14 needs
+> 4.5–5.5 V, so its outputs swing to 5 V, which can damage the S3's inputs. The 74LVC14 has
+> 5 V-tolerant inputs and the same Schmitt hysteresis; two stages per channel stay non-inverting,
+> so `SIGNALS_INVERTED = false` is unchanged. Corrected in `docs/BOM.md` block G.

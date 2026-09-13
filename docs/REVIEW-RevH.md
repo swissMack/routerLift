@@ -1,6 +1,6 @@
 # routerLift — Design and Implementation Plan
 
-**Document** RTL-DESIGN-001 · **Revision** H (draft) · **Date** 2 September 2026 · **Status** Issued for first review
+**Document** RTL-DESIGN-001 · **Revision** H (draft) · **Date** 2 September 2026, status updated 13 September 2026 · **Status** Issued for first review; bench bring-up in progress
 
 | | |
 | --- | --- |
@@ -13,17 +13,17 @@
 
 ## 1. Purpose and status
 
-This document describes the design and implementation plan for an ESP32-based automated router lift, and is issued for first review. **No firmware has been written and no mechanical parts have been bought.** The electronics are largely in hand; the machine itself does not yet exist.
+This document describes the design and implementation plan for an ESP32-based automated router lift, and is issued for first review. The electronics are largely in hand and bench bring-up has started (13 September 2026, recorded in `BRINGUP-LOG.md`): the FluidNC configuration is written and loads on the bare motion board, and the HMI firmware shows its display, reads touch and holds the UART link to FluidNC, including detecting link loss and recovering from it. Nothing is mounted on a lift and no cut has been made.
 
 The design departs from Requirement Specification RevG in several recorded ways. Those departures are listed in section 5 and are the most important thing for a reviewer to challenge.
 
 ### What is settled
 
-The controller architecture, the I/O split, the communication protocol, the safety model, and the physical control panel are all decided and documented here.
+The controller architecture, the I/O split, the communication protocol, the safety model, and the physical control panel are all decided and documented here. The host lift body is selected: the **sauter FML-P**, 1.5 mm screw lead and 65 mm travel.
 
 ### What is open
 
-The mechanics. Which commercial lift body will be motorised is unknown, and that decision sets the screw lead, the travel and the achievable resolution. **`steps_per_mm` is currently a placeholder derived from an assumption, not a measurement.**
+**`steps_per_mm` is 1066.67, derived from the FML-P's published lead — not yet measured.** The FML-P's 65 mm travel is short of MEC-01's ≥75 mm and needs a deliberate Rev H decision. The foot-switch dead-man behaviour and several other FluidNC details are still to be proven on the bench (section 14).
 
 ---
 
@@ -90,8 +90,8 @@ These are the changes a reviewer should scrutinise most closely. Each was made f
 | 2 | Handwheel is a ZS61, 60 mm dial (Annex B.8) | **ZS80, 80 mm dial** | The unit in hand. Same 100 PPR and electricals, so scaling is unchanged; rim travel per detent improves from 1.88 mm to 2.51 mm |
 | 3 | HMI is display-only, no motion authority (ELE-11) | **HMI owns the handwheel, buttons and cycle logic** | A display-only HMI cannot host the operator controls the machine needs. ELE-11's *safety* invariant is preserved; its *scope* wording is not |
 | 4 | TB6600 common anode at +5 V (Annex B.9) | **+3.3 V** | At 5 V the ESP32's logic high leaves 1.7 V across the input optocoupler, above its LED drop, so it never fully turns off. Causes missed steps at rapid — silent depth error under DEV-01 |
-| 5 | `ENA±` not connected (Annex B.9) | **Wired to GPIO 14** | Without it the motor holds 2.8 A/phase indefinitely with no way to de-energise, against ENV-03 |
-| 6 | MPG on FluidNC GPIO 34/35 (Annex B.9) | **HMI GPIO 6/7 behind a 74HCT14** | Follows the I/O split. Flips `MPG::SIGNALS_INVERTED` to `false`, since a two-stage Schmitt buffer is non-inverting where the assumed PC817 optos were not |
+| 5 | `ENA±` not connected (Annex B.9) | **Wired to GPIO 14** | Without it the motor stays energised indefinitely with no way to de-energise, against ENV-03. Drive current is also cut from the RevG 2.8 A to 1.0–1.4 A/phase |
+| 6 | MPG on FluidNC GPIO 34/35 (Annex B.9) | **HMI GPIO 6/7 behind a 74LVC14 on 3.3 V** (corrected from 74HCT14, which needs 5 V and would drive 5 V into the S3) | Follows the I/O split. Flips `MPG::SIGNALS_INVERTED` to `false`, since a two-stage Schmitt buffer is non-inverting where the assumed PC817 optos were not |
 | 7 | Soft limits operator-editable (legacy `Settings.cpp`) | **Commissioning-only** | Prevents an operator widening their own protection, and keeps a safety-relevant setting out of HMI write access |
 
 **Consequential reservation:** GPIO 34 and 35, freed by deviation 6, are reserved rather than reused — 35 as `DRIVER_ALARM`, so that closing DEV-01 later is a configuration edit and not a rewire.
@@ -188,7 +188,7 @@ Six buttons with short and long press, giving twelve functions, deliberately spl
 
 **STOP is a feed hold, not an emergency stop.** The E-stop remains the mains-rated mushroom. The two must be physically unmistakable and mounted apart — two red mushrooms with different behaviours is a dangerous panel.
 
-The expander costs no GPIOs, sharing the touch controller's existing I²C bus, and frees two pins that were previously committed.
+The expander (MCP23017 at 0x20) sits on its own I²C bus on GPIO 15/16, connector P3, because the touch controller's bus is not brought out. It costs those two pins and gives back sixteen I/O: the five buttons, the rough/fine switch (A5), a foot-switch mirror (A6) and the ROUTER LED (B0).
 
 ---
 
@@ -203,7 +203,7 @@ The FXBB is a shipping commercial product and the reference for this design. Whe
 | Field configuration | All 15 settings changed at the machine | `config.yaml` edited from a computer |
 | Dust tolerance | Three physical buttons, no touch | Touch panel for second-level functions |
 | Hazard surface | Never touches mains | Contactor, relay, mains wiring and compliance |
-| Proven | Years in the field, with a manual and fault table | Unbuilt, never compiled |
+| Proven | Years in the field, with a manual and fault table | Bench bring-up only — boards, display and link proven; never cut |
 | Depth cycles | None | Scribe/rough/finish scheduler, dovetail, keyhole, bit-change |
 | Memory | One volatile slot | Named presets in NVS |
 | Probing | None | Two-touch probe with plate thickness |
@@ -219,12 +219,12 @@ The FXBB is a shipping commercial product and the reference for this design. Whe
 | Phase | Deliverable | Status |
 | --- | --- | --- |
 | 1 | Repo restructure — bespoke firmware retired to `legacy/`, new `firmware/` and `hmi/` trees | **Complete** (`01511d2`) |
-| 2 | `firmware/config.yaml` — FluidNC machine definition | Not started. Blocked only on `steps_per_mm` |
-| 3 | `docs/UART-PROTOCOL.md` — the HMI/controller protocol | Not started |
-| 4 | `hmi/` — ESP32-S3 firmware: LVGL UI, GRBL sender, handwheel, buttons, cycles | Not started |
-| 5 | Rev H specification amendment | Not started — seven deviations pending |
+| 2 | `firmware/config.yaml` — FluidNC machine definition | **Written; loads and bench-verified on the bare board** (FluidNC v4.1.0, 13 Sept). `steps_per_mm` derived, not measured |
+| 3 | `docs/UART-PROTOCOL.md` — the HMI/controller protocol | **Complete.** Status polling and link-loss timing verified on the bench |
+| 4 | `hmi/` — ESP32-S3 firmware | **Increments 1–3 built and bench-verified** for display, touch and link. Buttons and MPG coded, not yet wired. Increment 4 (cycles) and 5 (fault log, diagnostics) not started |
+| 5 | Rev H specification amendment | Not started — deviations pending, to follow bench testing |
 
-Phases 2 and 3 can proceed immediately. Phase 4 is the bulk of the work. Phase 5 should follow bench testing so that the specification records what was proven rather than what was intended.
+Phase 4 is the bulk of the remaining work. Phase 5 should follow bench testing so that the specification records what was proven rather than what was intended.
 
 ---
 
@@ -232,11 +232,11 @@ Phases 2 and 3 can proceed immediately. Phase 4 is the bulk of the work. Phase 5
 
 Each step gates the next. No router and no cutter until the final steps.
 
-1. **Build** — `pio run -e hmi` compiles; `legacy/` is not built.
-2. **Panel bring-up** — LVGL renders at 480×272 and touch tracks. Highest technical risk.
-3. **FluidNC standalone** — over USB, with the motor on the bench and the router unplugged: `$$` reads back, `$H` homes, top limit faults, `G38.2` probes, `M3`/`M5` clicks the relay.
+1. **Build** — `pio run -e hmi` compiles; `legacy/` is not built. **Done.**
+2. **Panel bring-up** — LVGL renders at 480×272 and touch tracks. **Done** 13 Sept.
+3. **FluidNC standalone** — *bare board done 13 Sept (config loads, limit inputs behave); the rest needs motor and switches.* Over USB, with the motor on the bench and the router unplugged: `$$` reads back, `$H` homes, top limit faults, `G38.2` probes, `M3`/`M5` clicks the relay.
 4. **Both sensor types** — meter the conditioning circuit, confirm 0–3.3 V swing with the inductive sensor on 24 V, then **pull the signal wire and confirm it faults rather than going quiet**.
-5. **Link** — status tracks position live; handwheel moves the axis.
+5. **Link** — status tracks position live; handwheel moves the axis. *Link up, loss and recovery done 13 Sept; handwheel not yet wired.*
 6. **Link loss** — pull the cable mid-jog; motion must stop and must never start.
 7. **Cycles dry-run** — all four, air-cutting, router unplugged.
 8. **Acceptance** — ACC-01 to ACC-04 repeatability with a dial indicator, then ACC-06, 07, 10, 11.
@@ -249,16 +249,18 @@ Only then: router at lowest speed with no bit in the collet, then production cut
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| **`steps_per_mm` is an assumption** | Every depth figure is provisional | Measure the actual lead with a dial indicator before trusting any cut |
-| QSPI panel and LVGL with ten connector GPIOs | Bring-up failure or running out of pins | Guition vendor example and the `hmi-diag` env are the working reference; three GPIOs spare (5, 9, 14) plus ten expander I/O |
-| FluidNC key names unverified | `config.yaml` may not load as written | Check the second-UART and macro keys against the installed release |
+| **`steps_per_mm` (1066.67) is derived, not measured** | Every depth figure is provisional | Measure the actual lead with a dial indicator before trusting any cut |
+| MEC-01 travel | FML-P gives 65 mm against ≥75 mm | Deliberate Rev H revision, not silent absorption |
+| MPG level shifter part | A 74HCT14 would drive 5 V into the S3 | Specify 74LVC14 on 3.3 V; check the part in hand before wiring |
+| Ten connector GPIOs | Running out of pins | Panel and touch are proven; three GPIOs spare (5, 9, 14) plus ten expander I/O |
+| FluidNC behaviour unverified | Foot-switch release edge (dead-man retract), `$Macro0` rewrite over the wire, homing pull-off alarm code, soft-limit sign convention, `Relay` reporting non-zero S | Prove each on the bench. UART keys, `Relay:` key and status reporting already verified — reports are on change only, so the HMI polls `?` every 100 ms |
 | Cycle logic lives in the HMI | An HMI bug can give a wrong depth | Accepted — FluidNC independently enforces limits, homing and probing, so it cannot give an unsafe move |
-| Handwheel latency | Poor feel on the primary control | Tune report rate and jog chunk size; judge at bench step 5 |
+| Handwheel latency | Poor feel on the primary control | Tune status poll rate and jog chunk size; judge at bench step 5 |
 | DEV-01 open | No stall detection; silent step loss | GPIO 35 reserved so a closed-loop driver closes it as a config edit |
 
 ### Open questions for the reviewer
 
-1. Which commercial lift body? This is the critical path — it fixes the screw lead, the travel, and the achievable resolution.
+1. The sauter FML-P is selected. Is revising MEC-01 down to its 65 mm travel acceptable?
 2. Are the deviations in section 5 accepted, in particular the ELE-11 rewording?
 3. Should the specification be amended to Rev H now, or after bench testing?
 4. Is the handwheel latency trade acceptable in principle, given it cannot be removed without forking FluidNC?

@@ -80,8 +80,8 @@
 <text x="812" y="298" class="hdr">SENSOR CONDITIONING</text>
 <text x="812" y="320" class="it">×5 — HOME, TOP, PROBE,</text>
 <text x="812" y="336" class="it">FOOT, DRV_ALM</text>
-<text x="812" y="360" class="tiny">10 k series · 4k7 pull-up to 3V3</text>
-<text x="812" y="376" class="tiny">BAT54S clamp · 100 nF to GND</text>
+<text x="812" y="360" class="tiny">4k7 pull-up to 3V3 (wire side) · 10 k series</text>
+<text x="812" y="376" class="tiny">GPIO side: BAT54S clamp · 100 nF to GND</text>
 <text x="812" y="400" class="ok">≈1 ms RC — ELE-04 in hardware</text>
 <text x="812" y="424" class="note">Survives a mis-wired PNP sensor</text>
 <text x="812" y="440" class="note">and accepts either switch type</text>
@@ -96,7 +96,7 @@
 <rect class="box" x="464" y="644" width="652" height="126"/>
 <text x="480" y="666" class="hdr">CABLE SCHEDULE OUT OF THE ENCLOSURE</text>
 <text x="480" y="690" class="lbl">to lift    motor 4-core shielded  ·  home 2-core shielded  ·  top 2-core shielded  ·  probe 2-core shielded</text>
-<text x="480" y="710" class="lbl">to panel   UART 2-core + GND  ·  I²C 2-core + GND  ·  MPG 4-core shielded  ·  +5 V / 0 V</text>
+<text x="480" y="710" class="lbl">to panel   UART 2-core + GND  ·  STOP 2-core (to G21)  ·  +5 V / 0 V   (MPG + I²C stay inside the panel)</text>
 <text x="480" y="730" class="lbl">to floor   foot switch 2-core</text>
 <text x="480" y="750" class="lbl">to mains   router socket L/N/PE  ·  inlet L/N/PE</text>
 
@@ -106,7 +106,7 @@
 <text x="1196" y="134" class="sub">single assembly, display + buttons together</text>
 
 <text x="1196" y="162" class="it">JC4827W543C — 4.3" touch</text>
-<text x="1206" y="178" class="tiny">120 × 70 mm module, panel cutout</text>
+<text x="1206" y="178" class="tiny">120 × 70.2 mm module, panel cutout</text>
 
 <text x="1196" y="204" class="it">MCP23017 @ 0x20</text>
 <text x="1206" y="220" class="tiny">own I²C bus, G15/G16 on P3</text>
@@ -122,16 +122,16 @@
 
 <text x="1196" y="394" class="it">MPG handwheel — ZS80</text>
 <text x="1206" y="410" class="tiny">80 mm dial, 100 PPR, 5 V</text>
-<text x="1196" y="434" class="it">74HCT14 level shifter</text>
+<text x="1196" y="434" class="it">74LVC14 level shifter, 3.3 V supply</text>
 <text x="1206" y="450" class="warn">5 V → 3.3 V, required</text>
 <text x="1206" y="466" class="tiny">two stages per channel = non-inverting</text>
 <text x="1206" y="482" class="tiny">SIGNALS_INVERTED = false</text>
 <text x="1196" y="506" class="note">Mount the handwheel where your hand rests.</text>
 
 <line class="sig" x1="1140" y1="240" x2="1180" y2="240"/>
-<text x="1092" y="232" class="lbl">UART</text>
+<text x="1143" y="234" class="lbl">UART</text>
 <line class="sig" x1="1140" y1="270" x2="1180" y2="270"/>
-<text x="1092" y="290" class="lbl">I²C</text>
+<text x="1143" y="264" class="lbl">STOP</text>
 <line class="v5" x1="1140" y1="300" x2="1180" y2="300"/>
 
 <!-- ============ LIFT ASSEMBLY ============ -->

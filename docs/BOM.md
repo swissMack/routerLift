@@ -14,7 +14,7 @@ schematic blocks exactly.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | E-stop button | Latching mushroom head, **NC**, mains-rated | 🛒 | SAF-01. Breaks L to **both** PSU and contactor. Not a logic-level button |
-| 1 | Router contactor | Coil to suit relay module; contacts ≥2× router nameplate | 🛒 | PWR-03. Add arc suppression (RC snubber across contacts) |
+| 1 | Router contactor | Coil to suit relay module; contacts ≥2× router nameplate | 🛒 | PWR-03. Add arc suppression (RC snubber across contacts). ⚠️ **Coil voltage unverified** — the wiring map assumes 230 V AC; no part chosen yet |
 | 1 | RCD / GFCI | To suit local installation | 🛒 | PWR-02 |
 | 1 | Mains fuse + holder | Sized for PSU + router | 🛒 | In L, after the E-stop |
 | 1 | Router socket | Switched, PE-bonded | 🛒 | Fed from contactor T1 |
@@ -26,8 +26,9 @@ schematic blocks exactly.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | PSU | **24–36 V DC**, ≥50 % current margin | 🛒 | ⚠️ **Not 48 V.** TB6600 absolute max ≈40–42 V. This narrows §2.1's stated 24–48 V range and is a direct consequence of DEV-01 |
-| 1 | DC-DC buck | 24–36 V → **5 V, ≥2 A** | 🛒 | HMI panel + backlight ≈0.5 A, MPG ≈40 mA, relay ≈70 mA. The RevG figure of ≥1 A assumed the QSPI display; the RGB panel draws more |
-| — | +3.3 V | From the ESP32 devkit's onboard LDO | ✅ | Only load is 3 opto commons ≈24 mA |
+| 1 | DC-DC buck | 24–36 V → **5 V, ≥2 A** | 🛒 | Budget: panel ≈0.26 A (vendor spec), FluidNC ESP32 devkit up to ≈0.25 A with WiFi, relay module ≈70 mA, MPG ≈40 mA, shifter and expander negligible — **≈0.6–0.7 A**. ≥2 A is ≈3× margin, covering WiFi TX peaks and relay-coil inrush |
+| — | +3.3 V (motion) | From the ESP32 devkit's onboard LDO | ✅ | Loads: 3 opto commons ≈24 mA + 5 conditioning pull-ups ≈4 mA |
+| — | +3.3 V (panel) | From the panel's own regulator, P4 `3.3V` pin | ✅ | Feeds the 74LVC14 and MCP23017 only. ⚠️ **Never join it to the motion ESP32's 3.3 V** — join GND only |
 | 1 | Star-ground point | At the PSU | 🛒 | PWR-04. One ground reference, not a daisy chain |
 
 ## C · Motion controller
@@ -63,7 +64,7 @@ schematic blocks exactly.
 > This supersedes Annex B.5's 2.8 A, chosen when the mechanics were unknown.
 
 > ⚠️ **Wire `ENA−` to GPIO 14.** The RevG diagram marks `ENA±` n/c, which leaves the
-> motor at 2.8 A/phase permanently with no idle reduction — an ENV-03 thermal risk
+> motor energised permanently with no idle reduction — an ENV-03 thermal risk
 > over an 8-hour session, and no way for FluidNC to de-energise. One extra wire buys
 > `disable_pin` and `$Stepper/IdleTime`.
 
@@ -83,9 +84,13 @@ schematic blocks exactly.
 | Qty | Item | Specification | Notes |
 | --- | --- | --- | --- |
 | 5 | Resistor | 10 kΩ, series | Limits an accidental 24 V to ~2 mA into the clamp |
-| 5 | Resistor | 4.7 kΩ, pull-up to +3.3 V | External rather than the internal ~45 kΩ, for rise time |
-| 5 | Diode array | BAT54S, clamp to 3V3 / GND | What makes a mis-wired PNP sensor survivable |
-| 5 | Capacitor | 100 nF to GND | 10 k × 100 n ≈ 1 ms RC — **ELE-04 met in hardware** |
+| 5 | Resistor | 4.7 kΩ, pull-up to +3.3 V, **sensor/wire side** of the 10 kΩ | External rather than the internal ~45 kΩ, for rise time |
+| 5 | Diode array | BAT54S, clamp to 3V3 / GND, **GPIO side** | What makes a mis-wired PNP sensor survivable |
+| 5 | Capacitor | 100 nF to GND, **GPIO side** | 10 k × 100 n ≈ 1 ms RC — **ELE-04 met in hardware** |
+
+**Topology:** `+3.3 V — 4.7 kΩ — wire node — 10 kΩ — GPIO node (BAT54S + 100 nF) — GPIO`. The
+pull-up must sit on the wire side: on the GPIO side the 10 k / 4.7 k divider leaves a closed switch
+at ≈2.2 V, which does not read LOW. Same as `docs/WIRING-RevH.md` diagram 4.
 
 This one circuit accepts either switch type with no config change: wired NC, both
 mechanical and inductive NPN idle LOW and read HIGH at the limit, and both fail safe
@@ -96,20 +101,29 @@ on a broken wire.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | Touch display board | **Guition JC4827W543C** — XH-S3E N4R8 (ESP32-S3, 4 MB flash, 8 MB octal PSRAM), 4.3" 480×272 IPS, NV3041A **QSPI**, GT911 touch | ✅ | Matches spec Annex B.10. Rev H wrongly recorded an ESP32-4827S043; bench bring-up 2026-09-13 confirmed the JC4827W543C |
-| 1 | Panel cutout / bezel | 120 × 70 mm module | 🛒 | Confirm against the board in hand |
-| 2 | Pull-up resistor | 4.7 kΩ, to 3.3 V | 🛒 | MCP23017 I²C bus (GPIO 15 SDA / 16 SCL) |
+| — | Supply | 5 V, ≈260 mA | — | Vendor spec. From the buck (block B) |
+| 1 | Panel cutout / bezel | 120 × 70.2 mm module (vendor spec) | 🛒 | Confirm against the board in hand |
+| 2 | Pull-up resistor | 4.7 kΩ, to 3.3 V | 🛒 | MCP23017 I²C bus 1 (GPIO 15 SDA / 16 SCL) |
+| 3 | Connector leads | **MX1.25 (Molex 51021-compatible) 4-pin, single-ended**, pre-crimped | 🛒 | For P2, P3, P4. Only one lead ships with the board. Check pin 1 on P4 before trusting colours (see `docs/BRINGUP-LOG.md`) |
 
-> Only ten GPIOs reach connectors: P2 IO46 · IO9 · IO14 · IO5, P3 IO6 · IO7 · IO15 · IO16,
-> P4/P5 IO17 · IO18 (P4 and P5 carry the same signals — use one). GPIO 46 is a boot strap.
-> The touch I²C bus (8/4) and the TF card lines (10–13) reach no connector.
+> Only ten GPIOs reach the JST 1.25 mm connectors: P1 GND · RXD · TXD · +5V (power/console),
+> P2 IO46 · IO9 · IO14 · IO5, P3 IO6 · IO7 · IO15 · IO16, P4 "UART1" GND · 3.3V · IO17 · IO18
+> (P5 carries the same as P4 — use one). Allocation: UART on P4 (TX 18 → FluidNC RX 16, RX 17 ←
+> FluidNC TX 17, plus GND); MPG A/B and I²C bus 1 on P3; spares 5/9/14 on P2; GPIO 46 is a boot
+> strap, avoid. The touch I²C bus (8/4) and the TF card lines (10–13) reach no connector.
 
 ## G · MPG handwheel and level shifting
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | MPG handwheel | **ZS80-5E100S** — 80 mm dial, 100 PPR, 5 V, single-ended | ✅ | ⚠️ Spec B.8 records the ZS61 (60 mm). Same electricals, larger dial. Corrected in Rev H |
-| 1 | Schmitt inverter | **74HCT14**, two stages per channel | 🛒 | 5 V → 3.3 V with hysteresis for EMI. **Non-inverting** as configured |
+| 1 | Schmitt inverter | **74LVC14, powered from 3.3 V** (panel P4), two stages per channel | 🛒 | 5 V-tolerant inputs, outputs swing 0–3.3 V, hysteresis for EMI. **Non-inverting** as configured |
 | — | MPG cable | Shielded, 4-core | 🛒 | ELE-10 |
+
+> ⚠️ **74LVC14, not 74HCT14 — design error corrected 2026-09-13.** Rev A of this BOM specified a
+> 74HCT14. That part needs a 4.5–5.5 V supply, so its outputs swing to 5 V — unsafe into the
+> ESP32-S3 — and at 3.3 V it is out of spec. The 74LVC14 runs at 3.3 V with 5 V-tolerant inputs
+> and the same Schmitt action. If a 74HCT14 has already arrived, do not connect it to the S3.
 
 > ⚠️ **Level shifting is required here and only here.** The ESP32-S3 is not 5 V
 > tolerant. Consequence for firmware: **`MPG::SIGNALS_INVERTED = false`** — the legacy
@@ -122,7 +136,7 @@ switch. Deliberately split across both boards.
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | I/O expander | **MCP23017**, I²C, addr **0x20** | 🛒 | On its own I²C bus, GPIO 15 SDA / 16 SCL (connector P3), 100 kHz, external 4.7 kΩ pull-ups. The touch bus reaches no connector. **Costs two GPIOs.** 16 I/O, 10 spare |
+| 1 | I/O expander | **MCP23017**, I²C, addr **0x20** | 🛒 | On its own I²C bus 1, GPIO 15 SDA / 16 SCL (connector P3), 100 kHz, external 4.7 kΩ pull-ups to 3.3 V. Powered from P4 GND · 3.3V. The touch bus reaches no connector. **Costs two GPIOs.** 16 I/O, 10 spare |
 | 6 | Push button | Momentary NO, panel mount, ≥16 mm | 🛒 | Dry contacts to GND, expander internal pull-ups |
 | 1 | Rough/fine selector | SPDT toggle → GND | 🛒 | ELE-09: 2 positions, not the legacy 3-band x1/x10/x100 |
 | 1 | Indicator LED | Panel mount, + series resistor | 🛒 | ROUTER only — lit = live, blinking = warming |
@@ -200,3 +214,4 @@ freed by moving the MPG to the HMI board. With these reserved, option B becomes 
 | TB6600 common | +5 V | **+3.3 V** | Rev H, Annex B.9 |
 | `ENA±` | n/c | **Wired to GPIO 14** | Rev H, Annex B.9 |
 | MPG pins | FluidNC GPIO 34/35 | **HMI GPIO 6/7**; 34/35 reserved for feedback | Rev H, Annex B.9 |
+| MPG level shifter | — | **74LVC14 at 3.3 V** (BOM Rev A's 74HCT14 was a design error) | This BOM, block G |

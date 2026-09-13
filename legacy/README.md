@@ -16,8 +16,9 @@ open item with a split design: **FluidNC on a standard ESP32** for motion, and a
 on the ESP32-S3, and the S3 board cannot carry the full machine pin budget — hence
 two controllers. This firmware assumed one.
 
-The hardware assumptions are also gone: no ILI9488 TFT, no XPT2046 touch controller,
-and **no MCP23017 expander** in the new design.
+The hardware assumptions are also gone: no ILI9488 TFT and no XPT2046 touch controller.
+An MCP23017 does return in Rev H, but only as the HMI's panel-button expander on its own
+I²C bus — not the legacy function-board ID scheme.
 
 ## Where each module's logic now lives
 
@@ -25,13 +26,14 @@ and **no MCP23017 expander** in the new design.
 | --- | --- |
 | `MotorControl`, `Homing`, `Safety` (limits/faults) | FluidNC `config.yaml` — native axes, homing, soft limits |
 | `Zeroing` (brass stamp) | FluidNC probe (`G38.2`), driven by the HMI |
-| `Relay` | FluidNC `relay_spindle` (`M3`/`M5`) |
+| `Relay` | FluidNC `Relay:` spindle (`M3`/`M5`) |
 | `FootSwitch` | FluidNC `macro0_pin` + `$Macro0` |
 | `RateSwitch` | HMI — rough/fine selector per ELE-09 (2 positions, not the old x1/x10/x100 bands) |
 | `MPG` | HMI — ESP32-S3 PCNT quadrature |
 | `Menu`, `Display`, `Touch` | HMI — LVGL screens |
 | `Presets`, `Settings` | HMI — NVS on the S3, **except** `softMinMm`/`softMaxMm` (see below) |
-| `IOExpander`, `FunctionBoard` | **Dropped.** No MCP23017 in the new design |
+| `IOExpander` | HMI `Buttons` — MCP23017 panel buttons, rough/fine selector, ROUTER LED |
+| `FunctionBoard` | **Dropped.** No function-board ID in the new design |
 
 ## Two things that deliberately do NOT get ported
 
@@ -55,5 +57,6 @@ ceiling, both of which can only ever be *narrower* than the commissioned envelop
 - `src/Display.cpp` — per-screen render methods and status-bar vocabulary
 - `src/Settings.cpp` — the 2 s debounced NVS flush, which **is** carried across
 - `include/config.h` — mechanical defaults, though note `steps_per_rev` and
-  `spindlePitchMm` here (1000 / 4 mm) are superseded by the spec's as-built values
-  (1600 pulses/rev at 1/8 microstepping, T8 2 mm lead → 800 steps/mm)
+  `spindlePitchMm` here (1000 / 4 mm) are superseded: Rev H uses 1600 pulses/rev at 1/8
+  microstepping on the sauter FML-P's 1.5 mm lead → 1066.67 steps/mm (derived, not yet
+  measured; see `firmware/README.md`)

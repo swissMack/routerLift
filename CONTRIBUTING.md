@@ -6,17 +6,22 @@
 - File layout: one class per `.h/.cpp` pair, named CamelCase
 - Member variables: `trailingUnderscore_`
 - Constants: in a `namespace` block in `config.h`
-- Each module exposes a single global instance (e.g. `extern MotorControl Motor;`)
+- Each module exposes a single global instance (e.g. `extern Link Motion;`)
+- GPIO numbers appear only in `hmi/include/pins.h`
 - Comments explain *why*, not *what* — assume the reader can read the code
+- `firmware/` stays stock FluidNC: `config.yaml` only, no source edits
 
 ## Safety-critical changes
 
 Any change that touches motion or fault handling needs review before merge:
 
-- `MotorControl` — soft-limit enforcement lives here
-- `Safety` — fault state machine
-- `Homing`, `Zeroing` — they suppress endstop faults during their routines
-- The `checkEndstops()` / `enforceSoftLimits()` calls in `main.cpp`
+- `firmware/config.yaml` — limits, homing, probe, STOP, relay (FluidNC owns motion safety)
+- `hmi/src/Zero.*` — Z0 validity and invalidation rules; no override anywhere
+- `hmi/src/Link.*` — the only UART writer; link-loss feed hold
+- `hmi/src/Wheel.*` — jog coalescing, look-ahead clamp, cancel-on-reversal
+
+Bench-test on the hardware with the router unpowered before opening a PR
+that touches any of the above.
 
 Bench-test on the hardware with the router unpowered before opening a PR
 that touches any of the above.
@@ -45,7 +50,8 @@ the why in the body if it isn't obvious.
 ## Build before pushing
 
 ```sh
-pio run
+pio run -e hmi
+pio run -e hmi-diag
 ```
 
 CI is not (yet) set up — verify locally.

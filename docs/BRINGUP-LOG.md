@@ -40,12 +40,11 @@ for limit inputs; real sensors go through proper terminals.
 
 ### Resume checklist (start here next session)
 
-1. **Before wiring the level shifters, check which part arrived.** The BOM
-   (`docs/BOM.md:111`) specifies a **74HCT14**. Powered at 5 V its outputs swing to 5 V, which the
-   ESP32-S3 is not rated for; powered at 3.3 V it is out of spec. The safe part is a **74LVC14
-   on 3.3 V** (5 V-tolerant inputs, same Schmitt hysteresis, two stages per channel stay
-   non-inverting). If a 74HCT14 arrived, do not connect its outputs to the S3 until this is
-   settled. Either way, `MPG::SIGNALS_INVERTED` must match the circuit.
+1. **Before wiring the level shifters, check which part arrived.** The design now specifies a
+   **74LVC14 powered from 3.3 V** (5 V-tolerant inputs, Schmitt hysteresis, two stages per
+   channel = non-inverting, `SIGNALS_INVERTED = false`). The BOM originally said 74HCT14: that
+   needs a 5 V supply and drives 5 V into the ESP32-S3. If a 74HCT14 is what arrived, do not
+   connect its outputs to the S3.
 2. ~~**Step B — join the two boards over UART.**~~ ✅ Passed later the same day — see the entry
    above. Next is the MPG through the shifters on P3 (GPIO 6/7).
 3. **Push status:** everything below is committed and pushed.
@@ -116,13 +115,13 @@ resetting FluidNC shows link lost then recovered.
 
 | # | Item | Where |
 | --- | --- | --- |
-| 1 | 74HCT14 vs 74LVC14 for the MPG shifter — see resume checklist | `docs/BOM.md:111`, `hmi/include/pins.h:30` |
-| 2 | Input conditioning: pull-up placement is a drawing decision, not in the BOM. Sensor side of the 10 kΩ is required, or a closed switch only pulls the GPIO to ~2.2 V | `docs/WIRING-RevH.md` diagram 4 |
+| 1 | ~~74HCT14 vs 74LVC14 for the MPG shifter~~ ✅ decided: **74LVC14 on 3.3 V**; BOM, drawings and code comments corrected. Still check the part that actually arrives | `docs/BOM.md` block G |
+| 2 | ~~Input-conditioning pull-up placement~~ ✅ documented: pull-up on the sensor side of the 10 kΩ, clamp + 100 nF on the GPIO side | `docs/BOM.md` block E, `docs/WIRING-RevH.md` diagram 4 |
 | 3 | Contactor coil voltage assumed 230 V AC in the wiring map | `docs/WIRING-RevH.md` diagram 5 |
-| 4 | Buck sizing (≥2 A) still justified by the old RGB panel's draw | `docs/BOM.md:29` |
-| 5 | Panel cutout 120 × 70 mm not checked against the JC4827W543C | `docs/BOM.md` |
-| 6 | Pin table says "No MCP23017", contradicting the design (pre-existing) | `docs/DESIGN-PLAN-RevH.md:65` |
-| 7 | TB6600 common anode still +5 V in one place; +3.3 V everywhere else | `docs/DESIGN-PLAN-RevH.md:77` |
+| 4 | ~~Buck sizing justified by the old RGB panel~~ ✅ re-derived: ≈0.6–0.7 A load at 5 V, ≥2 A kept for ≈3× margin | `docs/BOM.md` block A |
+| 5 | ~~Panel cutout unchecked~~ ✅ 120 × 70.2 mm from the Guition spec — still measure the board in hand before cutting | `docs/BOM.md` block F |
+| 6 | ~~Pin table said "No MCP23017"~~ ✅ corrected: expander on its own I²C bus 1 (15/16) | `docs/DESIGN-PLAN-RevH.md` |
+| 7 | ~~TB6600 common anode +5 V in one place~~ ✅ +3.3 V everywhere | `docs/DESIGN-PLAN-RevH.md` |
 | 8 | Foot-switch release edge (dead-man retract) still unverified in FluidNC | `firmware/README.md` |
 | 9 | `steps_per_mm` 1066.67 is derived, not measured — needs a dial indicator | `firmware/README.md` |
 | 10 | ~~Published wiring-map artifact still shows the old board~~ ✅ republished 2026-09-13 (version 2) | claude.ai artifact |

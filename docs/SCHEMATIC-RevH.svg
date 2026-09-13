@@ -68,7 +68,7 @@
 <text x="706" y="264" class="tiny">A2</text>
 
 <line class="rail mains" x1="744" y1="230" x2="762" y2="230"/>
-<text x="466" y="300" class="note">Router contactor: coil A1/A2 driven by the 5 V relay module (GPIO 4). Contact L1→T1 feeds the router socket.</text>
+<text x="466" y="300" class="note">Coil via relay (G4) · 230 V AC assumed — UNVERIFIED</text>
 <text x="56" y="196" class="note">E-stop breaks L to <tspan font-weight="700">both</tspan> the PSU and the contactor,</text>
 <text x="56" y="212" class="note">so it removes lift power and router power together.</text>
 <text x="56" y="236" class="warn">E-stop is hardware only — no GPIO, no firmware path.</text>
@@ -93,17 +93,17 @@
 <text x="1496" y="150" class="lbl">+3.3 V</text>
 
 <line class="rail v24" x1="960" y1="146" x2="960" y2="214"/>
-<line class="rail v24" x1="960" y1="214" x2="1620" y2="214"/>
-<text x="1626" y="218" class="lbl">→ TB6600 VCC</text>
+<line class="rail v24" x1="960" y1="214" x2="1515" y2="214"/>
+<text x="1521" y="218" class="lbl">→ TB6600 VCC</text>
 <line class="rail v5" x1="1180" y1="146" x2="1180" y2="238"/>
-<line class="rail v5" x1="1180" y1="238" x2="1620" y2="238"/>
-<text x="1626" y="242" class="lbl">→ HMI, MPG, relay</text>
+<line class="rail v5" x1="1180" y1="238" x2="1515" y2="238"/>
+<text x="1521" y="242" class="lbl">→ HMI, MPG, relay</text>
 <line class="rail v33" x1="1450" y1="146" x2="1450" y2="262"/>
-<line class="rail v33" x1="1450" y1="262" x2="1620" y2="262"/>
-<text x="1626" y="266" class="lbl">→ opto commons</text>
+<line class="rail v33" x1="1450" y1="262" x2="1515" y2="262"/>
+<text x="1521" y="266" class="lbl">→ opto commons</text>
 
 <text x="806" y="292" class="warn">⚠ PSU must be 24–36 V. NOT 48 V — TB6600 absolute max ≈40–42 V (DEV-01 constrains §2.1's range).</text>
-<text x="806" y="310" class="note">5 V budget: HMI panel + backlight ≈0.5 A, MPG ≈40 mA, relay ≈70 mA → size ≥2 A.</text>
+<text x="806" y="310" class="note">5 V budget: panel ≈0.26 A, ESP32 ≤0.25 A (WiFi), relay ≈70 mA, MPG ≈40 mA ≈ 0.6–0.7 A → ≥2 A (≈3× for TX peaks + coil inrush).</text>
 
 <!-- ================= C FLUIDNC ESP32 ================= -->
 <rect class="box" x="40" y="352" width="560" height="470"/>
@@ -215,11 +215,11 @@
 <circle cx="1420" cy="470" r="3.5" fill="#2563eb"/>
 <line class="sig" x1="1420" y1="470" x2="1470" y2="470"/>
 <text x="1476" y="474" class="lbl">→ GPIO</text>
-<line class="v33 rail" x1="1290" y1="470" x2="1290" y2="432"/>
-<rect x="1272" y="414" width="38" height="18" fill="#fff" stroke="#0891b2"/><text x="1277" y="427" class="tiny">4k7</text>
-<text x="1316" y="428" class="tiny">to +3.3 V</text>
+<line class="v33 rail" x1="1290" y1="470" x2="1290" y2="454"/>
+<rect x="1271" y="436" width="38" height="18" fill="#fff" stroke="#0891b2"/><text x="1276" y="449" class="tiny">4k7</text>
+<text x="1316" y="449" class="tiny">to +3.3 V, sensor side of 10k</text>
 <line class="sig" x1="1420" y1="470" x2="1420" y2="506"/>
-<text x="1352" y="522" class="tiny">BAT54S clamp → 3V3 / GND</text>
+<text x="1352" y="522" class="tiny">GPIO side: BAT54S → 3V3 / GND</text>
 <line class="sig" x1="1360" y1="470" x2="1360" y2="500"/>
 <text x="1212" y="504" class="tiny">100 nF</text>
 <text x="1212" y="518" class="tiny">to GND</text>
@@ -300,10 +300,10 @@
 <line class="sig" x1="866" y1="1004" x2="920" y2="1004"/>
 <line class="sig" x1="866" y1="1024" x2="920" y2="1024"/>
 <rect class="grp" x="920" y="960" width="150" height="110"/>
-<text x="932" y="980" class="pin" font-weight="700">74HCT14</text>
+<text x="932" y="980" class="pin" font-weight="700">74LVC14</text>
 <text x="932" y="996" class="tiny">2 stages / channel</text>
-<text x="932" y="1012" class="tiny">Schmitt hysteresis</text>
-<text x="932" y="1028" class="tiny">5 V → 3.3 V</text>
+<text x="932" y="1012" class="tiny">VCC 3.3 V (P4)</text>
+<text x="932" y="1028" class="tiny">5 V-tolerant in</text>
 <text x="932" y="1050" class="ok" font-size="10.5">non-inverting</text>
 <line class="sig" x1="1070" y1="1004" x2="1120" y2="1004"/>
 <text x="1078" y="998" class="lbl">→ G6</text>
@@ -312,8 +312,8 @@
 
 <text x="682" y="1098" class="warn">⚠ Level shifting IS required here — the ESP32-S3 is not 5 V tolerant.</text>
 <text x="682" y="1118" class="warn">⚠ MPG::SIGNALS_INVERTED = false</text>
-<text x="682" y="1134" class="note">The legacy value was true, assuming PC817 optos. A divider, 74LVC245 or</text>
-<text x="682" y="1150" class="note">two-stage 74HCT14 are all non-inverting. Wrong value = wheel counts backwards.</text>
+<text x="682" y="1134" class="note">Two-stage 74LVC14 is non-inverting. Not 74HCT14: it needs 4.5–5.5 V, so its</text>
+<text x="682" y="1150" class="note">outputs swing to 5 V into the S3. Wrong flag value = wheel counts backwards.</text>
 
 <text x="682" y="1180" class="note" font-weight="700">Scaling (ELE-09)</text>
 <text x="682" y="1198" class="pin" font-size="11">fine  0.01 mm/detent → 1 rev = 1 mm</text>

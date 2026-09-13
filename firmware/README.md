@@ -15,7 +15,8 @@ are not ours to get wrong. Any proposal that requires editing FluidNC's source f
    Easiest: **installer.fluidnc.com** in Chrome or Edge (Web Serial), WiFi build.
 2. Upload `config.yaml` to the board's filesystem — from the installer's file browser / terminal
    (`$Xmodem/Receive=/localfs/config.yaml`, confirm the `Received N bytes` count matches the local
-   file), or via the FluidNC web UI at `192.168.0.1` on the `FluidNC` access point.
+   file), or via the FluidNC web UI — `routerlift.local` once it has joined WiFi, or
+   `192.168.0.1` on the `FluidNC` fallback access point.
 3. `$Config/Filename=config.yaml` if it is not the default.
 4. **Restart with `$Bye`** — `$CD` shows the config loaded at the last boot, not the file on disk.
 5. Read the boot log from the first line. Any `[MSG:ERR:` line, or `Board None` with a
@@ -45,6 +46,18 @@ Board on USB only, nothing else connected:
 
 `E (…) esp_core_dump_flash: No core dump partition found!` appears on every boot. It is harmless
 — FluidNC's partition table has no core-dump area.
+
+### Console and network
+
+- **WiFi:** joins the home network as `routerlift.local` (192.168.1.82 on the bench); if it
+  cannot, it falls back to access point `FluidNC` with the default password `12345678` — change
+  it before commissioning, or `$WiFi/Mode=Off`.
+- **Telnet console, port 23:** `telnet routerlift.local 23` gives the same `?`, `$` commands and
+  messages as the USB serial port. Use it when USB serial does not enumerate (e.g. a charge-only
+  cable), or while the HMI is on UART1.
+- **`$Limits`** shows the live state of every input pin, per pin. Exit with **`!`** — any other
+  key leaves it running. A limit that reads active with the switch closed is usually a bad
+  jumper or terminal, not the GPIO.
 
 ---
 
@@ -116,12 +129,12 @@ rather than from the docs of the specific build in hand.
 | # | Item | Why it matters |
 | --- | --- | --- |
 | 1 | ✅ `uart1:` / `uart_channel1:` key names — **verified v4.1.0** | Without a second channel the HMI shares the USB port and the debug console is lost |
-| 2 | ✅ `report_interval_ms` exists — **verified v4.1.0** (boots at 100 ms); rate on the wire still to confirm with the HMI | The HMI's whole display depends on it; fallback is polling `?` |
+| 2 | ✅ `report_interval_ms` exists — **verified v4.1.0**, but it only reports **on change**, not as a heartbeat. Resolved: the HMI polls `?` every 100 ms and treats 500 ms of silence as link loss (Step B, 2026-09-13) | An idle machine in Alarm sends nothing, so without polling the HMI shows NO LINK |
 | 3 | Soft-limit envelope sign convention | We home negative and work positive — the less common orientation. Prove with `$J=` at both ends |
 | 4 | `macro0_pin` edge behaviour | Decides the foot-switch question above |
 | 5 | Macro length limits, and whether `$Macro0` can be rewritten over the wire | The press-half plan depends on it |
 | 6 | Homing pull-off failure raises a distinct alarm code | So the HMI can say "stuck switch", not just "limit" |
-| 7 | `Relay` spindle reports non-zero `S` in status | The ROUTER LED depends on reading it |
+| 7 | `Relay:` spindle reports non-zero `S` in status (the section key is `Relay:`, verified v4.1.0) | The ROUTER LED depends on reading it |
 
 ---
 
@@ -150,7 +163,9 @@ way nothing detects, because DEV-01 leaves no stall sensing to contradict a bad 
 | `steps_per_mm` | **1066.67 — derived from FML-P spec, not yet measured** | `docs/MECHANICS-RevH.md` |
 | `max_rate_mm_per_min` | 720 (12 mm/s) | Q14 |
 | `acceleration_mm_per_sec2` | 100 | Q16 |
-| `max_travel_mm` | 65 — provisional, FML-P published travel | MEC-01 |
+| `max_travel_mm` | 65 — FML-P published travel, not yet measured | MEC-01 |
+| Lead / microstepping → steps | 1.5 mm lead, 1600 pulse/rev → 1066.67 steps/mm | `docs/MECHANICS-RevH.md` |
+| TB6600 current | 1.0–1.4 A/phase, common anode +3.3 V | `docs/BOM.md` |
 | `idle_ms` | 255, never disable | Q17 |
 | Homing seek / feed | 600 / 60 mm/min | Q14–16 |
 | `pulloff_mm` | 2.0 mechanical, ~3.0 inductive | Q12 |

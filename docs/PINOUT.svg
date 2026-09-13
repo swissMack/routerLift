@@ -132,10 +132,10 @@
   <line class="lead" x1="310" y1="941" x2="430" y2="941"/><text x="240" y="946" class="fn" text-anchor="end">UART RX ← FluidNC G17</text>
 
   <rect class="pinbox" x="250" y="976" width="60" height="22" fill="#dcfce7"/><text x="258" y="992" class="pn">G6</text>
-  <line class="lead" x1="310" y1="987" x2="430" y2="987"/><text x="240" y="992" class="fn" text-anchor="end">MPG A ← 74HCT14 (P3)</text>
+  <line class="lead" x1="310" y1="987" x2="430" y2="987"/><text x="240" y="992" class="fn" text-anchor="end">MPG A ← 74LVC14 (P3)</text>
 
   <rect class="pinbox" x="250" y="1008" width="60" height="22" fill="#dcfce7"/><text x="258" y="1024" class="pn">G7</text>
-  <line class="lead" x1="310" y1="1019" x2="430" y2="1019"/><text x="240" y="1024" class="fn" text-anchor="end">MPG B ← 74HCT14 (P3)</text>
+  <line class="lead" x1="310" y1="1019" x2="430" y2="1019"/><text x="240" y="1024" class="fn" text-anchor="end">MPG B ← 74LVC14 (P3)</text>
 </g>
 
 <g>

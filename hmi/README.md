@@ -10,6 +10,35 @@ pio run -e hmi-diag     # board bring-up diagnostics
 pio device monitor
 ```
 
+Upload goes over the S3's native USB (`/dev/cu.usbmodem*`) and auto-resets. Only if the app has
+hung: hold **BOOT**, tap **RST**, then upload.
+
+`hmi-diag` skips all I²C (touch and MCP23017), waits for USB, logs display bring-up and cycles
+red/green/blue. Never leave it on a panel in service — it has no touch or buttons.
+
+## Pins (all in `include/pins.h`)
+
+| Function | GPIO | Connector |
+| --- | --- | --- |
+| UART to FluidNC | TX 18 → FluidNC 16, RX 17 ← FluidNC 17 | P4 (P5 is the same — use one) |
+| MPG A / B | 6 / 7, via a **74LVC14 on 3.3 V**, two stages per channel | P3 |
+| MCP23017 (I²C bus 1, 100 kHz) | SDA 15 / SCL 16, external 4.7 kΩ pull-ups to 3.3 V | P3 |
+| GT911 touch (I²C bus 0, on-board only) | SDA 8 / SCL 4, INT 3, RST 38 | — |
+| NV3041A QSPI panel | CS 45, SCK 47, D0–D3 21/48/40/39, backlight 1 | — |
+| Spares | 5, 9, 14 — **avoid 46** (boot strap) | P2 |
+
+The MPG shifter is non-inverting, so `MpgCfg::SIGNALS_INVERTED = false`. A 74HCT14 is the wrong
+part: it needs a 5 V supply and would drive 5 V into the S3.
+
+## Restoring the factory demo
+
+The board's original firmware is backed up in full (4 MB) at
+`~/Documents/routerLift-firmware-backups/screen-original-dashboard.bin`. Restore with:
+
+```sh
+esptool.py --chip esp32s3 write_flash 0 screen-original-dashboard.bin
+```
+
 ## Architecture invariant
 
 **This board has no motion authority (ELE-11).** Soft limits, hard limits, homing and probing are
@@ -19,20 +48,26 @@ this firmware can produce a *wrong cutting depth*; it must never produce an *uns
 `Link` is the single chokepoint — nothing else may write to the UART. That is what keeps the
 command vocabulary in `docs/UART-PROTOCOL.md` §4 exhaustive rather than aspirational.
 
+**Status polling.** `Link` sends the `?` realtime byte every 100 ms (`LinkCfg::POLL_MS`).
+FluidNC's `report_interval_ms` only reports on change, so without polling an idle machine sends
+nothing and the link reads as lost. No status for 500 ms (`LinkCfg::TIMEOUT_MS`) = link lost:
+feed hold is sent and Z0 is invalidated. Z0 stays invalid after the link recovers.
+
 ## Increments
 
 | # | Scope | State |
 | --- | --- | --- |
-| 1 | Link, handwheel, buttons, headless serial diagnostics | Built |
-| 2 | Display: Arduino_GFX NV3041A QSPI panel + GT911 touch + LVGL + main screen | Built |
-| **3** | Z0 validity, two-touch probe sequencing, named presets in NVS | **Built and compiling** |
+| 1 | Link, handwheel, buttons, headless serial diagnostics | Built. Link ✅ bench-verified (Step B); handwheel and buttons **not yet wired** |
+| 2 | Display: Arduino_GFX NV3041A QSPI panel + GT911 touch + LVGL + main screen | Built. ✅ Display and touch bench-verified |
+| 3 | Z0 validity, two-touch probe sequencing, named presets in NVS | Built. Z0 invalidation on link loss ✅ verified; probe not yet tested |
 | 4 | Cycles: standard → bit-change → dovetail → keyhole | Not started |
 | 5 | Fault log, diagnostics screen, runtime hours | Not started |
 
-Increment 3 is enough to pass bench-test steps 1, 2, 4, 5 and the probe half of 7: the panel
-renders and touch tracks, the link comes up and status is parsed, one detent moves the axis
-exactly 0.01 / 0.10 mm, the buttons and rough/fine selector read correctly, and a two-touch probe
-sets Z0 while a failed probe leaves it invalid.
+Increment 3 is enough, once the MPG, buttons and probe are wired, to attempt bench-test steps 1,
+2, 4, 5 and the probe half of 7: the panel renders and touch tracks, the link comes up and status
+is parsed, one detent moves the axis exactly 0.01 / 0.10 mm, the buttons and rough/fine selector
+read correctly, and a two-touch probe sets Z0 while a failed probe leaves it invalid. Bench
+progress is logged in `docs/BRINGUP-LOG.md`.
 
 Flash ~24% of the 3 MB app slot (`huge_app.csv`).
 
@@ -52,14 +87,15 @@ Flash ~24% of the 3 MB app slot (`huge_app.csv`).
 | `../include/pins.h` | **The only place GPIO numbers appear** |
 | `../include/config.h` | Tunable constants, each citing the Q&A item that decided it |
 
-## Two provisional values
+## Two values from the datasheet, not a measurement
 
-Both follow from the screw lead, which is unknown until a lift body is chosen and measured.
+Both follow from the sauter FML-P's published 1.5 mm screw lead. The lift body is not yet bought,
+so neither has been measured.
 
 | Where | Value | Why provisional |
 | --- | --- | --- |
-| `firmware/config.yaml` | `steps_per_mm: 800` | Assumes a 2 mm lead |
-| `include/config.h` | `MpgCfg::SCREW_LEAD_MM = 2.0` | Same assumption; sets the look-ahead clamp distance |
+| `firmware/config.yaml` | `steps_per_mm: 1066.67` | 1600 pulse/rev ÷ 1.5 mm — derived, confirm with a dial indicator |
+| `include/config.h` | `MpgCfg::SCREW_LEAD_MM = 1.5` | Same lead; sets the look-ahead clamp distance |
 
 Too large a clamp and it does nothing; too small and the wheel feels like it is dragging.
 

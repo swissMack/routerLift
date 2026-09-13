@@ -53,7 +53,7 @@
 <text x="346" y="166" class="sub">JC4827W543C · LVGL · our firmware</text>
 
 <text x="346" y="196" class="it">Wheel</text><text x="440" y="196" class="tiny">PCNT quadrature → jog commands</text>
-<text x="346" y="218" class="it">Buttons</text><text x="440" y="218" class="tiny">MCP23017 @ 0x20, polled 20 Hz</text>
+<text x="346" y="218" class="it">Buttons</text><text x="440" y="218" class="tiny">MCP23017 @ 0x20, own I²C bus 15/16, 20 Hz</text>
 <text x="346" y="240" class="it">Cycles</text><text x="440" y="240" class="tiny">scribe/rough/finish, dovetail, keyhole, bit-change</text>
 <text x="346" y="262" class="it">Zero</text><text x="440" y="262" class="tiny">Z0 validity tracking (FW-09)</text>
 <text x="346" y="284" class="it">Store</text><text x="440" y="284" class="tiny">presets + calibration in NVS</text>
@@ -74,7 +74,8 @@
 <text x="860" y="222" class="lbl" text-anchor="middle">UART</text>
 <text x="860" y="236" class="tiny" text-anchor="middle">115200</text>
 <text x="860" y="316" class="tiny" text-anchor="middle">status</text>
-<text x="860" y="330" class="tiny" text-anchor="middle">~10 Hz</text>
+<text x="860" y="330" class="tiny" text-anchor="middle">? poll 100 ms</text>
+<text x="860" y="344" class="tiny" text-anchor="middle">lost &gt;500 ms</text>
 
 <!-- ================= FLUIDNC ZONE ================= -->
 <rect class="zone2" x="900" y="90" width="560" height="350"/>
@@ -152,7 +153,7 @@
 <text x="130" y="870" class="note">Handwheel latency — the wheel now reaches the step generator through a UART hop. And a link-loss failure mode that a single-board design cannot have.</text>
 
 <text x="56" y="898" class="note" font-weight="700">Over the link:</text>
-<text x="180" y="898" class="note">HMI → <tspan font-family="ui-monospace,Menlo,monospace">$J=</tspan> jog · <tspan font-family="ui-monospace,Menlo,monospace">$H</tspan> home · <tspan font-family="ui-monospace,Menlo,monospace">G38.2</tspan> probe · <tspan font-family="ui-monospace,Menlo,monospace">M3/M5</tspan> router · <tspan font-family="ui-monospace,Menlo,monospace">! ~ 0x18 0x85</tspan> immediate.  FluidNC → <tspan font-family="ui-monospace,Menlo,monospace">&lt;Idle|MPos:…|FS:…&gt;</tspan> status at ~10 Hz.  <tspan fill="#b3261e" font-weight="700">Link loss → feed hold, Z0 invalidated.</tspan></text>
+<text x="180" y="898" class="note">HMI → <tspan font-family="ui-monospace,Menlo,monospace">$J=</tspan> jog · <tspan font-family="ui-monospace,Menlo,monospace">$H</tspan> home · <tspan font-family="ui-monospace,Menlo,monospace">G38.2</tspan> probe · <tspan font-family="ui-monospace,Menlo,monospace">M3/M5</tspan> router · <tspan font-family="ui-monospace,Menlo,monospace">! ~ 0x18 0x85</tspan> immediate.  FluidNC → <tspan font-family="ui-monospace,Menlo,monospace">&lt;Idle|MPos:…|FS:…&gt;</tspan> status, polled every 100 ms.  <tspan fill="#b3261e" font-weight="700">Link loss → feed hold, Z0 invalidated.</tspan></text>
 <text x="56" y="922" class="note" font-weight="700">The boundary that matters:</text>
 <text x="56" y="944" class="note">The HMI can ask for a bad depth. It cannot ask for an unsafe move, because soft limits, hard limits, homing and probing are all enforced on the</text>
 <text x="56" y="960" class="note">far side of the link, and the E-stop is on neither side. STOP is wired to FluidNC's own <tspan font-family="ui-monospace,Menlo,monospace">feed_hold_pin</tspan> for the same reason — it must work when the HMI does not.</text>

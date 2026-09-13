@@ -1,5 +1,11 @@
 # Architecture
 
+> **SUPERSEDED — this describes the single-board v1 design** (one ESP32 doing motion and UI, ILI9488 TFT,
+> `MotorControl`, MCP23017 board-ID, DM542). It is kept for provenance and as a porting reference for
+> `legacy/`. **Do not build from it.** The current Rev H split architecture (stock FluidNC + ESP32-S3 HMI
+> over UART) is described in `docs/DESIGN-PLAN-RevH.md`, `docs/REVIEW-RevH.md` and
+> `docs/ARCHITECTURE-DIAGRAM.svg`. See `docs/SUPERSEDED.md`.
+
 ## Module map
 
 ```

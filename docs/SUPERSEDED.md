@@ -30,5 +30,16 @@ would cause a real fault:
 Its **JC4827W543C** display board is correct. Rev H listed it here as a fifth error, claiming
 an ESP32-4827S043; bench bring-up on 2026-09-13 proved the board in hand is the JC4827W543C.
 
+## Superseded documents
+
+These keep their original names (other files link to them) but open with a banner saying they
+describe the pre-RevG single-board design.
+
+| File | Describes | Rev H equivalent |
+| --- | --- | --- |
+| `ARCHITECTURE.md` | v1 module map: `MotorControl`, `Safety`, MCP23017 board-ID, ILI9488/XPT2046 UI, one-loop state machine | `DESIGN-PLAN-RevH.md`, `REVIEW-RevH.md`, `ARCHITECTURE-DIAGRAM.svg` |
+| `UX.md` | v1 screens on the 3.5" ILI9488, x1/x10/x100 rate switch | `DESIGN-PLAN-RevH.md` Phase 4 (modules, safety invariants) and 4b; `REVIEW-RevH.md` §10 control panel; `DESIGN-QA.md` display and panel decisions |
+| `BENCH-TEST.md` | v1 9-stage bring-up ladder: DM542, MCP23017 board-ID, ILI9488 | `BRINGUP-LOG.md` (what is proven) and the Verification section of `DESIGN-PLAN-RevH.md` (the gated plan) |
+
 The current drawing set is `SCHEMATIC-RevH.svg`, `WIRING-RevH.svg`, `PINOUT.svg` and
 `ARCHITECTURE-DIAGRAM.svg`. `BOM.md` carries the full deviations table.

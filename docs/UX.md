@@ -1,5 +1,12 @@
 # UX
 
+> **SUPERSEDED — this describes the single-board v1 UI** (3.5" ILI9488 at 480×320, x1/x10/x100 rate
+> switch, SSR router power, touch MENU/PARK/POWER buttons). **Do not build from it.** Rev H uses a
+> 480×272 JC4827W543C panel, six physical buttons and a rough/fine switch. See
+> `docs/DESIGN-PLAN-RevH.md` Phase 4 (modules, safety invariants) and Phase 4b, `docs/REVIEW-RevH.md`
+> §10 (physical control panel) and `docs/DESIGN-QA.md` (display and panel decisions). The input-
+> separation principle below (MPG jogs, touch navigates) still holds. See `docs/SUPERSEDED.md`.
+
 ## Input separation
 
 | Input | Role | Rationale |

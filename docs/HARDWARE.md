@@ -1,5 +1,11 @@
 # Hardware
 
+> ⚠️ **Superseded — pre-Rev-H single-board (v1) design.** This page describes the original
+> one-ESP32 build (ILI9488, DM542, MCP23017 board-ID, ball screw). The current hardware is the
+> Rev H split design: stock FluidNC on a classic ESP32 plus a Guition JC4827W543C ESP32-S3 panel
+> over UART. Use `docs/BOM.md`, `docs/WIRING-RevH.md`, `docs/SCHEMATIC-RevH.svg`,
+> `docs/PINOUT.svg` and `docs/BRINGUP-LOG.md` instead. The body below is kept for reference only.
+
 ## Bill of materials
 
 | Item | Notes |

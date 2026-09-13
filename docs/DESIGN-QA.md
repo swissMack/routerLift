@@ -54,7 +54,9 @@ Everything below goes straight into `firmware/config.yaml` or the HMI defaults. 
 
 | Parameter | Value | Source |
 | --- | --- | --- |
-| `steps_per_mm` | **800 — PROVISIONAL** | 1/8 µstep at an *assumed* 2 mm lead. **Measure on the real lift** |
+| `steps_per_mm` | **1066.67 — PROVISIONAL** | 1/8 µstep at the FML-P's published 1.5 mm lead — derived, not measured. **Measure on the real lift** (was 800 at an assumed 2 mm lead before the FML-P was chosen) |
+| `max_travel_mm` | 65 | FML-P travel; conflicts with MEC-01 ≥75 mm (open) |
+| TB6600 current | 1.0–1.4 A/phase | Motor oversized — see Consequences below |
 | Positive direction | Bit rising; home at bottom = machine zero | Q19 |
 | Rapid | 12 mm/s (720 mm/min) | Q14–16 |
 | Plunge | 2 mm/s (120 mm/min) | Q14–16 |
@@ -190,7 +192,7 @@ calibration, diagnostics, fault detail.
 16. Acceleration — start conservative and tune, or do you have a figure in mind?
 17. **[BLOCKING]** Motor idle: disable after N seconds of inactivity, or stay energised always?
     Affects heat (ENV-03) versus holding stiffness.
-18. Stay at 1/8 microstepping (800 steps/mm), or go finer for smoothness?
+18. Stay at 1/8 microstepping (1066.67 steps/mm on the FML-P), or go finer for smoothness?
 19. Which physical direction is positive Z — bit rising? Confirm before homing is configured.
 
 ## D · Probe and Z0
