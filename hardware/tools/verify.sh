@@ -1,0 +1,14 @@
+#!/bin/sh
+# Regenerate every KiCad project, run ERC, export PDFs, cross-check pins.
+set -eu
+KICAD_CLI="${KICAD_CLI:-/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli}"
+HW="$(cd "$(dirname "$0")/.." && pwd)"
+python3 -m unittest discover -s "$HW/tools/tests"
+python3 "$HW/tools/gen_schematics.py"
+for p in motion-carrier panel-carrier system; do
+  "$KICAD_CLI" sch erc --severity-error --exit-code-violations \
+    -o "$HW/$p/$p-erc.rpt" "$HW/$p/$p.kicad_sch"
+  "$KICAD_CLI" sch export pdf -o "$HW/$p/$p.pdf" "$HW/$p/$p.kicad_sch"
+done
+python3 "$HW/tools/check_pins.py"
+echo "verify: OK"
