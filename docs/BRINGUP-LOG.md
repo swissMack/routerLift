@@ -22,9 +22,12 @@ in Alarm sends nothing and the screen showed NO LINK with correct wiring. `Link:
 sends the `?` realtime byte every 100 ms. This also settles `firmware/README.md` item 2: the
 interval setting exists but is not a heartbeat; polling is required.
 
-**Loose end:** the FluidNC board did not enumerate on the Mac during this test (only the screen's
-`usbmodem` port appeared), though it was powered and linked. Likely a charge-only cable or a
-power-only port. Needs a data cable before the next FluidNC-side test.
+**FluidNC console without USB:** the FluidNC board was running (linked, web UI up at
+`routerlift.local`) but its USB serial port did not appear on the Mac — likely a charge-only
+cable. Not needed: FluidNC's **telnet console on port 23** gives the same `?`, `$` commands and
+messages over WiFi (`routerlift.local:23`). Queried that way it reported
+`<Alarm|MPos:0.000,0.000,0.000|FS:0,0|Pn:Z>` — the `Pn:Z` means a D33/D25 limit jumper had come
+loose during wiring; reseat before relying on limit state.
 
 ---
 
