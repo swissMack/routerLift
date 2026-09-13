@@ -13,7 +13,9 @@
   `report_interval_ms` only reports on change.
 - **Waiting on the MPG level shifters.** The right part is a **74LVC14 on 3.3 V**; the BOM's
   74HCT14 needs 5 V and would drive 5 V into the S3. Check the part before wiring it.
-- **Next:** MPG through the shifters on P3 (GPIO 6/7), then the MCP23017 buttons.
+- **Next:** the foot-switch edge test (jumper on GPIO 13, no hardware needed — procedure in
+  `docs/BRINGUP-LOG.md` resume checklist); then MPG through the shifters on P3 (GPIO 6/7), then
+  the MCP23017 buttons. Foot pedal ordered 2026-09-13.
 - **Not yet done:** panel buttons and MPG unwired; HMI increments 4 and 5 not started; lift body
   not bought; `steps_per_mm` 1066.67 is derived, not measured; foot-switch release edge unverified.
 

@@ -47,7 +47,16 @@ for limit inputs; real sensors go through proper terminals.
    connect its outputs to the S3.
 2. ~~**Step B — join the two boards over UART.**~~ ✅ Passed later the same day — see the entry
    above. Next is the MPG through the shifters on P3 (GPIO 6/7).
-3. **Push status:** everything below is committed and pushed.
+3. **Foot-switch edge test — can run now, no pedal needed** (pedal ordered 2026-09-13). Decides
+   whether FluidNC's `macro0_pin` fires on release as well as press, i.e. whether the MCP A6
+   mirror wire is needed for the dead-man retract (`firmware/README.md`, "the foot switch needs
+   both edges"). Nothing can move: FluidNC is in Alarm and the macro only prints.
+   1. Over WiFi (`telnet routerlift.local 23`): `$Macro0=$G` — a print-only command.
+   2. Touch a jumper **D13 → GND** (= press), hold 2 s, remove (= release). Repeat twice.
+   3. Watch the console: `[GC:…]` parser-state output on press only → fires on assert only, keep
+      the A6 mirror; output on press **and** release → both edges fire, the mirror can go.
+   4. Restore: `$Macro0=` (empty). Record the result here and in `firmware/README.md` item 4.
+4. **Push status:** everything below is committed and pushed.
 
 ### Motion controller — FluidNC ESP32 ✅ bare-board acceptance passed
 
