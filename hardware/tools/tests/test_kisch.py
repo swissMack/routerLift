@@ -401,5 +401,38 @@ class BoxSymbolTest(unittest.TestCase):
         self.assertEqual(pins["4"].angle, 180)
 
 
+class GlobalNetStubTest(unittest.TestCase):
+    """A global label's own shape (the hex/chevron body plus its Intersheetrefs
+    text) is taller than the 2.54mm row pitch box_symbol() (and similarly dense
+    parts) use between pins - confirmed by rendering the system project's
+    PSU_24_36V and CONTACTOR boxes through kicad-cli: a global net one row away
+    from a plain-labelled neighbour landed squarely on that neighbour's own label,
+    the same failure mode POWER_STUB already exists to fix for power nets. See
+    kisch.py place()'s `stub` line."""
+
+    def _stub_length(self, s, net, globals_=()):
+        s.place("Test:R2", "R?", "1k", (50.8, 50.8), {"1": net, "2": None})
+        wire = findall(s.items, "wire")[0]
+        pts = find(wire, "pts")
+        p1, p2 = pts[1][1:], pts[2][1:]
+        return abs(p2[1] - p1[1])
+
+    def test_global_net_gets_the_longer_power_stub(self):
+        s = Sheet("t", "t", lib(), globals=("G",))
+        self.assertAlmostEqual(self._stub_length(s, "G"), kisch.POWER_STUB)
+
+    def test_non_global_net_on_the_same_sheet_keeps_the_default_stub(self):
+        s = Sheet("t", "t", lib(), globals=("G",))
+        self.assertAlmostEqual(self._stub_length(s, "OTHER"), kisch.STUB)
+
+    def test_a_sheet_that_declares_no_globals_is_unaffected(self):
+        """Sheet(globals=...) defaults to empty, so a sheet that never opts in -
+        every sheet before this task's system.py - sees no change at all: neither
+        motion-carrier.py nor panel-carrier.py pass globals, and both regenerate
+        byte-identical (checked by hand, not by this suite)."""
+        s = Sheet("t", "t", lib())
+        self.assertAlmostEqual(self._stub_length(s, "G"), kisch.STUB)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -321,7 +321,21 @@ class Sheet:
                                    [A("uuid"), self._next()]])
                 continue
             d = pin_outward(rot, pin)
-            stub = POWER_STUB if net in POWER_NETS else STUB
+            # A global label's shape (the hex/chevron body plus its Intersheetrefs
+            # text) is taller than a plain label's - measured by rendering an actual
+            # dense connector through kicad-cli: about 3.4mm total for a 1.27mm font,
+            # against the 2.54mm row pitch box_symbol() (and any similar multi-row
+            # part) uses between pins. At the default STUB, a global net one row away
+            # from a plain-labelled neighbour lands squarely on that neighbour's own
+            # label text (confirmed on the system project's PSU_24_36V and CONTACTOR
+            # boxes - system.py, mains sheet). Giving a global net the same longer
+            # stub as a power net moves it far enough out that it's no longer aligned
+            # in x with a same-side neighbour using the default stub, the same fix
+            # POWER_STUB already relies on for power-vs-plain rows. Only Sheet(globals
+            # =...) opts a sheet into this at all (self.globals defaults to empty), so
+            # it changes nothing for a sheet that never declares any - confirmed by
+            # motion-carrier and panel-carrier regenerating byte-identical.
+            stub = POWER_STUB if (net in POWER_NETS or net in self.globals) else STUB
             end = (round(point[0] + d[0] * stub, 4), round(point[1] + d[1] * stub, 4))
             self.wire(point, end)
             self.label(net, end, d, field_gap=fg)

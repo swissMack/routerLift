@@ -1,0 +1,84 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "582f3ed4-e62a-52c1-8184-c0dfd7f587a1")
+	(paper "A4")
+	(title_block
+		(title "routerLift system - Rev H")
+		(date "2026-09-13")
+		(rev "H")
+		(company "routerLift"))
+	(lib_symbols)
+	(text "Reference drawing only - not for PCB layout.\nCarrier boards: hardware/motion-carrier, hardware/panel-carrier."
+		(exclude_from_sim no)
+		(at 25.4 25.4 0)
+		(effects
+			(font
+				(size 1.8 1.8))
+			(justify left top))
+		(uuid "6501b34f-6bf5-5e8a-aaa8-600301a7e83e"))
+	(sheet
+		(at 50.8 76.2)
+		(size 30.48 10.16)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid))
+		(fill
+			(color 0 0 0 0))
+		(uuid "fcef0137-bbe8-5222-9af7-39540385d8c5")
+		(property "Sheetname" "Mains"
+			(at 50.8 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left bottom)))
+		(property "Sheetfile" "mains.kicad_sch"
+			(at 50.8 86.96 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left top)))
+		(instances
+			(project "system"
+				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1"
+					(page "2")))))
+	(sheet
+		(at 127 76.2)
+		(size 30.48 10.16)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid))
+		(fill
+			(color 0 0 0 0))
+		(uuid "cc0c7ce9-ec37-5823-8ced-1036d95ff1f9")
+		(property "Sheetname" "Low voltage"
+			(at 127 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left bottom)))
+		(property "Sheetfile" "low-voltage.kicad_sch"
+			(at 127 86.96 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left top)))
+		(instances
+			(project "system"
+				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1"
+					(page "3")))))
+	(sheet_instances
+		(path "/"
+			(page "1")))
+	(embedded_fonts no))
