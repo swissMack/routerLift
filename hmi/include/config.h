@@ -16,12 +16,13 @@ namespace LinkCfg {
 
 constexpr uint32_t BAUD = 115200;
 
-// No status report for this long => link considered lost. Five missed
-// intervals at the 10 Hz FluidNC report rate.  (docs/UART-PROTOCOL.md §7.2)
+// No status report for this long => link considered lost: feed hold is sent
+// and Z0 is invalidated. Five missed polls at 10 Hz.  (docs/UART-PROTOCOL.md §7.2)
 constexpr uint32_t TIMEOUT_MS = 500;
 
-// If FluidNC's automatic reporting is unavailable, poll '?' at this rate.
-// Verify $Report/Interval exists in the installed release first.
+// Poll '?' at this rate, always. FluidNC v4.1.0's report_interval_ms only
+// reports on change, so an idle machine (e.g. sitting in Alarm) sends nothing
+// and the link would read as lost. Bench-verified in Step B, 2026-09-13.
 constexpr uint32_t POLL_MS = 100;
 
 // One command in flight at a time. Deliberately more conservative than the
@@ -42,7 +43,8 @@ namespace MpgCfg {
 
 constexpr uint16_t PULSES_PER_REV = 100;   // ZS80-5E100S
 
-// FALSE for the 74HCT14 two-stage buffer, which is non-inverting.
+// FALSE for the 74LVC14 two-stage buffer (on 3.3 V), which is non-inverting.
+// Not a 74HCT14: that needs a 5 V supply and would put 5 V into the S3.
 // The legacy firmware used true because it assumed PC817 optocouplers.
 // Wrong value = wheel counts backwards.  (docs/BOM.md block G)
 constexpr bool SIGNALS_INVERTED = false;

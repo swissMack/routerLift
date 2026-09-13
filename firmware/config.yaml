@@ -41,9 +41,8 @@ stepping:
 # --------------------------------------------------------------------------
 # Second GRBL channel — the HMI link
 # --------------------------------------------------------------------------
-# ⚠ VERIFY these key names against the installed FluidNC release before
-#   flashing. If this release has no second channel, the HMI must share the
-#   USB serial port, which costs the debug console during bring-up.
+# Key names uart1 and uart_channel1 verified on FluidNC v4.1.0 (2026-09-13).
+#   The second channel keeps the USB serial port free as a debug console.
 uart1:
   txd_pin: gpio.17      # → HMI GPIO 17 (RX)
   rxd_pin: gpio.16      # ← HMI GPIO 18 (TX)
@@ -52,8 +51,9 @@ uart1:
 
 uart_channel1:
   uart_num: 1
-  report_interval_ms: 100    # ~10 Hz auto status. The HMI's whole display is
-                             # driven by this; without it the HMI must poll '?'.
+  report_interval_ms: 100    # Auto status, but v4.1.0 only sends it ON CHANGE -
+                             # an idle machine sends nothing. So the HMI also
+                             # polls with ? every 100 ms; 500 ms silence = link lost.
   message_level: Info
 
 # --------------------------------------------------------------------------

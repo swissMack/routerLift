@@ -8,8 +8,8 @@ static ESP32Encoder enc;
 void Wheel::begin(int8_t pinA, int8_t pinB) {
     ESP32Encoder::useInternalWeakPullResistors = puType::up;
 
-    // SIGNALS_INVERTED is false for the 74HCT14 two-stage buffer, which is
-    // non-inverting. The legacy firmware used true because it assumed PC817
+    // SIGNALS_INVERTED is false for the 74LVC14 two-stage buffer (3.3 V
+    // supply), which is non-inverting. The legacy firmware used true because it assumed PC817
     // optocouplers. Wrong value = the wheel counts backwards.
     if (MpgCfg::SIGNALS_INVERTED) enc.attachFullQuad(pinB, pinA);
     else                          enc.attachFullQuad(pinA, pinB);

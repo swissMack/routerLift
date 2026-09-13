@@ -1,6 +1,7 @@
 #pragma once
 //
-// routerLift HMI — pin map for the Guition JC4827W543C (ESP32-S3-WROOM-1-N4R8).
+// routerLift HMI — pin map for the Guition JC4827W543C (XH-S3E N4R8 module:
+// ESP32-S3, 4 MB flash, 8 MB octal PSRAM).
 //
 // THIS IS THE ONLY PLACE PIN NUMBERS APPEAR. Nothing else in hmi/ may hardcode
 // a GPIO. See docs/PINOUT.svg for the same map drawn out.
@@ -27,9 +28,11 @@ constexpr int8_t UART_RX = 17;   // <- FluidNC GPIO 17 (TX)
 constexpr int    UART_NUM = 1;
 
 // ------------------------------------------------------------ MPG handwheel
-// ZS80-5E100S, 100 PPR, 5 V, via a 74HCT14 (two stages per channel).
+// ZS80-5E100S, 100 PPR, 5 V, via a 74LVC14 powered from 3.3 V (two stages
+// per channel). Its inputs are 5 V-tolerant and its outputs swing 3.3 V. NOT a
+// 74HCT14: that needs a 5 V supply and its 5 V outputs would damage the S3.
 //
-// The 74HCT14 pair is NON-INVERTING. The legacy firmware set
+// The two-stage pair is NON-INVERTING. The legacy firmware set
 // MPG::SIGNALS_INVERTED = true because it assumed PC817 optocouplers.
 // Getting this wrong makes the wheel count backwards - see SIGNALS_INVERTED
 // in hmi/include/config.h.
