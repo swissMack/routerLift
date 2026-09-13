@@ -27,7 +27,8 @@ static Arduino_NV3041A* gfx = new Arduino_NV3041A(
     bus, GFX_NOT_DEFINED /* RST - tied to EN on this board */,
     0 /* rotation */, true /* IPS */);
 
-// GT911 on the same I2C bus as the MCP23017 expander (0x5D vs 0x20).
+// GT911 on the board's own I2C bus (Wire, 8/4). The MCP23017 has a separate
+// bus - see Buttons.cpp.
 static TAMC_GT911 ts(Pins::I2C_SDA, Pins::I2C_SCL,
                      Pins::TOUCH_INT, Pins::TOUCH_RST, 480, 272);
 
@@ -124,7 +125,8 @@ bool Display::begin() {
 #endif
 
     // Quarter-screen draw buffer in internal RAM, as the vendor demo does.
-    // The 261 KB panel framebuffer lives in PSRAM and is Arduino_GFX's problem.
+    // No panel framebuffer on this board: flush_cb writes straight to the
+    // NV3041A over QSPI, so this buffer is the only copy of the pixels.
     const uint32_t px = (uint32_t)w_ * h_ / 4;
     buf = (lv_color_t*)heap_caps_malloc(sizeof(lv_color_t) * px,
                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);

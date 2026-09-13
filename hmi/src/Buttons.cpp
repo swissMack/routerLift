@@ -3,6 +3,10 @@
 
 Buttons Panel;
 
+// The expander has its own I2C controller (bus 1) on connector P3. The
+// board's Wire bus (8/4) belongs to the touch panel and reaches no connector.
+static TwoWire McpBus(1);
+
 // MCP23017 registers (IOCON.BANK = 0, the power-on default)
 static constexpr uint8_t REG_IODIRA = 0x00;
 static constexpr uint8_t REG_IODIRB = 0x01;
@@ -11,29 +15,30 @@ static constexpr uint8_t REG_GPIOA  = 0x12;
 static constexpr uint8_t REG_OLATB  = 0x15;
 
 static bool wr(uint8_t reg, uint8_t val) {
-    Wire.beginTransmission(Pins::MCP_ADDR);
-    Wire.write(reg);
-    Wire.write(val);
-    return Wire.endTransmission() == 0;
+    McpBus.beginTransmission(Pins::MCP_ADDR);
+    McpBus.write(reg);
+    McpBus.write(val);
+    return McpBus.endTransmission() == 0;
 }
 
 static bool rd(uint8_t reg, uint8_t& out) {
-    Wire.beginTransmission(Pins::MCP_ADDR);
-    Wire.write(reg);
-    if (Wire.endTransmission(false) != 0) return false;
-    if (Wire.requestFrom((int)Pins::MCP_ADDR, 1) != 1) return false;
-    out = Wire.read();
+    McpBus.beginTransmission(Pins::MCP_ADDR);
+    McpBus.write(reg);
+    if (McpBus.endTransmission(false) != 0) return false;
+    if (McpBus.requestFrom((int)Pins::MCP_ADDR, 1) != 1) return false;
+    out = McpBus.read();
     return true;
 }
 
 bool Buttons::begin() {
 #ifdef HMI_DIAG_NO_I2C
-    // Diagnostic build: I2C shares GPIO 19/20 with the S3's native USB, so
-    // starting it kills the serial log. Leave the expander absent.
+    // Diagnostic build: no I2C at all, so display bring-up can be observed
+    // with nothing else on the buses.
     present_ = false;
     return false;
 #endif
-    Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL, 400000);
+    // 100 kHz, not 400: this bus leaves the board on a cable to the panel.
+    McpBus.begin(Pins::MCP_SDA, Pins::MCP_SCL, 100000);
 
     // Port A all inputs with pull-ups; buttons are NO to GND so pressed = LOW.
     // Port B all outputs for indicators.

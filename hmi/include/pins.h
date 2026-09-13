@@ -40,13 +40,20 @@ constexpr int8_t MPG_A = 6;
 constexpr int8_t MPG_B = 7;
 
 // ---------------------------------------------------------------------- I2C
-// Shared bus: GT911 touch controller (0x5D) + MCP23017 expander (0x20).
-// On the JC4827W543 this bus is on 8/4, clear of the S3's native USB pins
-// (19/20) - so starting I2C no longer kills the serial console.
+// Two buses, because the board's own touch bus reaches no connector.
+//
+// Bus 0 (Wire) - on-board GT911 touch controller (0x5D) only. GPIO 8/4 are
+// routed to the touch panel and nowhere else. Clear of the S3's native USB
+// pins (19/20), so starting I2C does not kill the serial console.
 constexpr int8_t I2C_SCL = 4;
 constexpr int8_t I2C_SDA = 8;
-constexpr uint8_t MCP_ADDR   = 0x20;
 constexpr uint8_t GT911_ADDR = 0x5D;
+
+// Bus 1 - MCP23017 panel-button expander (0x20), on connector P3.
+// Needs external 4.7 kOhm pull-ups to 3.3 V on both lines at the expander.
+constexpr int8_t MCP_SDA = 15;
+constexpr int8_t MCP_SCL = 16;
+constexpr uint8_t MCP_ADDR = 0x20;
 
 // -------------------------------------------------------------- Touch GT911
 // INT also selects the GT911's I2C address during reset. GPIO 3 is a strap
@@ -76,14 +83,10 @@ constexpr int8_t TFT_BL  = 1;
 //   P1  GND · RXD · TXD · +5V      (UART0 + 5 V in)
 // GPIO 46 is a boot strap - never drive it from outside at power-up.
 //
-// OPEN: the touch I2C bus (8/4) reaches no connector, so the MCP23017 cannot
-// share it as Rev H planned. Proposed: a second I2C bus on 15/16 (P3). Not
-// wired or coded yet - Buttons.cpp still starts Wire on I2C_SDA/I2C_SCL.
+// Allocated: P3 = MPG A/B (6/7) + MCP I2C (15/16); P4 = UART (17/18).
 constexpr int8_t SPARE_A = 5;
 constexpr int8_t SPARE_B = 9;
 constexpr int8_t SPARE_C = 14;
-constexpr int8_t SPARE_D = 15;
-constexpr int8_t SPARE_E = 16;
 
 // ------------------------------------------------- Committed by the board
 // Listed so nobody reassigns them by accident. Do not use.

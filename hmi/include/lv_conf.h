@@ -9,15 +9,16 @@
 #define LV_CONF_H
 
 // ---- colour ---------------------------------------------------------------
-// RGB565 to match the ILI6485 panel. LV_COLOR_16_SWAP stays 0 because
+// RGB565 to match the NV3041A panel. LV_COLOR_16_SWAP stays 0 because
 // Arduino_GFX's draw16bitRGBBitmap already expects native byte order.
 #define LV_COLOR_DEPTH 16
 #define LV_COLOR_16_SWAP 0
 
 // ---- memory ---------------------------------------------------------------
-// LVGL's own heap, separate from the draw buffer and the panel framebuffer.
-// The framebuffer (480x272x2 = 261 KB) lives in PSRAM, which is why
-// board_build.arduino.memory_type = qio_opi is mandatory.
+// LVGL's own heap, separate from the draw buffer. The JC4827W543C's QSPI
+// panel keeps its own pixels, so there is no framebuffer in RAM. The module
+// still has octal PSRAM, so board_build.arduino.memory_type = qio_opi stays
+// mandatory - quad mode fails the PSRAM ID read and boot-loops.
 #define LV_MEM_CUSTOM 0
 #define LV_MEM_SIZE (48U * 1024U)
 

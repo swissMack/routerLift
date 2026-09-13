@@ -1,17 +1,14 @@
 #pragma once
 //
-// Display — RGB panel, GT911 touch, and LVGL plumbing.
+// Display — NV3041A QSPI panel, GT911 touch, and LVGL plumbing.
 //
-// The panel constructor and timings are copied VERBATIM from the vendor demo
-// at docs/4.3inch_ESP32-4827S043.zip:
-//   1-Demo/Demo_Arduino/3_3-4_TFT-LVGL-Widgets/LvglWidgets/
+// Board: Guition JC4827W543C. The QSPI bus and NV3041A constructor follow the
+// Guition vendor example; pins are in hmi/include/pins.h. The panel is IPS and
+// needs colour inversion, and both GT911 axes are mirrored against the panel
+// at rotation 0.
 //
-// Do not "improve" them from the datasheet. The demo is what is proven to work
-// on this board; the porch and pclk values in particular are not obvious and
-// getting them wrong gives a rolling or blank panel rather than a clean error.
-//
-// The zip is gitignored (112 MB, over GitHub's file limit) and exists only on
-// the build machine.
+// docs/4.3inch_ESP32-4827S043.zip is the vendor pack for a different (RGB
+// parallel) board and is not a reference for this one.
 
 #include <Arduino.h>
 #include <lvgl.h>
