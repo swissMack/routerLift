@@ -292,8 +292,9 @@ flowchart LR
 
 ## 6 · Operator panel
 
-The panel holds everything that depends on job state: presets, zero validity, cycles. Five buttons
-and the selector go through an MCP23017 on the touch controller's I²C bus, so they cost no GPIOs.
+The panel holds everything that depends on job state: presets, zero validity, cycles. The board is a
+Guition JC4827W543C, which brings only ten GPIOs out to JST 1.25 mm connectors. Five buttons and
+the selector go through an MCP23017 on its own I²C bus, because the touch bus reaches no connector.
 
 ```mermaid
 flowchart LR
@@ -305,12 +306,13 @@ flowchart LR
 
   MPG["MPG ZS80<br/>100 PPR, 5 V"] -->|"A, B at 5 V"| LS["Level shifter<br/>see warning below"]
   B5["Buck 5 V"] --> MPG
-  LS -->|"A to GPIO 11"| S3
-  LS -->|"B to GPIO 12"| S3
+  LS -->|"A to GPIO 6, P3"| S3
+  LS -->|"B to GPIO 7, P3"| S3
 
-  S3["ESP32-S3 panel<br/>ESP32-4827S043"]
-  S3 -->|"SCL 20, SDA 19"| BUS["I²C bus"]
-  BUS --> GT["GT911 touch<br/>0x5D, on board"]
+  S3["ESP32-S3 panel<br/>Guition JC4827W543C"]
+  S3 -->|"SDA 8, SCL 4<br/>on board only"| TBUS["I²C bus 0"]
+  TBUS --> GT["GT911 touch<br/>0x5D, on board"]
+  S3 -->|"SDA 15, SCL 16, P3"| BUS["I²C bus 1<br/>4.7 kΩ pull-ups to 3.3 V"]
   BUS --> MCP["MCP23017<br/>address 0x20"]
 
   A0["A0 CYCLE START"] --> MCP
@@ -327,7 +329,7 @@ flowchart LR
   STOP["STOP button"] -.->|"wires to motion GPIO 21,<br/>not to this board"| FST["Motion ESP32"]
 
   class S3,GT,MCP board
-  class BUS,FRX,FTX,FST v33
+  class BUS,TBUS,FRX,FTX,FST v33
   class MPG,B5 v5
   class A0,A1,A2,A3,A4,A5,A6,LED,STOP field
   class LS warn
@@ -335,14 +337,16 @@ flowchart LR
 
 | Panel pin | Signal | Notes |
 | --- | --- | --- |
-| GPIO 18 | UART TX → motion GPIO 16 | 3.3 V both ends, no shifter. Also join GND |
-| GPIO 17 | UART RX ← motion GPIO 17 | 115200 baud |
-| GPIO 11 · 12 | MPG A · B | Must arrive at 3.3 V |
-| GPIO 20 · 19 | I²C SCL · SDA | Shared with the on-board GT911 |
+| GPIO 18 (P4) | UART TX → motion GPIO 16 | 3.3 V both ends, no shifter. Also join GND (P4) |
+| GPIO 17 (P4) | UART RX ← motion GPIO 17 | 115200 baud. P5 carries the same signals — use one, not both |
+| GPIO 6 · 7 (P3) | MPG A · B | Must arrive at 3.3 V |
+| GPIO 15 · 16 (P3) | I²C bus 1 SDA · SCL | MCP23017 only, 100 kHz, 4.7 kΩ pull-ups to 3.3 V |
+| P4 GND · 3.3V | Power for shifter and expander | P3 has no power pins |
 | MCP A0–A5 | Buttons and selector | Dry contact to GND, internal pull-ups |
 | MCP A6 | Foot switch mirror | Plan still unverified — see `firmware/README.md` |
 | MCP B0 | ROUTER LED | Lit = live, blinking = warming up |
-| GPIO 10 · 13 | Spare | GPIO 0 is a boot strap: never a button |
+| GPIO 5 · 9 · 14 (P2) | Spare | GPIO 46 (P2) is a boot strap: never drive it at power-up |
+| GPIO 8 · 4 | Touch I²C | On-board GT911 only; reaches no connector |
 
 > ⚠️ **Open design issue — MPG level shifter.** `docs/BOM.md` specifies a **74HCT14**. A 74HCT14
 > needs a 5 V supply, and then its outputs swing to 5 V, which can damage the S3's inputs. Use a

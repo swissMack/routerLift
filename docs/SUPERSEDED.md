@@ -12,10 +12,10 @@ never as a build reference.
 ## Why they are wrong to build from
 
 `superseded-SCHEMATIC.svg` predates the split architecture entirely. FluidNC does not run
-on the ESP32-S3, and the S3's RGB panel cannot carry the machine's pin budget, so one
+on the ESP32-S3, and the S3 panel board cannot carry the machine's pin budget, so one
 controller can no longer do both jobs.
 
-`superseded-wiring_diagram.svg` is closer but wrong in five specific ways, each of which
+`superseded-wiring_diagram.svg` is closer but wrong in four specific ways, each of which
 would cause a real fault:
 
 1. **MPG on FluidNC GPIO 34/35.** The handwheel now goes to the HMI board. Those pins are
@@ -26,8 +26,9 @@ would cause a real fault:
 3. **`ENA±` marked n/c.** Leaves the motor energised at 2.8 A/phase permanently with no way
    for FluidNC to de-energise it. Now wired to GPIO 14.
 4. **No STOP button.** STOP now lands on FluidNC GPIO 21 as `feed_hold_pin`.
-5. **Display board is a JC4827W543C.** The board in hand is an ESP32-4827S043 with a
-   completely different panel interface and pinout.
+
+Its **JC4827W543C** display board is correct. Rev H listed it here as a fifth error, claiming
+an ESP32-4827S043; bench bring-up on 2026-09-13 proved the board in hand is the JC4827W543C.
 
 The current drawing set is `SCHEMATIC-RevH.svg`, `WIRING-RevH.svg`, `PINOUT.svg` and
 `ARCHITECTURE-DIAGRAM.svg`. `BOM.md` carries the full deviations table.

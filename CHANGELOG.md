@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — HMI board correction
+
+Bench bring-up on 2026-09-13 showed the panel in hand is a **Guition
+JC4827W543C**, not the Sunton ESP32-4827S043 that Rev H recorded. Spec Annex
+B.10 was right; Rev H's "correction" of it was mistaken.
+
+### Fixed
+
+- HMI targets the JC4827W543C (XH-S3E N4R8 module): NV3041A panel over 4-bit
+  QSPI (CS 45, SCK 47, D0–D3 21/48/40/39), IPS colour inversion, backlight on
+  GPIO 1
+- GT911 touch on the board's own I²C bus, SDA 8 / SCL 4, INT 3, RST 38. Both
+  touch axes are flipped in firmware to match the panel at rotation 0
+- MCP23017 button expander moved to its own I²C bus on GPIO 15 SDA / 16 SCL
+  (connector P3), with external 4.7 kΩ pull-ups — the touch bus reaches no
+  connector
+- MPG A/B moved from GPIO 11/12 to 6/7 (connector P3); 11/12 are TF-card lines
+  on this board
+- `huge_app.csv` partitions — the stock 8 MB table boot-looped on 4 MB flash
+- `memory_type = qio_opi` confirmed: PSRAM is octal, quad fails the ID read
+
+### Added
+
+- `hmi-diag` PlatformIO environment for board bring-up
+
 ## [Unreleased] — Rev H split architecture
 
 The single-ESP32 design is superseded. Motion moves to stock FluidNC on a

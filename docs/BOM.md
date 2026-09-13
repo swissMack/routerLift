@@ -95,11 +95,13 @@ on a broken wire.
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Touch display board | **ESP32-4827S043** — ESP32-S3-N4R8, 4.3" 480×272 IPS, ILI6485 **RGB parallel**, GT911 touch | ✅ | ⚠️ Spec Annex B.10 wrongly records a JC4827W543C (NV3041A QSPI). Corrected in Rev H |
+| 1 | Touch display board | **Guition JC4827W543C** — XH-S3E N4R8 (ESP32-S3, 4 MB flash, 8 MB octal PSRAM), 4.3" 480×272 IPS, NV3041A **QSPI**, GT911 touch | ✅ | Matches spec Annex B.10. Rev H wrongly recorded an ESP32-4827S043; bench bring-up 2026-09-13 confirmed the JC4827W543C |
 | 1 | Panel cutout / bezel | 120 × 70 mm module | 🛒 | Confirm against the board in hand |
+| 2 | Pull-up resistor | 4.7 kΩ, to 3.3 V | 🛒 | MCP23017 I²C bus (GPIO 15 SDA / 16 SCL) |
 
-> The RGB bus consumes 20 GPIOs and octal PSRAM takes 33–37, leaving ~6 usable pins.
-> **The TF card slot is sacrificed** to free GPIO 10–13.
+> Only ten GPIOs reach connectors: P2 IO46 · IO9 · IO14 · IO5, P3 IO6 · IO7 · IO15 · IO16,
+> P4/P5 IO17 · IO18 (P4 and P5 carry the same signals — use one). GPIO 46 is a boot strap.
+> The touch I²C bus (8/4) and the TF card lines (10–13) reach no connector.
 
 ## G · MPG handwheel and level shifting
 
@@ -120,7 +122,7 @@ switch. Deliberately split across both boards.
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | I/O expander | **MCP23017**, I²C, addr **0x20** | 🛒 | On the HMI's existing bus (SCL 20 / SDA 19) alongside the GT911 at 0x5D. **Costs zero GPIOs.** 16 I/O, 10 spare |
+| 1 | I/O expander | **MCP23017**, I²C, addr **0x20** | 🛒 | On its own I²C bus, GPIO 15 SDA / 16 SCL (connector P3), 100 kHz, external 4.7 kΩ pull-ups. The touch bus reaches no connector. **Costs two GPIOs.** 16 I/O, 10 spare |
 | 6 | Push button | Momentary NO, panel mount, ≥16 mm | 🛒 | Dry contacts to GND, expander internal pull-ups |
 | 1 | Rough/fine selector | SPDT toggle → GND | 🛒 | ELE-09: 2 positions, not the legacy 3-band x1/x10/x100 |
 | 1 | Indicator LED | Panel mount, + series resistor | 🛒 | ROUTER only — lit = live, blinking = warming |
@@ -148,8 +150,8 @@ an HMI state machine — so they cannot move without forking FluidNC.
 > STOP as a flush round button, mounted well apart. **Two red mushrooms with different behaviours
 > is a dangerous panel.**
 
-**Side benefit:** moving rough/fine and cycle start onto the expander frees HMI `G10` and `G13`,
-taking the S3 from zero spare GPIOs to three. `legacy/src/IOExpander.cpp` also becomes reusable —
+**Side benefit:** keeping rough/fine and cycle start on the expander leaves three of the board's ten
+connector GPIOs spare (5, 9, 14). `legacy/src/IOExpander.cpp` also becomes reusable —
 port the polling and debounce, drop the board-ID logic.
 
 ## Enclosure, connectors and cable
@@ -192,9 +194,9 @@ freed by moving the MPG to the HMI board. With these reserved, option B becomes 
 
 | Item | RevG says | As built | Where corrected |
 | --- | --- | --- | --- |
-| Display board | JC4827W543C, NV3041A QSPI | **ESP32-4827S043**, ILI6485 RGB parallel | Rev H, Annex B.10 |
+| Display board | JC4827W543C, NV3041A QSPI | **Same — not a deviation.** Rev H's ESP32-4827S043 record was wrong (bench, 2026-09-13) | Annex B.10 stands |
 | Handwheel | ZS61 (60 mm dial) | **ZS80** (80 mm dial), same 100 PPR | Rev H, Annex B.8 |
 | PSU range | 24–48 V (ELE-01) | **24–36 V** | Already noted §2.1 under DEV-01 |
 | TB6600 common | +5 V | **+3.3 V** | Rev H, Annex B.9 |
 | `ENA±` | n/c | **Wired to GPIO 14** | Rev H, Annex B.9 |
-| MPG pins | FluidNC GPIO 34/35 | **HMI GPIO 11/12**; 34/35 reserved for feedback | Rev H, Annex B.9 |
+| MPG pins | FluidNC GPIO 34/35 | **HMI GPIO 6/7**; 34/35 reserved for feedback | Rev H, Annex B.9 |

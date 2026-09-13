@@ -29,7 +29,7 @@ The mechanics. Which commercial lift body will be motorised is unknown, and that
 
 ## 2. Executive summary
 
-A single ESP32 cannot do this job. FluidNC — the motion firmware chosen for its proven homing, soft limits, probing and jog handling — does not run on the ESP32-S3, and the ESP32-S3 display board's RGB parallel panel consumes 20 GPIOs, leaving it unable to carry the machine's pin budget. The design therefore uses **two controllers**:
+A single ESP32 cannot do this job. FluidNC — the motion firmware chosen for its proven homing, soft limits, probing and jog handling — does not run on the ESP32-S3, and the ESP32-S3 display board brings only ten GPIOs out to connectors, leaving it unable to carry the machine's pin budget. The design therefore uses **two controllers**:
 
 - A **standard ESP32 running stock FluidNC** for all motion and all safety enforcement. It is configured entirely by one YAML file; we write no code for it.
 - An **ESP32-S3 on a 4.3" touch panel** as the operator interface, running our firmware. It acts as a GRBL sender over a UART link.
@@ -48,7 +48,7 @@ The design is more capable than the commercial FXBB FräsLift V3 it is modelled 
 
 | | |
 | --- | --- |
-| **Forced by** | FluidNC does not run on the ESP32-S3, and the S3's RGB panel consumes 20 GPIOs |
+| **Forced by** | FluidNC does not run on the ESP32-S3, and the S3 board exposes only ten GPIOs on connectors |
 | **Gained** | Motion stays a stock, proven binary configured by one file. Homing, limits, probing and jogging are not ours to get wrong |
 | **Paid** | Handwheel latency through a UART hop, and a link-loss failure mode that a single-board design cannot have |
 
@@ -68,7 +68,7 @@ The design is more capable than the commercial FXBB FräsLift V3 it is modelled 
 | --- | --- | --- |
 | Controller architecture | Split: FluidNC ESP32 + ESP32-S3 HMI | Forced — see 3.1 |
 | Old firmware | Retired to `legacy/`, kept unbuilt as reference | Preserves menu structure and NVS patterns worth porting |
-| Display board | ESP32-4827S043, RGB parallel | The board in hand. **Not** what RevG records |
+| Display board | Guition JC4827W543C, NV3041A QSPI | The board in hand, as RevG records. Confirmed at bench bring-up 2026-09-13 |
 | I/O split | Operator inputs on the S3; every safety-relevant input on FluidNC | Keeps safety off the UART link |
 | UART protocol | GRBL / G-code, HMI as sender | Keeps FluidNC stock — no fork, no custom build |
 | Soft limits | Commissioning-only in `config.yaml` | An operator must not be able to widen their own envelope |
@@ -86,12 +86,12 @@ These are the changes a reviewer should scrutinise most closely. Each was made f
 
 | # | RevG says | This design does | Why |
 | --- | --- | --- | --- |
-| 1 | Display is a JC4827W543C with NV3041A QSPI panel (Annex B.10) | **ESP32-4827S043 with ILI6485 RGB parallel panel** | The board in hand. The RGB bus takes 20 GPIOs versus ~6 for QSPI, which drives the whole pin strategy and forces sacrificing the TF card |
+| 1 | Display is a JC4827W543C with NV3041A QSPI panel (Annex B.10) | **Withdrawn — no deviation** | Rev H recorded an ESP32-4827S043 RGB parallel board here. That was mistaken: bench bring-up on 2026-09-13 confirmed the board in hand is the JC4827W543C, so RevG was correct |
 | 2 | Handwheel is a ZS61, 60 mm dial (Annex B.8) | **ZS80, 80 mm dial** | The unit in hand. Same 100 PPR and electricals, so scaling is unchanged; rim travel per detent improves from 1.88 mm to 2.51 mm |
 | 3 | HMI is display-only, no motion authority (ELE-11) | **HMI owns the handwheel, buttons and cycle logic** | A display-only HMI cannot host the operator controls the machine needs. ELE-11's *safety* invariant is preserved; its *scope* wording is not |
 | 4 | TB6600 common anode at +5 V (Annex B.9) | **+3.3 V** | At 5 V the ESP32's logic high leaves 1.7 V across the input optocoupler, above its LED drop, so it never fully turns off. Causes missed steps at rapid — silent depth error under DEV-01 |
 | 5 | `ENA±` not connected (Annex B.9) | **Wired to GPIO 14** | Without it the motor holds 2.8 A/phase indefinitely with no way to de-energise, against ENV-03 |
-| 6 | MPG on FluidNC GPIO 34/35 (Annex B.9) | **HMI GPIO 11/12 behind a 74HCT14** | Follows the I/O split. Flips `MPG::SIGNALS_INVERTED` to `false`, since a two-stage Schmitt buffer is non-inverting where the assumed PC817 optos were not |
+| 6 | MPG on FluidNC GPIO 34/35 (Annex B.9) | **HMI GPIO 6/7 behind a 74HCT14** | Follows the I/O split. Flips `MPG::SIGNALS_INVERTED` to `false`, since a two-stage Schmitt buffer is non-inverting where the assumed PC817 optos were not |
 | 7 | Soft limits operator-editable (legacy `Settings.cpp`) | **Commissioning-only** | Prevents an operator widening their own protection, and keeps a safety-relevant setting out of HMI write access |
 
 **Consequential reservation:** GPIO 34 and 35, freed by deviation 6, are reserved rather than reused — 35 as `DRIVER_ALARM`, so that closing DEV-01 later is a configuration edit and not a rewire.
@@ -250,7 +250,7 @@ Only then: router at lowest speed with no bit in the collet, then production cut
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | **`steps_per_mm` is an assumption** | Every depth figure is provisional | Measure the actual lead with a dial indicator before trusting any cut |
-| RGB panel and LVGL on ~6 free pins | Bring-up failure or display corruption | Vendor demo is the working reference; fallback is moving UART to 43/44 and losing the console |
+| QSPI panel and LVGL with ten connector GPIOs | Bring-up failure or running out of pins | Guition vendor example and the `hmi-diag` env are the working reference; three GPIOs spare (5, 9, 14) plus ten expander I/O |
 | FluidNC key names unverified | `config.yaml` may not load as written | Check the second-UART and macro keys against the installed release |
 | Cycle logic lives in the HMI | An HMI bug can give a wrong depth | Accepted — FluidNC independently enforces limits, homing and probing, so it cannot give an unsafe move |
 | Handwheel latency | Poor feel on the primary control | Tune report rate and jog chunk size; judge at bench step 5 |

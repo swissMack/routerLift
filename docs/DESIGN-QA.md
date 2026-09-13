@@ -125,9 +125,9 @@ without the fork problem.
 | — | rough/fine switch | MCP23017 A5 | MPG scale (ELE-09) | — |
 | — | ROUTER LED | MCP23017 B0 | lit = live, blinking = warming | — |
 
-MCP23017 at **0x20** on the HMI's existing I²C bus (SCL 20 / SDA 19, shared with the GT911 touch
-controller at 0x5D — no address conflict). Internal pull-ups, buttons to GND, polled at 20 Hz with
-debounce. Ten I/O spare for later.
+MCP23017 at **0x20** on its own I²C bus (SDA GPIO 15 / SCL GPIO 16, connector P3, external 4.7 kΩ
+pull-ups) — the GT911 touch bus is not brought out to any connector. Internal pull-ups, buttons to
+GND, polled at 20 Hz with debounce. Ten I/O spare for later.
 
 ⚠️ **STOP is a feed hold, not an E-stop.** The E-stop remains the mains-rated mushroom that kills
 the contactor. They must be physically unmistakable — E-stop as a red mushroom on yellow, STOP as
@@ -152,8 +152,8 @@ calibration, diagnostics, fault detail.
   screw is self-locking. `idle_ms: 255` becomes a preference rather than a necessity.
 - **`legacy/src/IOExpander.cpp` is reusable after all.** Previously written off as dropped; the
   MCP23017 returns on the HMI's I²C bus. Port the polling and debounce, drop the board-ID logic.
-- **Pin pressure is relieved.** Moving rough/fine and cycle start onto the expander frees `G10` and
-  `G13`, taking the HMI from zero spare GPIOs to three.
+- **Pin pressure is relieved.** The board brings only ten GPIOs out to connectors. Keeping rough/fine
+  and cycle start on the expander leaves three of them spare (GPIO 5, 9, 14).
 
 ---
 

@@ -1,11 +1,12 @@
 # HMI — ESP32-S3 operator panel
 
-Our firmware. Runs on the ESP32-4827S043 (ESP32-S3-WROOM-1-N4R8) and acts as a **GRBL sender**
-to the FluidNC board over UART.
+Our firmware. Runs on the Guition JC4827W543C (XH-S3E N4R8 module: ESP32-S3, 4 MB flash, 8 MB
+octal PSRAM) and acts as a **GRBL sender** to the FluidNC board over UART.
 
 ```sh
 pio run -e hmi          # build
 pio run -e hmi -t upload
+pio run -e hmi-diag     # board bring-up diagnostics
 pio device monitor
 ```
 
@@ -23,7 +24,7 @@ command vocabulary in `docs/UART-PROTOCOL.md` §4 exhaustive rather than aspirat
 | # | Scope | State |
 | --- | --- | --- |
 | 1 | Link, handwheel, buttons, headless serial diagnostics | Built |
-| 2 | Display: Arduino_GFX RGB panel + GT911 touch + LVGL + main screen | Built |
+| 2 | Display: Arduino_GFX NV3041A QSPI panel + GT911 touch + LVGL + main screen | Built |
 | **3** | Z0 validity, two-touch probe sequencing, named presets in NVS | **Built and compiling** |
 | 4 | Cycles: standard → bit-change → dovetail → keyhole | Not started |
 | 5 | Fault log, diagnostics screen, runtime hours | Not started |
@@ -33,7 +34,7 @@ renders and touch tracks, the link comes up and status is parsed, one detent mov
 exactly 0.01 / 0.10 mm, the buttons and rough/fine selector read correctly, and a two-touch probe
 sets Z0 while a failed probe leaves it invalid.
 
-RAM 22.5%, flash 21.8% of 4 MB.
+Flash ~24% of the 3 MB app slot (`huge_app.csv`).
 
 ## Modules
 
@@ -42,7 +43,7 @@ RAM 22.5%, flash 21.8% of 4 MB.
 | `Link.{h,cpp}` | GRBL sender. Status parsing, one-command-in-flight window, realtime bytes |
 | `Wheel.{h,cpp}` | MPG decode via PCNT, coalescing, look-ahead clamp, cancel-on-reversal |
 | `Buttons.{h,cpp}` | MCP23017 polling, debounce, short/long press, ROUTER LED |
-| `Display.{h,cpp}` | RGB panel, GT911 touch, LVGL plumbing, backlight dimming |
+| `Display.{h,cpp}` | NV3041A QSPI panel, GT911 touch, LVGL plumbing, backlight dimming |
 | `Ui.{h,cpp}` | LVGL screens. Increment 3 still builds the main screen only |
 | `Zero.{h,cpp}` | Two-touch probe sequencing and Z0 validity - the most safety-relevant logic here |
 | `Store.{h,cpp}` | NVS: named presets, plate thickness, teachable ceiling |
@@ -70,8 +71,10 @@ Too large a clamp and it does nothing; too small and the wheel feels like it is 
   collision produces a baffling "expected ']' before numeric constant" in an unrelated header.
 - **The stock `esp32-s3-devkitc-1` definition assumes 8 MB flash and no PSRAM.** This board is
   4 MB flash with 8 MB *octal* PSRAM, so `board_build.arduino.memory_type = qio_opi` and the
-  flash size overrides are both required. With the wrong memory type the panel driver has no
-  framebuffer.
+  flash size overrides are both required. Octal is confirmed on the bench: with `qio_qspi` the
+  PSRAM ID read fails.
+- **Partitions must be `huge_app.csv`.** The stock table is the 8 MB layout and boot-loops on
+  this 4 MB flash.
 - **LVGL needs `-DLV_CONF_INCLUDE_SIMPLE` and `-I hmi/include` in `build_flags`.** Without them
   it looks for `../../lv_conf.h` next to the library and the entire of LVGL fails to compile,
   with an error that points at LVGL's internals rather than at your configuration.
@@ -82,17 +85,15 @@ Too large a clamp and it does nothing; too small and the wheel feels like it is 
 
 ## The panel constructor
 
-The **timing values** in `Display.cpp` are verbatim from the vendor demo in
-`docs/4.3inch_ESP32-4827S043.zip` at `1-Demo/Demo_Arduino/3_3-4_TFT-LVGL-Widgets/`. Do not
-re-derive the porch or pclk numbers from the datasheet — wrong values give a rolling or blank
-panel rather than a clean error, which is a miserable thing to debug.
+The board is a **Guition JC4827W543C**: NV3041A over 4-bit QSPI (`Arduino_ESP32QSPI` +
+`Arduino_NV3041A`), pins from the Guition vendor example, all in `pins.h`. The constructor's
+`ips = true` is required — without it every colour comes out inverted. The GT911's axes are both
+mirrored against the panel at rotation 0, so `Display.cpp` flips them.
 
-The **API shape** differs from the demo. It targets an older Arduino_GFX; 1.6.7 moved the timings
-into `Arduino_ESP32RGBPanel` and renamed the display class from `Arduino_RPi_DPI_RGBPanel` to
-`Arduino_RGB_Display`. Same numbers, different arrangement. If you ever pin an older GFX, the
-demo's literal constructor works as written.
-
-The zip is gitignored (112 MB, over GitHub's file limit) and exists only on the build machine.
+**Wrong-board symptom worth remembering:** Rev H targeted a Sunton ESP32-4827S043 RGB panel.
+That firmware boots cleanly on this board and shows nothing — `gfx->begin()` on an RGB bus cannot
+tell no panel is attached. The gitignored `docs/4.3inch_ESP32-4827S043.zip` is that other board's
+vendor pack and is not a reference for this one.
 
 ## Z0 validity — the rules
 

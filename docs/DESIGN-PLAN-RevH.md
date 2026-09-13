@@ -17,16 +17,16 @@ Decisions taken with the user this session (these are settled — do not relitig
 | Decision | Choice |
 |---|---|
 | Old firmware | Move to `legacy/`, keep in tree as porting reference, not built |
-| Display board | **ESP32-4827S043** (RGB parallel, ILI6485) — matches `docs/4.3inch_ESP32-4827S043.zip` |
+| Display board | **Guition JC4827W543C** (NV3041A QSPI) — confirmed at bench bring-up 2026-09-13 |
 | I/O split | Operator inputs on the S3; every safety-relevant input stays on FluidNC |
 | UART protocol | GRBL/gcode — S3 acts as a GRBL sender, FluidNC stays stock |
 | Soft limits | **Commissioning-only** in `config.yaml` — no longer operator-editable (see below) |
 | Scope | Full pivot, both halves |
 
-The board choice departs from spec Annex B.10, which records a JC4827W543C with an NV3041A QSPI
-panel. The board in hand is the RGB parallel variant. **B.10 is wrong and must be corrected**
-(see Phase 5). The I/O split also departs from B.10's "HMI only" rationale and needs ELE-11
-reworded.
+The board matches spec Annex B.10, which records a JC4827W543C with an NV3041A QSPI panel. This
+plan originally claimed the board in hand was an ESP32-4827S043 RGB parallel variant and that B.10
+was wrong; bench bring-up on 2026-09-13 proved that claim mistaken. **B.10's board record stands.**
+The I/O split does depart from B.10's "HMI only" rationale and needs ELE-11 reworded.
 
 ## Target layout
 
@@ -92,7 +92,7 @@ moved to the S3.
 
 | Signal | Level | Shifter? |
 |---|---|---|
-| MPG A/B → S3 GPIO 11/12 | **5 V** | **Yes, required** — ESP32-S3 is not 5 V tolerant |
+| MPG A/B → S3 GPIO 6/7 | **5 V** | **Yes, required** — ESP32-S3 is not 5 V tolerant |
 | STEP/DIR/ENA → TB6600 | 3.3 V sinking | No — *provided* the common anode change below |
 | Limits (mechanical or NPN) | contact / open collector to 3.3 V | No — conditioning circuit covers it |
 | Probe, foot switch, selector, cycle start | dry contact to GND | No |
@@ -273,7 +273,7 @@ cannot pass. The switch tells the controller to stop; the stop guarantees it. Ch
 given DEV-01, and it means an overrun damages nothing.
 
 Other switchgear to purchase: 1 foot switch (momentary NO, GPIO 13), 1 rough/fine selector (SPDT,
-HMI GPIO 10), 1 cycle-start button (momentary, HMI GPIO 13), and 1 E-stop — **latching
+MCP23017 A5), 1 cycle-start button (momentary, MCP23017 A0), and 1 E-stop — **latching
 mushroom-head, NC, mains-rated**, since SAF-01 has it breaking L to both the PSU and the router
 contactor. Not a logic-level button.
 
@@ -351,21 +351,25 @@ Document, with worked examples:
 
 ### Pin map (the tight part)
 
-The RGB bus consumes 20 GPIOs, and the N4R8's octal PSRAM takes 33–37. **The TF card is
-sacrificed** to free 10–13. Final budget:
+The JC4827W543C brings only ten GPIOs out to its JST 1.25 mm connectors (P2 46/9/14/5, P3
+6/7/15/16, P4 17/18 with GND and 3.3 V; P5 duplicates P4). The QSPI panel, touch bus, octal PSRAM
+(33–37) and TF card (10–13) reach no connector. Final budget:
 
-| Function | GPIO |
-|---|---|
-| UART TX → FluidNC RX(16) | 18 |
-| UART RX ← FluidNC TX(17) | 17 |
-| MPG A / B (**via level shifter — see below**) | 11 / 12 |
-| I²C SCL / SDA (GT911 **+ MCP23017**) | 20 / 19 |
-| Spare | 10, 13, and 0 (BOOT strap — avoid for a panel button) |
+| Function | GPIO | Connector |
+|---|---|---|
+| UART TX → FluidNC RX(16) | 18 | P4 |
+| UART RX ← FluidNC TX(17) | 17 | P4 |
+| MPG A / B (**via level shifter — see below**) | 6 / 7 | P3 |
+| I²C bus 1 SDA / SCL (**MCP23017 only**, external 4.7 kΩ pull-ups) | 15 / 16 | P3 |
+| Spare | 5, 9, 14 | P2 |
+| Avoid | 46 (boot strap — never drive at power-up) | P2 |
 
-**Panel buttons go on an MCP23017 at 0x20, not on GPIOs.** The RGB bus leaves the S3 with three
-free pins and one of those is a boot strap, so five HMI-side buttons plus the rough/fine switch
-will not fit. The expander shares the GT911's existing I²C bus (GT911 is at 0x5D — no conflict),
-costs **zero GPIOs**, drives the ROUTER LED, and leaves ten I/O spare. Port the polling and
+P3 has no power pins; take GND and 3.3 V for the MPG shifter and the expander from P4.
+
+**Panel buttons go on an MCP23017 at 0x20, not on GPIOs.** Five HMI-side buttons plus the
+rough/fine switch and LED would use most of the ten connector pins. The expander needs its own
+I²C bus because the GT911's bus is not brought out; it costs two GPIOs, drives the ROUTER LED, and
+leaves ten I/O spare. Port the polling and
 debounce from `legacy/src/IOExpander.cpp`; drop its board-ID logic.
 
 | MCP23017 | Function |
@@ -386,23 +390,22 @@ move to FluidNC without forking it.
 ⚠️ **STOP is a feed hold, not an E-stop.** Keep them physically unmistakable — E-stop as the
 mains-rated red mushroom on yellow, STOP as a flush round button, mounted well apart.
 
-Fixed by the board: RGB bus 1, 3–9, 14, 15, 16, 21, 39–42, 45–48; backlight 2; GT911 SCL 20 /
-SDA 19 / RST 38; console 43/44. Put this map in a single `hmi/include/pins.h` and nowhere else.
+Fixed by the board: QSPI panel CS 45, SCK 47, D0–D3 21/48/40/39; backlight 1; GT911 SDA 8 /
+SCL 4 / INT 3 / RST 38; native USB 19/20; console 43/44. Put this map in a single `hmi/include/pins.h` and nowhere else.
 
 ### Project setup
 
 - `board = esp32-s3-devkitc-1`, `board_build.arduino.memory_type = qio_opi` (octal PSRAM),
-  `board_build.partitions` sized for LVGL.
-- `lib_deps`: `moononournation/GFX Library for Arduino`, `lvgl@^8.4`. Vendor `touch.h`/`touch.cpp`
-  (GT911) from the zip's `3_3-4_TFT-LVGL-Widgets` demo — that demo is the working reference for
-  panel init, LVGL glue, and touch, and its `Arduino_ESP32RGBPanel` +
-  `Arduino_RPi_DPI_RGBPanel` (480×272, 9 MHz pclk) constructor arguments should be copied verbatim.
+  `board_build.partitions = huge_app.csv` (the stock 8 MB table boot-loops on 4 MB flash).
+- `lib_deps`: `moononournation/GFX Library for Arduino`, `lvgl@^8.4`, a GT911 driver. Panel init
+  follows the Guition vendor example: `Arduino_ESP32QSPI` + `Arduino_NV3041A` (480×272, IPS
+  inversion). Both touch axes are mirrored against the panel at rotation 0.
 - LVGL draw buffers in PSRAM.
 
 ### Modules
 
 - `Link` — GRBL sender: TX queue with the `ok` window, status-report parser, connection state.
-- `Wheel` — PCNT quadrature on 11/12, 4× decode, 100 PPR. Scale per ELE-09/B.8: fine
+- `Wheel` — PCNT quadrature on 6/7, 4× decode, 100 PPR. Scale per ELE-09/B.8: fine
   0.01 mm/detent (1 rev = 1 mm), rough 0.1 mm/detent (1 rev = 10 mm). Emits jog commands via `Link`.
   Rate-limit so a fast spin cannot flood the UART.
 - `Cycles` — the §7 state machines: standard scribe/rough/finish scheduler (FW-02: equalised
@@ -469,9 +472,9 @@ inch. Worth a deliberate decision rather than an accident, though a metric shop 
 The build has already diverged from RevG in two recorded ways, so the spec needs a revision rather
 than silent drift:
 
-- **Annex B.10** — replace the JC4827W543C/NV3041A record with the ESP32-4827S043 as-built:
-  ILI6485 RGB parallel, the 20-pin bus, GT911 on 19/20, TF card sacrificed, and the resulting
-  free-pin budget.
+- **Annex B.10** — keep the JC4827W543C/NV3041A record (confirmed on the bench 2026-09-13; the
+  earlier plan to replace it with an ESP32-4827S043 was mistaken). Add the connector pin budget:
+  UART on P4, MPG and the MCP23017's own I²C bus on P3, spares on P2.
 - **ELE-11** — reword. The HMI is no longer display-only; it owns the MPG and panel inputs and
   originates jog/cycle commands. Keep the invariant that it has no *authority over safety*:
   limits, homing, probe, and the E-stop chain are unaffected by HMI failure.
@@ -494,8 +497,8 @@ Incremental, each step gating the next — no router, no bit, until the last ste
 
 1. **Build.** `pio run -e hmi` compiles. `legacy/` is not built.
 2. **Panel bring-up.** Flash the HMI; LVGL widgets render at 480×272 and GT911 touch tracks. This
-   is the highest-risk step (RGB timing, PSRAM buffers) — if it fails, diff against the vendor
-   `3_3-4_TFT-LVGL-Widgets` demo before touching anything else.
+   is the highest-risk step (panel driver, partitions, PSRAM mode) — if it fails, use the
+   `hmi-diag` env and diff against the Guition vendor example before touching anything else.
 3. **FluidNC standalone.** Upload `config.yaml`, connect over USB, confirm `$$` reads back, `$H`
    homes on the bottom switch, top limit faults, `G38.2` probes, `M3`/`M5` clicks the relay —
    all **with the motor on the bench, not mounted, and the router unplugged**.
@@ -507,8 +510,8 @@ Incremental, each step gating the next — no router, no bit, until the last ste
    worth proving rather than trusting.
 4. **Link.** Cross-wire 17/18 ↔ 16/17, confirm the HMI's status bar tracks `MPos` live as the
    axis is jogged from the USB console. Then confirm the reverse: MPG detents move the axis.
-5. **Pin-budget check.** Confirm 10/11/12/13 read correctly with the RGB panel running — a
-   conflict here shows up as display corruption, not as an input fault.
+5. **Pin-budget check.** Confirm MPG 6/7 and the expander bus on 15/16 read correctly with the
+   panel running and touch active.
 6. **Link-loss test.** Pull the UART cable mid-jog. Motion must stop or complete safely and must
    never start; the HMI must show disconnected; `$H`/limits must still work from USB.
 7. **Cycles dry-run.** Each §7 cycle end-to-end, air-cutting, router unplugged (ACC-05).
@@ -520,9 +523,8 @@ production cuts with an E-stop within arm's reach.
 
 ## Risks
 
-- **RGB panel + LVGL on a 480×272 board with 6 free pins is the main technical risk.** If GPIO
-  10–13 turn out to be committed to the TF card in hardware in a way that conflicts, the fallback
-  is moving the UART to 43/44 and giving up the serial console — decide only if measured.
+- **The HMI board's ten connector GPIOs are the main pin constraint.** Three remain spare (5, 9,
+  14); GPIO 46 is a boot strap. If more are needed, the MCP23017's ten spare I/O come first.
 - FluidNC's second-UART key names must be verified against the installed release; if the version
   in hand lacks `uart_channel1`, the HMI has to share the USB serial channel, which costs the
   debug console.

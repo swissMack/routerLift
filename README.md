@@ -41,12 +41,12 @@ needs FluidNC source edits forfeits that.
 `G38.2` probe for tool zeroing, `Relay` spindle SSR for router power with a
 2500 ms spin-up gate.
 
-**Operator panel** — ESP32-4827S043 board (ESP32-S3-WROOM-1-N4R8, 4 MB flash,
-8 MB octal PSRAM). 4.3" 480×272 RGB parallel panel via Arduino_GFX, GT911
-capacitive touch, LVGL 8.4. Six panel buttons and the rough/fine selector sit on
-an MCP23017 sharing the GT911's I²C bus — the RGB panel consumes twenty GPIOs,
-so the expander is what makes a physical control panel possible at all. MPG
-handwheel decoded on the S3's PCNT peripheral.
+**Operator panel** — Guition JC4827W543C board (XH-S3E N4R8 module: ESP32-S3,
+4 MB flash, 8 MB octal PSRAM). 4.3" 480×272 IPS NV3041A panel over QSPI via
+Arduino_GFX, GT911 capacitive touch, LVGL 8.4. The board brings only ten GPIOs
+out to connectors, so the panel buttons and the rough/fine selector sit on an
+MCP23017 on its own I²C bus (GPIO 15/16) — the touch bus is not brought out.
+MPG handwheel decoded on the S3's PCNT peripheral (GPIO 6/7).
 
 STOP is deliberately *not* on the panel: it is wired to FluidNC's own
 `feed_hold_pin`, so it halts motion even if the HMI has crashed.

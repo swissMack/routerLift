@@ -50,7 +50,7 @@
 
 <rect class="box" x="330" y="126" width="470" height="296"/>
 <text x="346" y="150" class="hdr">HMI — ESP32-S3</text>
-<text x="346" y="166" class="sub">ESP32-4827S043 · LVGL · our firmware</text>
+<text x="346" y="166" class="sub">JC4827W543C · LVGL · our firmware</text>
 
 <text x="346" y="196" class="it">Wheel</text><text x="440" y="196" class="tiny">PCNT quadrature → jog commands</text>
 <text x="346" y="218" class="it">Buttons</text><text x="440" y="218" class="tiny">MCP23017 @ 0x20, polled 20 Hz</text>
@@ -145,7 +145,7 @@
 <text x="56" y="794" class="hdr">WHY TWO CONTROLLERS</text>
 
 <text x="56" y="822" class="note" font-weight="700">Forced:</text>
-<text x="130" y="822" class="note">FluidNC does not run on the ESP32-S3, and the S3's RGB panel consumes 20 GPIOs — it cannot carry the machine's pin budget.</text>
+<text x="130" y="822" class="note">FluidNC does not run on the ESP32-S3, and the S3 board exposes only 10 GPIOs — it cannot carry the machine's pin budget.</text>
 <text x="56" y="846" class="note" font-weight="700">Gained:</text>
 <text x="130" y="846" class="note">Motion stays a stock, proven binary configured by one YAML file. Homing, limits, probing and jogging are not ours to get wrong.</text>
 <text x="56" y="870" class="note" font-weight="700">Paid:</text>

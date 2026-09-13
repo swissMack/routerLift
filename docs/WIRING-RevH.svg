@@ -105,11 +105,11 @@
 <text x="1196" y="118" class="hdr">OPERATOR PANEL</text>
 <text x="1196" y="134" class="sub">single assembly, display + buttons together</text>
 
-<text x="1196" y="162" class="it">ESP32-4827S043 — 4.3" touch</text>
+<text x="1196" y="162" class="it">JC4827W543C — 4.3" touch</text>
 <text x="1206" y="178" class="tiny">120 × 70 mm module, panel cutout</text>
 
 <text x="1196" y="204" class="it">MCP23017 @ 0x20</text>
-<text x="1206" y="220" class="tiny">on the display's own I²C bus</text>
+<text x="1206" y="220" class="tiny">own I²C bus, G15/G16 on P3</text>
 
 <text x="1196" y="246" class="it">6 buttons</text>
 <text x="1206" y="264" class="lbl">STOP*  CYCLE START  ROUTER</text>
