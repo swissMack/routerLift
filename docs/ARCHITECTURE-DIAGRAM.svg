@@ -84,7 +84,7 @@
 <text x="936" y="150" class="hdr">MOTION — ESP32 running FluidNC</text>
 <text x="936" y="166" class="sub">stock binary · config.yaml only · no code of ours</text>
 
-<text x="936" y="196" class="it">Step generation</text><text x="1090" y="196" class="tiny">trapezoidal accel, 800 steps/mm*</text>
+<text x="936" y="196" class="it">Step generation</text><text x="1090" y="196" class="tiny">trapezoidal accel, 1066.67 steps/mm*</text>
 <text x="936" y="218" class="it">Homing</text><text x="1090" y="218" class="tiny">two-stage seek + pull-off (MOT-06)</text>
 <text x="936" y="240" class="it">Hard limits</text><text x="1090" y="240" class="tiny">bottom + top, in the ISR</text>
 <text x="936" y="262" class="it">Soft limits</text><text x="1090" y="262" class="tiny">commissioning-only, checked pre-move</text>
@@ -156,6 +156,6 @@
 <text x="56" y="922" class="note" font-weight="700">The boundary that matters:</text>
 <text x="56" y="944" class="note">The HMI can ask for a bad depth. It cannot ask for an unsafe move, because soft limits, hard limits, homing and probing are all enforced on the</text>
 <text x="56" y="960" class="note">far side of the link, and the E-stop is on neither side. STOP is wired to FluidNC's own <tspan font-family="ui-monospace,Menlo,monospace">feed_hold_pin</tspan> for the same reason — it must work when the HMI does not.</text>
-<text x="56" y="982" class="tiny">* 800 steps/mm is provisional — it follows from an assumed 2 mm screw lead and must be measured on the actual lift body.</text>
+<text x="56" y="982" class="tiny">* 1066.67 steps/mm is provisional — it follows from the FML-P’s stated 1.5 mm lead and must be measured on the actual lift body.</text>
 
 </svg>

@@ -146,10 +146,10 @@
 <text x="286" y="632" class="tiny">home reference + negative limit,</text>
 <text x="286" y="646" class="tiny">machine zero per MOT-04.</text>
 
-<text x="286" y="676" class="note" font-weight="700">steps_per_mm = 800</text>
+<text x="286" y="676" class="note" font-weight="700">steps_per_mm = 1066.67</text>
 <text x="286" y="692" class="tiny">1/8 µstep ×200 = 1600 pulse/rev</text>
-<text x="286" y="706" class="tiny">T8 screw, 2 mm lead.</text>
-<text x="286" y="734" class="note" font-weight="700">max_travel_mm = 90 (provisional)</text>
+<text x="286" y="706" class="tiny">FML-P screw, 1.5 mm lead.</text>
+<text x="286" y="734" class="note" font-weight="700">max_travel_mm = 65 (FML-P)</text>
 <text x="286" y="750" class="tiny">soft limits commissioning-only —</text>
 <text x="286" y="764" class="tiny">not operator-editable.</text>
 <text x="286" y="790" class="ok">STOP on G21 = feed_hold_pin — acts</text>
@@ -183,7 +183,7 @@
 <line x1="912" y1="482" x2="960" y2="482" stroke="#16a34a" stroke-width="3"/><text x="968" y="486" class="pin">GRN → A−</text>
 <line x1="912" y1="502" x2="960" y2="502" stroke="#ca8a04" stroke-width="3"/><text x="968" y="506" class="pin">YEL → B+</text>
 <line x1="912" y1="522" x2="960" y2="522" stroke="#2563eb" stroke-width="3"/><text x="968" y="526" class="pin">BLU → B−</text>
-<text x="912" y="546" class="tiny">T8 ACME, 2 mm lead, self-locking (MEC-02)</text>
+<text x="912" y="546" class="tiny">1.5 mm lead, self-locking ~2.3° (MEC-02)</text>
 
 <text x="642" y="736" class="warn">⚠ Tie PUL+/DIR+/ENA+ to +3.3 V, NOT +5 V.</text>
 <text x="642" y="754" class="note">With a 5 V common the ESP32's 3.3 V high leaves 1.7 V across the input opto —</text>

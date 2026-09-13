@@ -141,7 +141,7 @@
 
 <text x="1196" y="614" class="it">NEMA 23 57HS76-3004A08</text>
 <text x="1206" y="630" class="tiny">coupled to the lift's own screw</text>
-<text x="1196" y="654" class="it">Lead screw — lead TBC</text>
+<text x="1196" y="654" class="it">Lead screw — 1.5 mm (FML-P)</text>
 <text x="1206" y="672" class="warn">measure before setting steps_per_mm</text>
 
 <text x="1196" y="700" class="it">Bottom switch — home + neg limit</text>
@@ -188,8 +188,8 @@
 
 <text x="56" y="782" class="warn">4 · Measure the screw lead</text>
 <text x="56" y="798" class="note">Dial indicator over a known number of</text>
-<text x="56" y="814" class="note">motor revolutions. 800 steps/mm is an</text>
-<text x="56" y="830" class="note">assumption until you have done this.</text>
+<text x="56" y="814" class="note">motor revolutions. 1066.67 steps/mm is</text>
+<text x="56" y="830" class="note">an assumption until you have done this.</text>
 
 <text x="56" y="858" class="warn">5 · Two red buttons, two meanings</text>
 <text x="56" y="874" class="note">E-stop mushroom kills mains. STOP is a</text>
