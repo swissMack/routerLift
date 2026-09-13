@@ -118,6 +118,44 @@ class ProjectTest(unittest.TestCase):
             Project("p", root, "/nonexistent").validate()
 
 
+class FieldRotationTest(unittest.TestCase):
+    """KiCad renders a symbol property's stored angle combined with the parent
+    symbol's rotation, but not by simple (parent + stored) % 360 addition - that
+    was tried and disproved by rendering a probe schematic in kicad-cli: e.g. a
+    stored angle of 0 renders upright at parent rotation 0 AND at 180, while a
+    stored angle of 180 renders upside down at both. Empirically (verified by
+    rendering all 16 parent x stored combinations of 0/90/180/270 to PDF), text
+    renders upright exactly when: stored == 0 and parent % 180 == 0, or
+    stored == 90 and parent % 180 == 90. kisch must pick the stored angle that
+    satisfies this so field text (references, values - e.g. a power-flag
+    "GND"/"+5V") never renders sideways or upside down, which is how two power
+    nets a few pins apart on a rotated connector row ended up as overlapping
+    garbled text."""
+
+    def _value_angle(self, rot):
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "A", "2": "B"}, rot=rot)
+        tree = s.to_sexpr("p", ["/x"], {("/x", s.parts[0]["uuid"]): "R1"}, {}, True)
+        sym = find(tree, "symbol")
+        self.assertEqual(find(sym, "at")[3], rot)
+        value_prop = [p for p in findall(sym, "property") if p[1] == "Value"][0]
+        return find(value_prop, "at")[3]
+
+    def test_property_angle_upright_at_0(self):
+        self.assertEqual(self._value_angle(0), 0)
+
+    def test_property_angle_upright_at_90(self):
+        self.assertEqual(self._value_angle(90), 90)
+
+    def test_property_angle_upright_at_180(self):
+        # The regression: a naive counter-rotation ((-rot) % 360) gives 180 here,
+        # which kicad-cli renders upside down - confirmed by direct PDF rendering.
+        self.assertEqual(self._value_angle(180), 0)
+
+    def test_property_angle_upright_at_270(self):
+        self.assertEqual(self._value_angle(270), 90)
+
+
 class BoxSymbolTest(unittest.TestCase):
     def test_box_pins_on_grid(self):
         sym = kisch.box_symbol("PSU", ["L", "N", "PE"], ["V+", "V-"])

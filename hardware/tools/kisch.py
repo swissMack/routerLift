@@ -365,14 +365,40 @@ class Sheet:
              [A("unit"), part["unit"]], [A("exclude_from_sim"), False],
              [A("in_bom"), not part["power"]], [A("on_board"), not part["power"]],
              [A("dnp"), part["dnp"]], [A("uuid"), part["uuid"]]]
+        # A power symbol's Value field ("GND", "+5V", ...) is auto-placed right at a
+        # net's wire stub, which on a dense 2.54mm-pitch connector row is only one row
+        # pitch from the next pin's own label. A regular part's Reference/Value uses a
+        # (2.54, 2.54) diagonal offset - the y half of that alone is a full row pitch,
+        # so it reliably lands a power net's Value text on top of the row next to it.
+        # Halving it to 1.27mm keeps it inside its own row for the common case (a power
+        # net a row or more away from its neighbours - e.g. two different power nets on
+        # a connector, or a passive's own power-net pin). On a connector with a power
+        # net on every other pin (e.g. a GND return alongside every signal) even that
+        # can still brush the neighbouring row's label at this pitch; there is no
+        # (dx, dy) that clears every case at 2.54mm pitch without a real layout change.
+        value_offset = (1.27, 1.27) if part["power"] else (2.54, 2.54)
         props = [("Reference", instances[0][1], part["power"], (2.54, -2.54)),
-                 ("Value", part["value"], False, (2.54, 2.54)),
+                 ("Value", part["value"], False, value_offset),
                  ("Footprint", part["footprint"], True, (0, 0)),
                  ("Datasheet", "", True, (0, 0))]
         props += [(k, v, True, (0, 0)) for k, v in part["fields"].items()]
+        # KiCad renders a symbol property's stored angle combined with the parent
+        # symbol's own rotation, but not by simple addition - determined empirically
+        # (see hardware/tools/tests/test_kisch.py FieldRotationTest): a stored angle of
+        # 0 renders upright whenever the part's own rotation is a multiple of 180, and
+        # a stored angle of 90 renders upright whenever it is an odd multiple of 90.
+        # Getting this wrong is how field text (references, values - e.g. a power-flag
+        # "GND"/"+5V") ends up sideways or upside down, which is how two power nets a
+        # few pins apart on a rotated connector row end up as overlapping garbled text.
+        field_angle = 0 if part["rot"] % 180 == 0 else 90
         for name, value, hidden, (dx, dy) in props:
-            e.append([A("property"), name, value, [A("at"), x + dx, y + dy, 0],
-                      _font(hide=hidden, justify=["left"])])
+            # A smaller font for a power symbol's Value only reduces how far it reaches
+            # into a neighbouring row on a dense connector (see the offset comment above)
+            # - it doesn't change position, so it stacks with that half offset instead of
+            # replacing it.
+            size = 1.0 if (part["power"] and name == "Value") else 1.27
+            e.append([A("property"), name, value, [A("at"), x + dx, y + dy, field_angle],
+                      _font(size=size, hide=hidden, justify=["left"])])
         for number in part["pins"]:
             e.append([A("pin"), number, [A("uuid"), _uid(part["uuid"] + "/" + number)]])
         e.append([A("instances"), [A("project"), project] + [
