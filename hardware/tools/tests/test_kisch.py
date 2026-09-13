@@ -389,6 +389,157 @@ class FieldGapTest(unittest.TestCase):
         self.assertGreater(value_pos(5.08), value_pos(None))
 
 
+class JogTest(unittest.TestCase):
+    """The Critical regression from Task 4 review round 1: on hardware/tools/system.py's
+    generated box symbols, a POWER_NET pin (GND/+5V) directly above a plain-net pin has
+    its own arrow/ground-symbol graphic - not just its Value text, which
+    PowerNetLegibilityTest already covers - overlap the plain pin's own label text, on
+    both left- and right-pointing rows. Confirmed by rendering the real system project
+    through kicad-cli: MOTION_CARRIER's RELAY_GND/RELAY_IN, RELAY_MODULE's GND/RELAY_IN,
+    LIMIT_SWITCH_NC's GND/HOME_SIG or TOP_SIG, FOOT_PEDAL's two GND/FOOT_* pairs,
+    STOP_BUTTON's GND/STOP_SIG, PANEL_CARRIER's LINK_GND/LINK_TX and MPG_GND/MPG_A,
+    DISPLAY_JC4827W543C's P1_GND/LEAD_P3, and MPG_ZS80's GND/MPG_A all show the same
+    failure. Mechanism: a power flag's shape (the stock "power:GND"/"power:+5V"
+    polyline) is centred on its own row and reaches about half of box_symbol()'s 2.54mm
+    row pitch either side of it; a plain label is justified against the *bottom* of its
+    anchor point (see label()), so it grows upward, toward the row above. The two
+    reaches meet almost exactly at the row boundary by construction - stub length
+    (POWER_STUB vs STUB) only moves things *along* the wire, not perpendicular to it, so
+    it cannot fix this. Reproduce the same shape - a 2-row box_symbol() with a power net
+    on row 1 and a plain net on row 2 - on both sides, using the real "power:GND"
+    polyline geometry (fixtures/power.kicad_sym matches the stock library's shape), and
+    check by bounding box (not by eye) that it overlaps without a jog and clears with
+    one, in both orientations."""
+
+    def _polyline_bbox(self, l, lib_id, at, rot):
+        """Bounding box (sheet mm) of a power symbol's own drawn polyline(s), after
+        kisch's rigid-body part rotation - the same transform pin_point() applies to
+        pins, applied here to the symbol's graphics instead, since KiCad rotates a
+        symbol's pins and its artwork together as one rigid body (confirmed against
+        the real design: see place()'s jog docstring)."""
+        sym = l.get(lib_id)
+        xs, ys = [], []
+        for sub in findall(sym, "symbol"):
+            for poly in findall(sub, "polyline"):
+                for xy in find(poly, "pts")[1:]:
+                    fake = kisch.Pin("", "", "", float(xy[1]), float(xy[2]), 0)
+                    x, y = kisch.pin_point(at, rot, fake)
+                    xs.append(x)
+                    ys.append(y)
+        return (min(xs), min(ys), max(xs), max(ys))
+
+    @staticmethod
+    def _label_bbox(x, y, text, size, justify):
+        """Like the module-level _text_bbox, but - unlike that one - actually honours
+        a vertical ("top"/"bottom") justify component instead of always centring:
+        needed here because the mechanism under test IS the vertical justify (a plain
+        label is anchored at the *bottom* of its text, so it grows upward - see
+        label()), which _text_bbox's centred approximation cannot see. Kept local to
+        this test rather than changing the shared _text_bbox, which every other test
+        in this file already relies on at its current (centred) precision."""
+        x, y, size = float(x), float(y), float(size)
+        width, height = len(text) * size, size * 1.6
+        if "right" in justify:
+            x0, x1 = x - width, x
+        elif "left" in justify:
+            x0, x1 = x, x + width
+        else:
+            x0, x1 = x - width / 2, x + width / 2
+        if "bottom" in justify:
+            y0, y1 = y - height, y
+        elif "top" in justify:
+            y0, y1 = y, y + height
+        else:
+            y0, y1 = y - height / 2, y + height / 2
+        return (x0, y0, x1, y1)
+
+    def _render(self, side, extra):
+        # A 2-row box_symbol(): GND on row 1 (top, local y = +GRID), a plain net on
+        # row 2 (bottom, local y = -GRID) - the exact shape every failing box above
+        # has, regardless of how many other rows surround it. The plain net's name
+        # ("RELAY_IN", the real one from MOTION_CARRIER) matters: it must be long
+        # enough that its label text reaches back to where GND's own longer-stub flag
+        # sits, exactly as it does in the real design - a short name like "SIG" does
+        # not reach that far and would not reproduce the collision. `side` puts both
+        # pins on the left (direction (-1, 0)) or the right (direction (1, 0)).
+        left, right = (["GND", "RELAY_IN"], []) if side == "left" else ([], ["GND", "RELAY_IN"])
+        sym = kisch.box_symbol("J", left, right)
+        l = Library(symbol_dir=FIXTURES, extra={"routerlift:J": sym})
+        s = Sheet("p", "p", l)
+        s.place("routerlift:J", "J1", "j", (50.8, 50.8),
+                {"GND": "GND", "RELAY_IN": "RELAY_IN"}, jog={"GND": extra})
+        # RELAY_IN needs a second connection (validate() rejects a one-ended net); GND
+        # is a power net so it needs none.
+        s.place("routerlift:J", "J2", "far", (152.4, 50.8),
+                {"GND": "GND", "RELAY_IN": "RELAY_IN"})
+        with tempfile.TemporaryDirectory() as d:
+            Project("p", s, d).write()
+            tree = parse((Path(d) / "p.kicad_sch").read_text())
+        gnd = [sym for sym in findall(tree, "symbol")
+               if find(sym, "lib_id")[1] == "power:GND"
+               and abs(float(find(sym, "at")[1]) - 50.8) < 30][0]
+        gnd_at = find(gnd, "at")
+        gnd_box = self._polyline_bbox(l, "power:GND",
+                                       (float(gnd_at[1]), float(gnd_at[2])),
+                                       float(gnd_at[3]))
+        sig_boxes = []
+        for lbl in findall(tree, "label"):
+            at = find(lbl, "at")
+            if lbl[1] == "RELAY_IN" and abs(float(at[1]) - 50.8) < 30:
+                justify = find(find(lbl, "effects"), "justify")[1:]
+                sig_boxes.append(self._label_bbox(at[1], at[2], "RELAY_IN", 1.27, justify))
+        self.assertEqual(len(sig_boxes), 1, "expected exactly one RELAY_IN label near J1")
+        return gnd_box, sig_boxes[0]
+
+    def test_power_directly_above_plain_overlaps_without_a_jog_left_side(self):
+        gnd_box, sig_box = self._render("left", extra=0)
+        self.assertTrue(_overlaps(gnd_box, sig_box),
+                         "expected the un-jogged fixture to reproduce the collision: "
+                         "%r vs %r" % (gnd_box, sig_box))
+
+    def test_power_directly_above_plain_overlaps_without_a_jog_right_side(self):
+        gnd_box, sig_box = self._render("right", extra=0)
+        self.assertTrue(_overlaps(gnd_box, sig_box),
+                         "expected the un-jogged fixture to reproduce the collision: "
+                         "%r vs %r" % (gnd_box, sig_box))
+
+    def test_jog_clears_the_collision_left_side(self):
+        # Left-side pins point in direction (-1, 0); perpendicular is (0, -1) (see
+        # place()'s jog docstring), so a positive extra moves GND toward smaller sheet
+        # y - up and away from SIG, which sits below it (larger sheet y).
+        gnd_box, sig_box = self._render("left", extra=2 * kisch.GRID)
+        self.assertFalse(_overlaps(gnd_box, sig_box),
+                          "GND still overlaps SIG after jogging: %r vs %r"
+                          % (gnd_box, sig_box))
+
+    def test_jog_clears_the_collision_right_side(self):
+        # Right-side pins point in direction (1, 0); perpendicular is (0, 1), so a
+        # negative extra moves GND up and away from SIG here instead.
+        gnd_box, sig_box = self._render("right", extra=-2 * kisch.GRID)
+        self.assertFalse(_overlaps(gnd_box, sig_box),
+                          "GND still overlaps SIG after jogging: %r vs %r"
+                          % (gnd_box, sig_box))
+
+    def test_omitting_jog_draws_the_same_single_straight_wire_as_before(self):
+        """Every existing caller (motion_carrier.py, panel_carrier.py, and every
+        place() call in system.py that doesn't need a jog) omits `jog` entirely, and
+        must see the exact single straight wire place() always drew."""
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "A", "2": "B"})
+        wires = findall(s.items, "wire")
+        self.assertEqual(len(wires), 2)
+        for w in wires:
+            self.assertEqual(len(find(w, "pts")) - 1, 2)
+
+    def test_zero_jog_also_draws_a_single_straight_wire(self):
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "A", "2": "B"}, jog={"1": 0})
+        wires = findall(s.items, "wire")
+        self.assertEqual(len(wires), 2)
+        for w in wires:
+            self.assertEqual(len(find(w, "pts")) - 1, 2)
+
+
 class BoxSymbolTest(unittest.TestCase):
     def test_box_pins_on_grid(self):
         sym = kisch.box_symbol("PSU", ["L", "N", "PE"], ["V+", "V-"])

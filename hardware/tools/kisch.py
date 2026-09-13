@@ -261,7 +261,7 @@ class Sheet:
         self.ports[name] = shape
 
     def place(self, lib_id, ref, value, at, nets, rot=0, unit=1, footprint="",
-              dnp=False, fields=None, field_gap=None):
+              dnp=False, fields=None, field_gap=None, jog=None):
         """nets maps pin number or unique pin name to a net name, or None for no-connect.
 
         field_gap overrides how far the Reference/Value text sits from the part's
@@ -284,24 +284,50 @@ class Sheet:
         "+3V3"/"+5V" text overlaps its own arrow's tip at some rotations (GND's flag
         clears fine at the same offset; +3V3/+5V's does not - a rendering quirk of the
         stock symbols' geometry, not something derivable, only found by rendering). See
-        test_kisch.py FieldGapTest.test_field_gap_clears_a_power_flags_own_arrow."""
+        test_kisch.py FieldGapTest.test_field_gap_clears_a_power_flags_own_arrow.
+
+        jog maps a pin number or unique pin name (same key style as `nets`) to an extra
+        sideways offset in mm (signed - either direction), inserted into that one pin's
+        wire, perpendicular to its own outward direction, before it reaches its label or
+        power flag. Optional - every existing caller that omits it (or passes an entry
+        of 0) draws the exact single straight wire it always did.
+
+        Needed for a POWER_NET (or global - see Sheet(globals=...)) pin that sits on a
+        row immediately next to a different net: a power flag is not just Value text -
+        it is the actual arrow/ground-symbol graphic from the stock power library, which
+        has a real footprint centred on its own row, reaching about half of
+        box_symbol()'s 2.54mm row pitch either side of it (confirmed by rendering
+        "power:GND" and "power:+5V" through kicad-cli and reading their stored
+        polylines). A plain label's own text reaches a comparable distance the other
+        way - it is justified against the *bottom* of its anchor point (see label()),
+        so it grows upward, toward the row above, not centred on its own row. The two
+        reaches meet almost exactly at the row boundary by construction, so on a dense,
+        many-row part (routerLift's generated box symbols - hardware/tools/system.py)
+        they visibly collide: confirmed on MOTION_CARRIER's RELAY_GND/RELAY_IN,
+        RELAY_MODULE's GND/RELAY_IN, and others. `jog` moves the power pin's own wire
+        out of the way, on the 1.27mm grid, without touching how any other pin on the
+        same part - or any other part - is drawn. See test_kisch.py JogTest, including
+        the left-side and right-side "power net directly above a plain net" case."""
         if ref.endswith("?") and unit != 1:
             raise ValueError("%s: multi-unit parts need a fixed reference" % lib_id)
         pins = self.lib.pins(lib_id, unit)
         by_name = collections.defaultdict(list)
         for p in pins.values():
             by_name[p.name].append(p)
-        resolved = collections.OrderedDict()
-        for key, net in nets.items():
+
+        def resolve(key):
             key = str(key)
             if key in pins:
-                pin = pins[key]
-            elif len(by_name.get(key, [])) == 1:
-                pin = by_name[key][0]
-            else:
-                raise ValueError("%s %s unit %d: no unique pin %r; pins are %s" % (
-                    ref, lib_id, unit, key,
-                    ", ".join("%s=%s" % (p.number, p.name) for p in pins.values())))
+                return pins[key]
+            if len(by_name.get(key, [])) == 1:
+                return by_name[key][0]
+            raise ValueError("%s %s unit %d: no unique pin %r; pins are %s" % (
+                ref, lib_id, unit, key,
+                ", ".join("%s=%s" % (p.number, p.name) for p in pins.values())))
+
+        resolved = collections.OrderedDict()
+        for key, net in nets.items():
+            pin = resolve(key)
             if pin.number in resolved:
                 raise ValueError("%s: pin %s assigned twice" % (ref, pin.number))
             resolved[pin.number] = net
@@ -309,6 +335,7 @@ class Sheet:
         if missing:
             raise ValueError("%s %s unit %d: unassigned pins %s (use None for no-connect)"
                              % (ref, lib_id, unit, ", ".join(missing)))
+        jog_by_number = {resolve(key).number: extra for key, extra in (jog or {}).items()}
         fg = STUB if field_gap is None else field_gap
         at = (_snap(at[0]), _snap(at[1]))
         self._add_part(lib_id, ref, value, at, rot, unit, footprint, dnp, fields or {},
@@ -336,8 +363,24 @@ class Sheet:
             # it changes nothing for a sheet that never declares any - confirmed by
             # motion-carrier and panel-carrier regenerating byte-identical.
             stub = POWER_STUB if (net in POWER_NETS or net in self.globals) else STUB
-            end = (round(point[0] + d[0] * stub, 4), round(point[1] + d[1] * stub, 4))
-            self.wire(point, end)
+            extra = jog_by_number.get(number, 0)
+            if extra:
+                # Perpendicular to the pin's own outward direction d: rotate d by +90
+                # degrees ((dx, dy) -> (-dy, dx)). A positive `extra` and a positive
+                # rotation direction happen to agree on-screen for every orientation
+                # this design uses; sign is otherwise just a caller convention (see the
+                # JogTest cases for both left- and right-side pins).
+                perp = (-d[1], d[0])
+                mid = (round(point[0] + d[0] * STUB, 4), round(point[1] + d[1] * STUB, 4))
+                jogged = (round(mid[0] + perp[0] * extra, 4), round(mid[1] + perp[1] * extra, 4))
+                end = (round(jogged[0] + d[0] * (stub - STUB), 4),
+                       round(jogged[1] + d[1] * (stub - STUB), 4))
+                self.wire(point, mid)
+                self.wire(mid, jogged)
+                self.wire(jogged, end)
+            else:
+                end = (round(point[0] + d[0] * stub, 4), round(point[1] + d[1] * stub, 4))
+                self.wire(point, end)
             self.label(net, end, d, field_gap=fg)
             self._count(net)
 

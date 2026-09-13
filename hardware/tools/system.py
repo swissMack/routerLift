@@ -55,42 +55,91 @@ def box_field_gap(name):
     return round(half_h + 2 * GRID, 4)
 
 
-def place_box(s, name, ref, value, at, nets, rot=0):
-    s.place(box(name), ref, value, at, nets, rot=rot, field_gap=box_field_gap(name))
+JOG = GRID  # half the 2.54mm row pitch - see power_plain_jogs' docstring for why.
 
 
-def rejog(s, name, at, pin_key, net, extra, rot=0):
-    """Move the wire+label place_box() just drew for one pin, adding a perpendicular
-    jog before the label. Needed once, for RELAY_MODULE's NO/RELAY_NO: it sits on
-    the row immediately next to COM/L_FUSED, and both COM and NO are GLOBAL nets, so
-    both get the same longer POWER_STUB (see kisch.py place()'s stub comment) and
-    stay exactly as close together as before - the fix that separates a global net
-    from a plain-labelled neighbour (moving it further along its own stub direction,
-    clear of the neighbour's shorter one) does nothing when BOTH neighbours move by
-    the same amount and stay aligned. A global label's own shape (hex + Intersheet-
-    refs) measured about 3.4mm tall by rendering, taller than the 2.54mm row pitch
-    between COM and NO, so simply removing and redrawing the one wire+label with an
-    extra sideways step, clear of the other, is what actually separates them -
-    confirmed by rendering."""
-    pins = s.lib.pins(box(name))
-    pin = next(p for p in pins.values() if p.name == pin_key)
-    point = kisch.pin_point(at, rot, pin)
-    d = kisch.pin_outward(rot, pin)
-    base = kisch.POWER_STUB if (net in kisch.POWER_NETS or net in s.globals) else kisch.STUB
-    old_end = (round(point[0] + d[0] * base, 4), round(point[1] + d[1] * base, 4))
-    s.items = [it for it in s.items if not (
-        (it[0] == "wire" and tuple(kisch.find(it, "pts")[2][1:]) == old_end) or
-        (it[0] in ("label", "global_label") and it[1] == net
-         and tuple(kisch.find(it, "at")[1:3]) == old_end))]
-    perp = (-d[1], d[0])
-    mid = (round(point[0] + d[0] * kisch.STUB, 4), round(point[1] + d[1] * kisch.STUB, 4))
-    jogged = (round(mid[0] + perp[0] * extra, 4), round(mid[1] + perp[1] * extra, 4))
-    end = (round(jogged[0] + d[0] * (base - kisch.STUB), 4),
-           round(jogged[1] + d[1] * (base - kisch.STUB), 4))
-    s.wire(point, mid)
-    s.wire(mid, jogged)
-    s.wire(jogged, end)
-    s.label(net, end, d, field_gap=box_field_gap(name))
+def _jog_extra(side_sign, down, magnitude=JOG):
+    """The `extra` to pass to kisch.Sheet.place()'s jog= so a pin moves toward larger
+    sheet y (down the page - further from whatever is on the row above it) when
+    `down` is True, or toward smaller sheet y (up - further from the row below it)
+    when False. `side_sign` is -1 for a left-side box_symbol() pin, +1 for a
+    right-side one: place()'s jog is perpendicular to the pin's own outward
+    direction ((-1, 0) for left, (1, 0) for right), so the two need opposite-signed
+    `extra` to move the same visual direction - see place()'s jog docstring."""
+    return (magnitude if down else -magnitude) * side_sign
+
+
+def power_plain_jogs(name, nets):
+    """{pin: extra} for every POWER_NET pin (GND/+5V/+24V/+3V3) on `name`'s
+    box_symbol() whose immediate neighbour *below* it (same side, next row down) is
+    a different, plain net - the exact collision place()'s jog parameter exists to
+    fix (a power flag's own arrow/ground-symbol shape reaches into the row below
+    it, and a plain label - justified against the *bottom* of its anchor, so it
+    grows upward - reaches back; see place()'s jog docstring). Computed generally
+    from BOXES + the nets being placed, not hand-tuned per box: every place_box()
+    call runs the same check.
+
+    Deliberately asymmetric - a plain net directly *above* a power pin is never
+    jogged, and never needs to be: a plain label only ever reaches upward, away
+    from whatever is below it, so it cannot be the one reaching into a power pin's
+    territory, and a power pin's own reach into the row *above* it never meets
+    that plain label's text either (the text has already moved on, further up,
+    toward whatever is above *it*). Confirmed against every reported instance -
+    every one was "power directly above a plain pin", never the reverse - and
+    against MOTION_CARRIER's ENA-/RELAY_5V pair (plain directly above a power pin
+    with another power pin below it), which an earlier, symmetric version of this
+    function wrongly jogged, landing its label exactly on the row above and
+    producing a real ERC 'multiple net names' collision - caught by re-running ERC
+    after this fix, not by rendering alone.
+
+    When the power pin's own row above is empty or plain (never another power pin
+    - see below), the power pin itself jogs the full JOG up, away from the plain
+    pin below - there is nothing above it to encroach on.
+
+    When its own above IS another power pin (RELAY_MODULE's VCC above GND;
+    MOTION_CARRIER's RELAY_5V above RELAY_GND; PANEL_CARRIER's and MPG_ZS80's own
+    +5V above GND), two adjacent power pins already sit at the closest spacing
+    rendering has shown safe, with nothing confirmed about how much margin (if any)
+    it has to give - so the power pin is left alone and the plain pin below jogs
+    instead. Jogging *only* that one plain pin down by the full JOG risks
+    reproducing the identical collision one row further on, against whatever
+    plain pin is next in the same list (confirmed by rendering an earlier version
+    of this function that did exactly that: "MPG_A" landed on top of "MPG_B").
+    Fixed the same way real schematics stagger a whole run of labels: every
+    consecutive plain pin below the jogged one - down to, but not including, the
+    next power pin or the end of the list - jogs down by the same full JOG,
+    preserving every one of *their* mutual spacings exactly (each pair a rigid,
+    unchanged distance apart, so nothing among them can newly collide) while
+    only ever shrinking the final pair's gap (the last jogged pin to the next
+    power pin, or nothing) by one JOG - exactly the same shrink a single relocated
+    pin already proved safe elsewhere in this function. Confirmed by rendering
+    every affected box (MOTION_CARRIER, RELAY_MODULE, PANEL_CARRIER, MPG_ZS80,
+    DISPLAY_JC4827W543C)."""
+    left, right = BOXES[name]
+    jogs = {}
+    for side_sign, row in ((-1, left), (1, right)):
+        for i, pname in enumerate(row):
+            if nets.get(pname) not in kisch.POWER_NETS or i + 1 >= len(row):
+                continue
+            below, below_net = row[i + 1], nets.get(row[i + 1])
+            if below_net is None or below_net in kisch.POWER_NETS:
+                continue
+            if i > 0 and nets.get(row[i - 1]) in kisch.POWER_NETS:
+                j = i + 1
+                while j < len(row) and nets.get(row[j]) not in kisch.POWER_NETS:
+                    jogs[row[j]] = _jog_extra(side_sign, down=True)
+                    j += 1
+            else:
+                jogs[pname] = _jog_extra(side_sign, down=False)
+    return jogs
+
+
+def place_box(s, name, ref, value, at, nets, rot=0, jog=None):
+    auto_jog = power_plain_jogs(name, nets)
+    if jog:
+        auto_jog.update(jog)
+    s.place(box(name), ref, value, at, nets, rot=rot, field_gap=box_field_gap(name),
+            jog=auto_jog or None)
 
 
 def mains(lib):
@@ -142,9 +191,15 @@ def low_voltage(lib):
                "A+": "MOT_A_P", "A-": "MOT_A_N", "B+": "MOT_B_P", "B-": "MOT_B_N"})
     place_box(s, "STEPPER", "M?", "Stepper motor", (381.0, 63.5),
               {"A+": "MOT_A_P", "A-": "MOT_A_N", "B+": "MOT_B_P", "B-": "MOT_B_N"})
+    # COM/NO are both GLOBAL nets (L_FUSED, RELAY_NO), not POWER_NETS, so
+    # power_plain_jogs() does not touch this pair - both already get the longer
+    # POWER_STUB (see kisch.py place()'s stub comment) and stay exactly as close
+    # together as before, since they move by the same amount. Jog NO explicitly,
+    # the same distance and direction (a right-side pin, jogged down/away from COM
+    # above it) confirmed by rendering in Task 4 round 1.
     place_box(s, "RELAY_MODULE", "M?", "5 V relay module", (292.1, 127.0),
-              {"VCC": "+5V", "GND": "GND", "IN": "RELAY_IN", "COM": "L_FUSED", "NO": "RELAY_NO"})
-    rejog(s, "RELAY_MODULE", (292.1, 127.0), "NO", "RELAY_NO", 2 * GRID)
+              {"VCC": "+5V", "GND": "GND", "IN": "RELAY_IN", "COM": "L_FUSED", "NO": "RELAY_NO"},
+              jog={"NO": _jog_extra(1, down=True, magnitude=2 * GRID)})
     place_box(s, "LIMIT_SWITCH_NC", "M?", "HOME bottom limit NC", (292.1, 177.8),
               {"C": "GND", "NC": "HOME_SIG"})
     place_box(s, "LIMIT_SWITCH_NC", "M?", "TOP limit NC", (292.1, 203.2),
