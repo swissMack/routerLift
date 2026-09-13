@@ -125,4 +125,4 @@ resetting FluidNC shows link lost then recovered.
 | 7 | TB6600 common anode still +5 V in one place; +3.3 V everywhere else | `docs/DESIGN-PLAN-RevH.md:77` |
 | 8 | Foot-switch release edge (dead-man retract) still unverified in FluidNC | `firmware/README.md` |
 | 9 | `steps_per_mm` 1066.67 is derived, not measured — needs a dial indicator | `firmware/README.md` |
-| 10 | Published wiring-map artifact still shows the old board; republish from `docs/WIRING-RevH.md` | claude.ai artifact |
+| 10 | ~~Published wiring-map artifact still shows the old board~~ ✅ republished 2026-09-13 (version 2) | claude.ai artifact |
