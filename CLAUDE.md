@@ -1,5 +1,24 @@
 # Project: routerLift — handoff for Claude Code
 
+## ▶ Current state (2026-09-13) — read this first
+
+**The sections below describe the v1.0.0 single-board design and are historical.** The project
+is now Rev H: stock FluidNC on a classic ESP32 for motion, plus a **Guition JC4827W543C**
+ESP32-S3 touch panel (`hmi/`) over UART. See `README.md` and `docs/DESIGN-PLAN-RevH.md`.
+
+**Bench status and the resume checklist live in `docs/BRINGUP-LOG.md`.** In short:
+
+- FluidNC board: flashed (v4.1.0), config verified, bare-board acceptance passed.
+- Screen board: display and touch working on the corrected board; not yet linked to FluidNC.
+- Paused waiting for the MPG level shifters. **Check the part before wiring it** — the BOM's
+  74HCT14 is unsafe into the S3; a 74LVC14 on 3.3 V is the right part.
+- Next: Step B, join the two boards over UART (wiring decided, in the log).
+
+Build: `pio run -e hmi` (or `-e hmi-diag`). Screen port: `/dev/cu.usbmodem*`.
+FluidNC: `routerlift.local` / 192.168.1.82.
+
+---
+
 > This section was added at end of a previous session that did the v1.0.0
 > firmware design via MCP-only file editing. Below it, the original
 > context-mode routing rules apply unchanged.
