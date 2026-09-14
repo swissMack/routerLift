@@ -66,6 +66,17 @@ class BoardBuilderTest(unittest.TestCase):
         self.assertTrue(z.GetDoNotAllowTracks())
         self.assertTrue(z.GetDoNotAllowVias())
 
+    def test_dnp_and_datasheet_match_the_schematic(self):
+        comps, pads = read_netlist(TEXT)
+        b = self.build()
+        b.place(comps["R2"], pads, 20.0, 10.0)
+        self.assertTrue(b.fps["R2"].IsDNP())
+        self.assertFalse(b.fps["R1"].IsDNP())
+        self.assertEqual(b.fps["R10"].GetField(pcbnew.FIELD_T_DATASHEET).GetText(),
+                         "https://example.com/r10.pdf")
+        self.assertEqual(b.fps["R10"].GetField(pcbnew.FIELD_T_DESCRIPTION).GetText(),
+                         "Test resistor")
+
     def test_footprints_keep_their_library_nickname(self):
         b = self.build()
         self.assertEqual(str(b.fps["R1"].GetFPID().GetLibNickname()), "Resistor_THT")

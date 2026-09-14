@@ -7,7 +7,8 @@ from pathlib import Path
 
 from kisch import find, findall, parse
 
-Component = collections.namedtuple("Component", "ref value footprint dnp")
+Component = collections.namedtuple("Component", "ref value footprint dnp datasheet description")
+Component.__new__.__defaults__ = ("", "")
 
 
 def _natural(ref):
@@ -22,7 +23,11 @@ def read_netlist(text):
         fp = find(c, "footprint")
         dnp = any(str(find(p, "name")[1]) == "dnp" for p in findall(c, "property"))
         ref = str(find(c, "ref")[1])
-        comps[ref] = Component(ref, str(find(c, "value")[1]), str(fp[1]) if fp else "", dnp)
+        ds = find(c, "datasheet")
+        datasheet = str(ds[1]) if ds and str(ds[1]) != "~" else ""
+        desc = find(c, "description")
+        comps[ref] = Component(ref, str(find(c, "value")[1]), str(fp[1]) if fp else "", dnp,
+                               datasheet, str(desc[1]) if desc else "")
     pads = {}
     for net in findall(find(tree, "nets"), "net"):
         name = str(find(net, "name")[1])

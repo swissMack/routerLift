@@ -55,6 +55,11 @@ class BoardBuilder:
         self.board.Add(fp)
         fp.SetPosition(self.p(x, y))
         fp.SetOrientationDegrees(rot)
+        fp.SetDNP(bool(comp.dnp))  # else schematic parity reports a 'Do not populate' mismatch
+        if comp.datasheet:
+            fp.GetField(pcbnew.FIELD_T_DATASHEET).SetText(comp.datasheet)
+        if comp.description:
+            fp.GetField(pcbnew.FIELD_T_DESCRIPTION).SetText(comp.description)
         for pad in fp.Pads():
             netname = pads.get((comp.ref, pad.GetNumber()))
             if netname:

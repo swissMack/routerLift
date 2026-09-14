@@ -16,6 +16,9 @@ class NetlistTest(unittest.TestCase):
         self.assertTrue(comps["R1"].footprint.startswith("Resistor_THT:"))
         self.assertTrue(comps["R2"].dnp)
         self.assertFalse(comps["R1"].dnp)
+        self.assertEqual(comps["R10"].datasheet, "https://example.com/r10.pdf")
+        self.assertEqual(comps["R1"].datasheet, "")
+        self.assertEqual(comps["R10"].description, "Test resistor")
 
     def test_net_names_kept_exactly(self):
         _, pads = read_netlist(TEXT)
