@@ -395,12 +395,12 @@
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "M"
-				(at 0 6.35 0)
+				(at 0 7.62 0)
 				(effects
 					(font
 						(size 1.27 1.27))))
 			(property "Value" "CONTACTOR"
-				(at 0 -6.35 0)
+				(at 0 -7.62 0)
 				(effects
 					(font
 						(size 1.27 1.27))))
@@ -418,8 +418,8 @@
 					(hide yes)))
 			(symbol "CONTACTOR_0_1"
 				(rectangle
-					(start -12.7 5.08)
-					(end 12.7 -5.08)
+					(start -12.7 6.35)
+					(end 12.7 -6.35)
 					(stroke
 						(width 0.254)
 						(type default))
@@ -427,7 +427,7 @@
 						(type background))))
 			(symbol "CONTACTOR_1_1"
 				(pin passive line
-					(at -15.24 2.54 0)
+					(at -15.24 3.81 0)
 					(length 2.54)
 					(name "A1"
 						(effects
@@ -438,7 +438,7 @@
 							(font
 								(size 1.27 1.27)))))
 				(pin passive line
-					(at -15.24 0 0)
+					(at -15.24 1.27 0)
 					(length 2.54)
 					(name "A2"
 						(effects
@@ -449,7 +449,7 @@
 							(font
 								(size 1.27 1.27)))))
 				(pin passive line
-					(at -15.24 -2.54 0)
+					(at -15.24 -1.27 0)
 					(length 2.54)
 					(name "L1"
 						(effects
@@ -460,13 +460,35 @@
 							(font
 								(size 1.27 1.27)))))
 				(pin passive line
-					(at 15.24 2.54 180)
+					(at -15.24 -3.81 0)
+					(length 2.54)
+					(name "L2"
+						(effects
+							(font
+								(size 1.27 1.27))))
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)))))
+				(pin passive line
+					(at 15.24 3.81 180)
 					(length 2.54)
 					(name "T1"
 						(effects
 							(font
 								(size 1.27 1.27))))
-					(number "4"
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)))))
+				(pin passive line
+					(at 15.24 1.27 180)
+					(length 2.54)
+					(name "T2"
+						(effects
+							(font
+								(size 1.27 1.27))))
+					(number "6"
 						(effects
 							(font
 								(size 1.27 1.27)))))))
@@ -1123,14 +1145,14 @@
 		(uuid "baf2f27b-7551-5e31-898f-e498508ca953"))
 	(wire
 		(pts
-			(xy 162.56 76.2)
-			(xy 160.02 76.2))
+			(xy 173.99 76.2)
+			(xy 171.45 76.2))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "7fc5075c-ef1e-5dbf-a812-b93795a6e6e5"))
 	(label "L_RCD"
-		(at 160.02 76.2 180)
+		(at 171.45 76.2 180)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1138,14 +1160,14 @@
 		(uuid "5eb6b1b9-4b90-5d20-95a1-911f8b8db8ba"))
 	(wire
 		(pts
-			(xy 193.04 76.2)
-			(xy 195.58 76.2))
+			(xy 181.61 76.2)
+			(xy 184.15 76.2))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "aa692cda-7c0f-54a3-8e32-eca1b35e50e1"))
-	(label "L_ESTOP"
-		(at 195.58 76.2 0)
+	(label "L_FUSED"
+		(at 184.15 76.2 0)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1153,14 +1175,14 @@
 		(uuid "0a719c90-daf4-5e0f-baa1-308dd58a1997"))
 	(wire
 		(pts
-			(xy 224.79 76.2)
-			(xy 222.25 76.2))
+			(xy 213.36 76.2)
+			(xy 210.82 76.2))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "398d4296-f1bc-5e43-acec-58c1aabe3aa4"))
-	(label "L_ESTOP"
-		(at 222.25 76.2 180)
+	(label "L_FUSED"
+		(at 210.82 76.2 180)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1168,22 +1190,22 @@
 		(uuid "49b6d628-4b0b-57ff-8eda-a733ea10872e"))
 	(wire
 		(pts
-			(xy 232.41 76.2)
-			(xy 240.03 76.2))
+			(xy 243.84 76.2)
+			(xy 251.46 76.2))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "cd54be10-dee1-5245-8249-c243040f1486"))
-	(global_label "L_FUSED"
+	(global_label "L_ESTOP"
 		(shape bidirectional)
-		(at 240.03 76.2 0)
+		(at 251.46 76.2 0)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify left))
 		(uuid "bf2c41c7-d325-5782-a15d-a02b41e9dc8a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 240.03 76.2 0)
+			(at 251.46 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -1196,7 +1218,7 @@
 			(width 0)
 			(type default))
 		(uuid "9f8afcda-166f-5ddc-935e-13b19f27a66f"))
-	(global_label "L_FUSED"
+	(global_label "L_ESTOP"
 		(shape bidirectional)
 		(at 281.94 73.66 180)
 		(effects
@@ -1295,14 +1317,14 @@
 		(uuid "cb805fa6-823c-5d65-ae8f-b88a93c33e1e"))
 	(wire
 		(pts
-			(xy 162.56 149.86)
-			(xy 160.02 149.86))
+			(xy 162.56 148.59)
+			(xy 160.02 148.59))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "d7eecffe-9444-5195-9648-4ddabe317228"))
 	(label "COIL_A1"
-		(at 160.02 149.86 180)
+		(at 160.02 148.59 180)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1310,14 +1332,14 @@
 		(uuid "9b1f5101-6404-5139-8f77-5f75ff642d5b"))
 	(wire
 		(pts
-			(xy 162.56 152.4)
-			(xy 160.02 152.4))
+			(xy 162.56 151.13)
+			(xy 160.02 151.13))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "a895ff24-ab39-5b90-ad09-decaf3c011a9"))
 	(label "N_RCD"
-		(at 160.02 152.4 180)
+		(at 160.02 151.13 180)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1325,41 +1347,71 @@
 		(uuid "4cc2bb7b-09ca-573e-8c8d-6227cc26e3c9"))
 	(wire
 		(pts
-			(xy 162.56 154.94)
-			(xy 154.94 154.94))
+			(xy 162.56 153.67)
+			(xy 154.94 153.67))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "52925fc6-88b6-56b0-82c6-2b158f3e7529"))
-	(global_label "L_FUSED"
+	(global_label "L_ESTOP"
 		(shape bidirectional)
-		(at 154.94 154.94 180)
+		(at 154.94 153.67 180)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify right))
 		(uuid "af657532-117f-5c1e-b8e3-cc7a1af5676d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 154.94 154.94 0)
+			(at 154.94 153.67 0)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(hide yes))))
 	(wire
 		(pts
-			(xy 193.04 149.86)
-			(xy 195.58 149.86))
+			(xy 162.56 156.21)
+			(xy 160.02 156.21))
 		(stroke
 			(width 0)
 			(type default))
 		(uuid "438e664b-7b62-5401-9d65-d9cdcb457cc4"))
+	(label "N_RCD"
+		(at 160.02 156.21 180)
+		(effects
+			(font
+				(size 1.27 1.27))
+			(justify right bottom))
+		(uuid "5482d2c2-7227-5951-9f2d-85cf7e30943d"))
+	(wire
+		(pts
+			(xy 193.04 148.59)
+			(xy 195.58 148.59))
+		(stroke
+			(width 0)
+			(type default))
+		(uuid "ef1afd43-6076-562f-aee0-df85a41870b9"))
 	(label "ROUTER_L"
-		(at 195.58 149.86 0)
+		(at 195.58 148.59 0)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify left bottom))
-		(uuid "5482d2c2-7227-5951-9f2d-85cf7e30943d"))
+		(uuid "3969ccf2-199e-5f47-89cd-de7db80bfdf1"))
+	(wire
+		(pts
+			(xy 193.04 151.13)
+			(xy 195.58 151.13))
+		(stroke
+			(width 0)
+			(type default))
+		(uuid "a55a9eb5-8479-5466-a737-ce2fa7e21ca6"))
+	(label "ROUTER_N"
+		(at 195.58 151.13 0)
+		(effects
+			(font
+				(size 1.27 1.27))
+			(justify left bottom))
+		(uuid "510ee09b-7398-5f3d-b006-3332a63e1b84"))
 	(wire
 		(pts
 			(xy 162.56 203.2)
@@ -1367,15 +1419,15 @@
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "3969ccf2-199e-5f47-89cd-de7db80bfdf1"))
-	(global_label "L_FUSED"
+		(uuid "64aa9a69-5887-5399-8a4f-f266bbf4a8d1"))
+	(global_label "L_ESTOP"
 		(shape bidirectional)
 		(at 154.94 203.2 180)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify right))
-		(uuid "a55a9eb5-8479-5466-a737-ce2fa7e21ca6")
+		(uuid "578bad79-5b50-52f3-9daa-99be8fee1763")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 154.94 203.2 0)
 			(effects
@@ -1389,14 +1441,14 @@
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "510ee09b-7398-5f3d-b006-3332a63e1b84"))
+		(uuid "6ddc2274-9cc3-57fe-8729-a663557f483a"))
 	(label "ROUTER_L"
 		(at 195.58 203.2 0)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify left bottom))
-		(uuid "c89df169-3599-5e0b-a21e-1564b0d0ba57"))
+		(uuid "3fc5817b-e54a-5a19-8818-e54d4c0a20bf"))
 	(wire
 		(pts
 			(xy 289.56 149.86)
@@ -1404,39 +1456,9 @@
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "578bad79-5b50-52f3-9daa-99be8fee1763"))
+		(uuid "ad5dab87-e982-5b64-ace9-8eaaa115db7e"))
 	(label "ROUTER_L"
 		(at 287.02 149.86 180)
-		(effects
-			(font
-				(size 1.27 1.27))
-			(justify right bottom))
-		(uuid "6ddc2274-9cc3-57fe-8729-a663557f483a"))
-	(wire
-		(pts
-			(xy 289.56 152.4)
-			(xy 287.02 152.4))
-		(stroke
-			(width 0)
-			(type default))
-		(uuid "3fc5817b-e54a-5a19-8818-e54d4c0a20bf"))
-	(label "N_RCD"
-		(at 287.02 152.4 180)
-		(effects
-			(font
-				(size 1.27 1.27))
-			(justify right bottom))
-		(uuid "a9dd1416-2935-5496-9cca-f2aee670d94b"))
-	(wire
-		(pts
-			(xy 289.56 154.94)
-			(xy 287.02 154.94))
-		(stroke
-			(width 0)
-			(type default))
-		(uuid "ad5dab87-e982-5b64-ace9-8eaaa115db7e"))
-	(label "PE"
-		(at 287.02 154.94 180)
 		(effects
 			(font
 				(size 1.27 1.27))
@@ -1444,19 +1466,49 @@
 		(uuid "13ba510e-a39b-50f6-bcae-579abeae94f7"))
 	(wire
 		(pts
+			(xy 289.56 152.4)
+			(xy 287.02 152.4))
+		(stroke
+			(width 0)
+			(type default))
+		(uuid "bab8cfd4-f4f6-5422-871b-861d7bafa114"))
+	(label "ROUTER_N"
+		(at 287.02 152.4 180)
+		(effects
+			(font
+				(size 1.27 1.27))
+			(justify right bottom))
+		(uuid "260c3a72-2a64-51f2-b36e-b443113d11d5"))
+	(wire
+		(pts
+			(xy 289.56 154.94)
+			(xy 287.02 154.94))
+		(stroke
+			(width 0)
+			(type default))
+		(uuid "da49d4dd-5c8a-5a1b-ad17-a062d1f8111c"))
+	(label "PE"
+		(at 287.02 154.94 180)
+		(effects
+			(font
+				(size 1.27 1.27))
+			(justify right bottom))
+		(uuid "1e528aef-aa27-5f4a-a720-216a4b2c0f18"))
+	(wire
+		(pts
 			(xy 289.56 203.2)
 			(xy 287.02 203.2))
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "260c3a72-2a64-51f2-b36e-b443113d11d5"))
+		(uuid "3c2955a9-29df-51f8-8ed6-a938988eebbc"))
 	(label "PE"
 		(at 287.02 203.2 180)
 		(effects
 			(font
 				(size 1.27 1.27))
 			(justify right bottom))
-		(uuid "da49d4dd-5c8a-5a1b-ad17-a062d1f8111c"))
+		(uuid "12946391-04e9-56d4-a7c1-2f3e031df440"))
 	(wire
 		(pts
 			(xy 38.1 254)
@@ -1464,7 +1516,7 @@
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "2d5309e9-24f4-5277-aa79-c28e59bab2c0"))
+		(uuid "e705c11f-68c6-5070-8731-83db5f98b94b"))
 	(wire
 		(pts
 			(xy 50.8 254)
@@ -1472,15 +1524,15 @@
 		(stroke
 			(width 0)
 			(type default))
-		(uuid "3c2a9611-6823-56bf-9521-fc4632d0c320"))
-	(text "E-stop breaks L to BOTH the PSU and the contactor (SAF-01).\nKey switch in series with the coil: key out = contactor cannot pull in (SAF-02).\nContactor coil voltage UNVERIFIED - drawn as 230 V AC from L_FUSED / N (BOM block A).\nL_FUSED and RELAY_NO continue on the low-voltage sheet (relay module contact).\nContactor drawn single-pole (L only) per WIRING-RevH diagram 5; switching L and N\nwith a 2-pole contactor is an open design choice."
+		(uuid "fe325ab4-7d7f-5bdb-97ab-8ce56553d600"))
+	(text "L: RCD -> fuse -> E-stop. The E-stop breaks L to BOTH the PSU and the contactor (SAF-01).\nKey switch in series with the coil: key out = contactor cannot pull in (SAF-02).\nContactor is 2-pole: L1-T1 switches L, L2-T2 switches N to the router socket.\nContactor coil voltage UNVERIFIED - drawn as 230 V AC from L_ESTOP / N (BOM block A).\nL_ESTOP and RELAY_NO continue on the low-voltage sheet (relay module contact)."
 		(exclude_from_sim no)
 		(at 25.4 25.4 0)
 		(effects
 			(font
 				(size 1.8 1.8))
 			(justify left top))
-		(uuid "6b906b78-6b63-5047-a9da-a7388f579277"))
+		(uuid "8718ec5f-283d-58a1-ab67-f874aadaf729"))
 	(symbol
 		(lib_id "routerlift:MAINS_INLET")
 		(at 50.8 76.2 0)
@@ -1576,35 +1628,35 @@
 					(reference "M2")
 					(unit 1)))))
 	(symbol
-		(lib_id "routerlift:ESTOP_NC")
-		(at 177.8 76.2 0)
+		(lib_id "Device:Fuse")
+		(at 177.8 76.2 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "5f8570a4-3023-5b1f-8952-3c04b7868b86")
-		(property "Reference" "M3"
-			(at 180.34 71.12 0)
+		(property "Reference" "F1"
+			(at 180.34 73.66 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)))
-		(property "Value" "E-stop mushroom NC"
-			(at 180.34 81.28 0)
+		(property "Value" "Fuse, PSU + router"
+			(at 180.34 78.74 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)))
 		(property "Footprint" ""
-			(at 177.8 76.2 0)
+			(at 177.8 76.2 90)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 177.8 76.2 0)
+			(at 177.8 76.2 90)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -1617,38 +1669,38 @@
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
-					(reference "M3")
+					(reference "F1")
 					(unit 1)))))
 	(symbol
-		(lib_id "Device:Fuse")
-		(at 228.6 76.2 90)
+		(lib_id "routerlift:ESTOP_NC")
+		(at 228.6 76.2 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "58ea7053-11c4-5339-b351-df507b1324b7")
-		(property "Reference" "F1"
-			(at 231.14 73.66 90)
+		(property "Reference" "M3"
+			(at 231.14 71.12 0)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)))
-		(property "Value" "Fuse, PSU + router"
-			(at 231.14 78.74 90)
+		(property "Value" "E-stop mushroom NC"
+			(at 231.14 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)))
 		(property "Footprint" ""
-			(at 228.6 76.2 90)
+			(at 228.6 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
 		(property "Datasheet" ""
-			(at 228.6 76.2 90)
+			(at 228.6 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -1661,7 +1713,7 @@
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
-					(reference "F1")
+					(reference "M3")
 					(unit 1)))))
 	(symbol
 		(lib_id "routerlift:PSU_24_36V")
@@ -1853,13 +1905,13 @@
 		(dnp no)
 		(uuid "323dbaa1-074c-5458-ab78-f2511c488cb4")
 		(property "Reference" "M6"
-			(at 180.34 144.78 0)
+			(at 180.34 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27))
 				(justify left)))
-		(property "Value" "Router contactor"
-			(at 180.34 160.02 0)
+		(property "Value" "Router contactor, 2-pole"
+			(at 180.34 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27))
@@ -1886,6 +1938,10 @@
 			(uuid "9150bbe7-2b21-5ccc-82ba-06c5a917a971"))
 		(pin "4"
 			(uuid "9533a6e7-40ee-5a7a-958f-87e1da586115"))
+		(pin "5"
+			(uuid "f980bddb-3fe7-5c64-ad4f-71f0f77927c5"))
+		(pin "6"
+			(uuid "917d73a1-add8-56ab-8c12-c564fa5eb98f"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -1899,7 +1955,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0c7f4c32-119d-5bbb-b648-241c2e4eef84")
+		(uuid "ba64a68a-a529-59fa-9edb-c9292f602c48")
 		(property "Reference" "M7"
 			(at 180.34 198.12 0)
 			(effects
@@ -1927,9 +1983,9 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "770c0e08-dca9-50ed-9042-40ba310166d5"))
+			(uuid "959a4b3a-c025-550d-bc43-550e06b9ccee"))
 		(pin "2"
-			(uuid "d564dd3f-54c7-55c2-889d-9e3963a20c90"))
+			(uuid "1d21fb52-1109-551a-9705-db48dbd994ff"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -1943,7 +1999,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "9a5d6e13-e7c3-5e4e-80ef-b3fb43ddcdea")
+		(uuid "2d615a49-626a-57e6-b6a0-4bb304c73fe5")
 		(property "Reference" "M8"
 			(at 307.34 144.78 0)
 			(effects
@@ -1971,11 +2027,11 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "9bc18118-28b2-5fa9-948f-4171f5998f98"))
+			(uuid "b9eae304-f719-532c-9923-f7ace5287e6c"))
 		(pin "2"
-			(uuid "b840f959-5074-5735-bd8a-ee6eb1b43a20"))
+			(uuid "8e8e47ef-13fe-507d-8faf-08776cbc4089"))
 		(pin "3"
-			(uuid "a9bb4b63-336e-572b-b30c-fe2dd4adb8be"))
+			(uuid "95190bc4-e52f-517a-bdb8-eb5bc0c06874"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -1989,7 +2045,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "422e138a-e201-57fc-85b1-e60416d01b96")
+		(uuid "96af8bf8-0f16-57a2-908c-82934222d5ad")
 		(property "Reference" "M9"
 			(at 307.34 198.12 0)
 			(effects
@@ -2017,7 +2073,7 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "c6365612-b047-56be-907e-61cad0cb64a9"))
+			(uuid "bff748eb-3e73-54f7-93e5-66d849eef1d7"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -2031,7 +2087,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "9ddac197-8e11-5778-b680-7c52c6b8dcdc")
+		(uuid "425d33ff-e0e8-55d8-8da8-6c2bb03cbea2")
 		(property "Reference" "#FLG1"
 			(at 40.64 251.46 0)
 			(effects
@@ -2060,7 +2116,7 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "89977c96-78ca-5a49-981f-a2027cf25832"))
+			(uuid "cb5aa714-fe05-569a-8cc2-2eaf4d251bdf"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -2074,7 +2130,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "1d7600b3-55cf-56c3-8f8a-410c6e478b1c")
+		(uuid "9df08efa-34f1-5faf-9a39-b13d356d00aa")
 		(property "Reference" "#PWR3"
 			(at 40.64 254 0)
 			(effects
@@ -2103,7 +2159,7 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "f8e0b83a-1099-520c-b8fa-87fb8a9a3040"))
+			(uuid "57b86e20-3964-55ea-b4dc-93d37c8eeeb6"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -2117,7 +2173,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "228c4966-34ff-50db-b894-adafed02474c")
+		(uuid "a77aa85f-1d4d-568c-896e-69f6f3f0e296")
 		(property "Reference" "#FLG2"
 			(at 53.34 251.46 0)
 			(effects
@@ -2146,7 +2202,7 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "1f9cfef9-e608-58ca-b5ef-6f220766e65f"))
+			(uuid "01a12782-7797-5f1f-8e16-ec123e0f242a"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"
@@ -2160,7 +2216,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "06cc66a9-0000-59c5-824b-38e5148da117")
+		(uuid "63b41364-a82c-5c08-8e48-729affefce16")
 		(property "Reference" "#PWR4"
 			(at 53.34 254 0)
 			(effects
@@ -2189,7 +2245,7 @@
 				(justify left)
 				(hide yes)))
 		(pin "1"
-			(uuid "f481514f-75d3-547f-addc-66480c9893ef"))
+			(uuid "1487a5b0-0423-530b-b8d0-0d203f49bd88"))
 		(instances
 			(project "system"
 				(path "/582f3ed4-e62a-52c1-8184-c0dfd7f587a1/fcef0137-bbe8-5222-9af7-39540385d8c5"

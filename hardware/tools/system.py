@@ -7,9 +7,9 @@ BOXES = {
     "RCD": (["L_IN", "N_IN"], ["L_OUT", "N_OUT"]),
     "ESTOP_NC": (["L_IN"], ["L_OUT"]),
     "PSU_24_36V": (["L", "N", "PE"], ["V+", "V-"]),
-    # Single-pole (L only) per WIRING-RevH diagram 5 - N runs straight from the RCD to
-    # the router socket and never passes through the contactor. See mains()'s note.
-    "CONTACTOR": (["A1", "A2", "L1"], ["T1"]),
+    # 2-pole: L1-T1 switches L and L2-T2 switches N to the router socket (decided
+    # 2026-09-14), so the router is isolated whichever way round the supply is wired.
+    "CONTACTOR": (["A1", "A2", "L1", "L2"], ["T1", "T2"]),
     "KEY_SWITCH": (["IN"], ["OUT"]),
     "RC_SNUBBER": (["X1"], ["X2"]),
     "ROUTER_SOCKET": (["L", "N", "PE"], []),
@@ -33,7 +33,7 @@ BOXES = {
     "PANEL_BUTTONS": (["CYCLE", "ROUTER", "BIT", "ZERO", "PRESET", "ROUGH_FINE", "COM"], []),
     "ROUTER_LED": (["A", "K"], []),
 }
-GLOBALS = ("L_FUSED", "RELAY_NO")
+GLOBALS = ("L_ESTOP", "RELAY_NO")
 
 
 def box(name):
@@ -150,29 +150,29 @@ def mains(lib):
               {"L": "L_SUPPLY", "N": "N_SUPPLY", "PE": "PE"})
     place_box(s, "RCD", "M?", "RCD", (114.3, 76.2),
               {"L_IN": "L_SUPPLY", "N_IN": "N_SUPPLY", "L_OUT": "L_RCD", "N_OUT": "N_RCD"})
-    place_box(s, "ESTOP_NC", "M?", "E-stop mushroom NC", (177.8, 76.2),
-              {"L_IN": "L_RCD", "L_OUT": "L_ESTOP"})
-    s.place("Device:Fuse", "F1", "Fuse, PSU + router", (228.6, 76.2),
-            {"1": "L_ESTOP", "2": "L_FUSED"}, rot=90)
+    s.place("Device:Fuse", "F1", "Fuse, PSU + router", (177.8, 76.2),
+            {"1": "L_RCD", "2": "L_FUSED"}, rot=90)
+    place_box(s, "ESTOP_NC", "M?", "E-stop mushroom NC", (228.6, 76.2),
+              {"L_IN": "L_FUSED", "L_OUT": "L_ESTOP"})
     place_box(s, "PSU_24_36V", "M?", "PSU 24-36 V", (304.8, 76.2),
-              {"L": "L_FUSED", "N": "N_RCD", "PE": "PE", "V+": "+24V", "V-": "GND"})
+              {"L": "L_ESTOP", "N": "N_RCD", "PE": "PE", "V+": "+24V", "V-": "GND"})
     place_box(s, "KEY_SWITCH", "M?", "Bit-change key switch", (114.3, 152.4),
               {"IN": "RELAY_NO", "OUT": "COIL_A1"})
-    place_box(s, "CONTACTOR", "M?", "Router contactor", (177.8, 152.4),
-              {"A1": "COIL_A1", "A2": "N_RCD", "L1": "L_FUSED", "T1": "ROUTER_L"})
+    place_box(s, "CONTACTOR", "M?", "Router contactor, 2-pole", (177.8, 152.4),
+              {"A1": "COIL_A1", "A2": "N_RCD", "L1": "L_ESTOP", "L2": "N_RCD",
+               "T1": "ROUTER_L", "T2": "ROUTER_N"})
     place_box(s, "RC_SNUBBER", "M?", "RC snubber", (177.8, 203.2),
-              {"X1": "L_FUSED", "X2": "ROUTER_L"})
+              {"X1": "L_ESTOP", "X2": "ROUTER_L"})
     place_box(s, "ROUTER_SOCKET", "M?", "Router socket", (304.8, 152.4),
-              {"L": "ROUTER_L", "N": "N_RCD", "PE": "PE"})
+              {"L": "ROUTER_L", "N": "ROUTER_N", "PE": "PE"})
     place_box(s, "PE_BOND", "M?", "PE: enclosure + lift frame", (304.8, 203.2), {"PE": "PE"})
     s.flag("+24V", (38.1, 254.0))
     s.flag("GND", (50.8, 254.0))
-    s.note("E-stop breaks L to BOTH the PSU and the contactor (SAF-01).\n"
+    s.note("L: RCD -> fuse -> E-stop. The E-stop breaks L to BOTH the PSU and the contactor (SAF-01).\n"
            "Key switch in series with the coil: key out = contactor cannot pull in (SAF-02).\n"
-           "Contactor coil voltage UNVERIFIED - drawn as 230 V AC from L_FUSED / N (BOM block A).\n"
-           "L_FUSED and RELAY_NO continue on the low-voltage sheet (relay module contact).\n"
-           "Contactor drawn single-pole (L only) per WIRING-RevH diagram 5; switching L and N\n"
-           "with a 2-pole contactor is an open design choice.",
+           "Contactor is 2-pole: L1-T1 switches L, L2-T2 switches N to the router socket.\n"
+           "Contactor coil voltage UNVERIFIED - drawn as 230 V AC from L_ESTOP / N (BOM block A).\n"
+           "L_ESTOP and RELAY_NO continue on the low-voltage sheet (relay module contact).",
            (25.4, 25.4))
     return s
 
@@ -194,14 +194,14 @@ def low_voltage(lib):
                "A+": "MOT_A_P", "A-": "MOT_A_N", "B+": "MOT_B_P", "B-": "MOT_B_N"})
     place_box(s, "STEPPER", "M?", "Stepper motor", (381.0, 63.5),
               {"A+": "MOT_A_P", "A-": "MOT_A_N", "B+": "MOT_B_P", "B-": "MOT_B_N"})
-    # COM/NO are both GLOBAL nets (L_FUSED, RELAY_NO), not POWER_NETS, so
+    # COM/NO are both GLOBAL nets (L_ESTOP, RELAY_NO), not POWER_NETS, so
     # power_plain_jogs() does not touch this pair - both already get the longer
     # POWER_STUB (see kisch.py place()'s stub comment) and stay exactly as close
     # together as before, since they move by the same amount. Jog NO explicitly,
     # the same distance and direction (a right-side pin, jogged down/away from COM
     # above it) confirmed by rendering in Task 4 round 1.
     place_box(s, "RELAY_MODULE", "M?", "5 V relay module", (292.1, 127.0),
-              {"VCC": "+5V", "GND": "GND", "IN": "RELAY_IN", "COM": "L_FUSED", "NO": "RELAY_NO"},
+              {"VCC": "+5V", "GND": "GND", "IN": "RELAY_IN", "COM": "L_ESTOP", "NO": "RELAY_NO"},
               jog={"NO": _jog_extra(1, down=True, magnitude=2 * GRID)})
     place_box(s, "LIMIT_SWITCH_NC", "M?", "HOME bottom limit NC", (292.1, 177.8),
               {"C": "GND", "NC": "HOME_SIG"})

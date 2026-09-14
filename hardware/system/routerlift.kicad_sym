@@ -314,12 +314,12 @@
 		(in_bom yes)
 		(on_board yes)
 		(property "Reference" "M"
-			(at 0 6.35 0)
+			(at 0 7.62 0)
 			(effects
 				(font
 					(size 1.27 1.27))))
 		(property "Value" "CONTACTOR"
-			(at 0 -6.35 0)
+			(at 0 -7.62 0)
 			(effects
 				(font
 					(size 1.27 1.27))))
@@ -337,8 +337,8 @@
 				(hide yes)))
 		(symbol "CONTACTOR_0_1"
 			(rectangle
-				(start -12.7 5.08)
-				(end 12.7 -5.08)
+				(start -12.7 6.35)
+				(end 12.7 -6.35)
 				(stroke
 					(width 0.254)
 					(type default))
@@ -346,7 +346,7 @@
 					(type background))))
 		(symbol "CONTACTOR_1_1"
 			(pin passive line
-				(at -15.24 2.54 0)
+				(at -15.24 3.81 0)
 				(length 2.54)
 				(name "A1"
 					(effects
@@ -357,7 +357,7 @@
 						(font
 							(size 1.27 1.27)))))
 			(pin passive line
-				(at -15.24 0 0)
+				(at -15.24 1.27 0)
 				(length 2.54)
 				(name "A2"
 					(effects
@@ -368,7 +368,7 @@
 						(font
 							(size 1.27 1.27)))))
 			(pin passive line
-				(at -15.24 -2.54 0)
+				(at -15.24 -1.27 0)
 				(length 2.54)
 				(name "L1"
 					(effects
@@ -379,13 +379,35 @@
 						(font
 							(size 1.27 1.27)))))
 			(pin passive line
-				(at 15.24 2.54 180)
+				(at -15.24 -3.81 0)
+				(length 2.54)
+				(name "L2"
+					(effects
+						(font
+							(size 1.27 1.27))))
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)))))
+			(pin passive line
+				(at 15.24 3.81 180)
 				(length 2.54)
 				(name "T1"
 					(effects
 						(font
 							(size 1.27 1.27))))
-				(number "4"
+				(number "5"
+					(effects
+						(font
+							(size 1.27 1.27)))))
+			(pin passive line
+				(at 15.24 1.27 180)
+				(length 2.54)
+				(name "T2"
+					(effects
+						(font
+							(size 1.27 1.27))))
+				(number "6"
 					(effects
 						(font
 							(size 1.27 1.27)))))))

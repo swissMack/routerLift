@@ -33,7 +33,7 @@ flowchart LR
     INLET["Inlet L / N / PE<br/>via RCD"] --> FUSE["Fuse"] --> ESTOP["E-STOP mushroom<br/>NC, latching"]
   end
   ESTOP -->|"L, N"| PSU["PSU 24–36 V DC<br/>NOT 48 V"]
-  ESTOP -->|"L"| CONT["Contactor<br/>see diagram 5"]
+  ESTOP -->|"L, N"| CONT["Contactor, 2-pole<br/>see diagram 5"]
   CONT --> SOCKET["Router socket"]
 
   PSU -->|"24–36 V"| TB["TB6600 driver"]
@@ -252,7 +252,9 @@ wire, other side to GND. Their FluidNC pins are set `:low`, so pressing reads as
 ## 5 · Mains and router switching
 
 Three things must all agree before the router runs: the E-stop is out, the bit-change key is in,
-and FluidNC has set GPIO 4 with `M3`. Only the last one is software.
+and FluidNC has set GPIO 4 with `M3`. Only the last one is software. The contactor is 2-pole: it
+switches both L and N to the router socket, so the router is isolated whichever way round the
+supply is wired.
 
 ```mermaid
 flowchart LR
@@ -266,11 +268,12 @@ flowchart LR
   K --> SL["Router socket L"]
   SNUB["RC snubber<br/>across the contact"] --- K
 
-  E --> KEY["Bit-change KEY switch<br/>in series with coil"]
-  KEY --> RC["Relay module contact<br/>COM to NO"]
-  RC --> A1["Contactor coil A1"]
+  E --> RC["Relay module contact<br/>COM to NO"]
+  RC --> KEY["Bit-change KEY switch<br/>in series with coil"]
+  KEY --> A1["Contactor coil A1"]
   A2["Contactor coil A2"] --> N["Mains N"]
-  N --> SN["Router socket N"]
+  N --> K2["Contactor main contact<br/>L2 to T2"]
+  K2 --> SN["Router socket N"]
 
   G4["ESP32 GPIO 4"] --> RIN["Relay module IN"]
   B5["Buck 5 V"] --> RVCC["Relay module VCC"]
@@ -280,7 +283,7 @@ flowchart LR
   PE --> PE2["Lift frame"]
   PE --> PE3["Router socket PE"]
 
-  class L,F,E,K,SL,SNUB,KEY,RC,A1,A2,N,SN mains
+  class L,F,E,K,K2,SL,SNUB,KEY,RC,A1,A2,N,SN mains
   class B5,RVCC,RGND,G0 v5
   class G4,RIN v33
   class PE,PE1,PE2,PE3 pe

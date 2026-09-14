@@ -57,8 +57,9 @@ generator and regenerate.
 
 ### 3. `system/` — documentation only
 
-- **Sheet `mains`:** RCD → E-stop NC (breaks L to PSU and contactor) → fuse → PSU and relay contact →
-  bit-change key switch → contactor coil A1/A2; RC snubber; router socket from T1; PE bonding.
+- **Sheet `mains`:** RCD → fuse → E-stop NC (breaks L to PSU and contactor) → PSU and relay contact →
+  bit-change key switch → contactor coil A1/A2; 2-pole contactor switching L (T1) and N (T2) to the
+  router socket; RC snubber; PE bonding. (Fuse order and 2-pole contactor decided 2026-09-14.)
 - **Sheet `low-voltage`:** PSU 24–36 V → buck 5 V → star ground; TB6600 + motor; sensors, probe,
   foot pedal, STOP; MPG; display board; both carriers as blocks with their connectors and the
   cables between them.

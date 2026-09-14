@@ -14,11 +14,11 @@ schematic blocks exactly.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | E-stop button | Latching mushroom head, **NC**, mains-rated | 🛒 | SAF-01. Breaks L to **both** PSU and contactor. Not a logic-level button |
-| 1 | Router contactor | Coil to suit relay module; contacts ≥2× router nameplate | 🛒 | PWR-03. Add arc suppression (RC snubber across contacts). ⚠️ **Coil voltage unverified** — the wiring map assumes 230 V AC; no part chosen yet |
+| 1 | Router contactor | **2-pole**, switching L and N; coil to suit relay module; contacts ≥2× router nameplate, AC-3 rated | 🛒 | PWR-03. Add arc suppression (RC snubber across contacts). ⚠️ **Coil voltage unverified** — the wiring map assumes 230 V AC; no part chosen yet |
 | 1 | RCD / GFCI | To suit local installation | 🛒 | PWR-02 |
-| 1 | Mains fuse + holder | Sized for PSU + router | 🛒 | In L, after the E-stop |
-| 1 | Router socket | Switched, PE-bonded | 🛒 | Fed from contactor T1 |
-| 1 | **Bit-change key switch** | Keyed, 2-position, key removable in OFF only | 🛒 | **SAF-02 hardware interlock.** In series with the contactor coil, between the relay contact and A2. Key out = contactor physically cannot pull in, regardless of firmware |
+| 1 | Mains fuse + holder | Sized for PSU + router | 🛒 | In L, after the RCD and before the E-stop |
+| 1 | Router socket | Switched, PE-bonded | 🛒 | L fed from contactor T1, N from T2 |
+| 1 | **Bit-change key switch** | Keyed, 2-position, key removable in OFF only | 🛒 | **SAF-02 hardware interlock.** In series with the contactor coil, between the relay contact and A1. Key out = contactor physically cannot pull in, regardless of firmware |
 | — | Mains cable, 3-core | To local code | 🛒 | PE to enclosure, lift frame **and** router socket |
 
 ## B · Power supply and rails

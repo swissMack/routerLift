@@ -2610,7 +2610,7 @@
 			(width 0)
 			(type default))
 		(uuid "18060b65-f368-5835-9392-75db32f0eaaa"))
-	(global_label "L_FUSED"
+	(global_label "L_ESTOP"
 		(shape bidirectional)
 		(at 314.96 124.46 0)
 		(effects
