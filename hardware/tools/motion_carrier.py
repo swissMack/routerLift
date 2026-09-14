@@ -9,7 +9,7 @@ CHANNELS = ["HOME", "TOP", "PROBE", "FOOT", "DRV_ALM"]
 DEVKIT_NETS = {
     "D26": "STEP", "D27": "DIR", "D14": "ENABLE", "D4": "RELAY_IN",
     "D33": "HOME_IN", "D25": "TOP_IN", "D32": "PROBE_IN", "D13": "FOOT_IN",
-    "D35": "DRV_ALM_IN", "D21": "STOP", "TX2_17": "LINK_TX", "RX2_16": "LINK_RX",
+    "D35": "DRV_ALM_IN", "D21": "STOP", "D17": "LINK_TX", "D16": "LINK_RX",
     "VIN": "+5V", "GND": "GND", "3V3": "+3V3",
 }
 
@@ -42,7 +42,7 @@ def build(lib, outdir):
                    ("left" if ref == "J1" else "right"), (x, 101.6), nets,
                    footprint=parts.FP_DEVKIT_ROW)
     root.note("J1 pins 1-15: " + " ".join(DEVKIT_LEFT) + "\nJ2 pins 1-15: " + " ".join(DEVKIT_RIGHT)
-              + "\nDOIT 30-pin layout - VERIFY against the devkit silkscreen.\n"
+              + "\nDOIT 30-pin layout - verified against the HW-394 board silkscreen, 2026-09-14.\n"
               "GPIO 34 reserved (feedback), 35 = driver alarm, not configured yet.", (25.4, 25.4))
 
     for i, name in enumerate(CHANNELS):

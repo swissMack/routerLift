@@ -1750,7 +1750,7 @@
 			(width 0)
 			(type default))
 		(uuid "2c97924a-d7f7-55ab-b8ae-f4cdfb1cc8b3"))
-	(text "J1 pins 1-15: EN VP_36 VN_39 D34 D35 D32 D33 D25 D26 D27 D14 D12 D13 GND VIN\nJ2 pins 1-15: D23 D22 TX0_1 RX0_3 D21 D19 D18 D5 TX2_17 RX2_16 D4 D2 D15 GND 3V3\nDOIT 30-pin layout - VERIFY against the devkit silkscreen.\nGPIO 34 reserved (feedback), 35 = driver alarm, not configured yet."
+	(text "J1 pins 1-15: EN VP_36 VN_39 D34 D35 D32 D33 D25 D26 D27 D14 D12 D13 GND VIN\nJ2 pins 1-15: D23 D22 TX0_1 RX0_3 D21 D19 D18 D5 D17 D16 D4 D2 D15 GND 3V3\nDOIT 30-pin layout - verified against the HW-394 board silkscreen, 2026-09-14.\nGPIO 34 reserved (feedback), 35 = driver alarm, not configured yet."
 		(exclude_from_sim no)
 		(at 25.4 25.4 0)
 		(effects

@@ -18,7 +18,6 @@ After running `verify.sh`, restore unchanged PDFs with `git checkout -- hardware
 
 ## Open items shown on the drawings
 
-- Devkit header rows assume the DOIT 30-pin layout — verify against the board in hand.
 - Contactor coil voltage (BOM block A).
 - MPG output type — R3/R4 on the panel carrier are DNP until known.
 - Foot-switch release mirror (MCP GPA6) — needs a second pedal contact or a shared-contact decision.

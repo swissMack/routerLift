@@ -13,7 +13,8 @@ class DevkitTest(unittest.TestCase):
 
     def test_gpio_from_silkscreen(self):
         self.assertEqual(devkit_gpio("D26"), 26)
-        self.assertEqual(devkit_gpio("TX2_17"), 17)
+        self.assertEqual(devkit_gpio("D17"), 17)
+        self.assertEqual(devkit_gpio("TX0_1"), 1)
         self.assertEqual(devkit_gpio("VP_36"), 36)
         self.assertIsNone(devkit_gpio("3V3"))
         self.assertIsNone(devkit_gpio("GND"))
