@@ -3,6 +3,7 @@
 Coordinates are millimetres from the board's top-left corner, y down.
 """
 import json
+import math
 import subprocess
 import tempfile
 from pathlib import Path
@@ -119,42 +120,76 @@ class BoardBuilder:
                 pcbnew.ToMM(box.GetRight()) - ORIGIN[0], pcbnew.ToMM(box.GetBottom()) - ORIGIN[1])
 
     def save(self, path):
-        # pcbnew.SaveBoard() also (re)writes the sibling .kicad_pro with its own
-        # default project settings, clobbering anything write_project_rules()
-        # already put there. Preserve it across the save.
-        path = Path(path)
-        pro = path.with_suffix(".kicad_pro")
-        prior = pro.read_text() if pro.exists() else None
-        pcbnew.SaveBoard(str(path), self.board)
-        if prior is not None:
-            pro.write_text(prior)
+        _save_board(self.board, path)
 
 
-def write_project_rules(pro_path):
-    """Merge JLCPCB rules and net classes into the project file the schematic already uses."""
-    pro_path = Path(pro_path)
-    pro = json.loads(pro_path.read_text()) if pro_path.exists() else {}
-    board = pro.setdefault("board", {})
-    ds = board.setdefault("design_settings", {})
-    ds["rules"] = {
-        "min_clearance": 0.25, "min_track_width": 0.25, "min_via_diameter": 0.6,
-        "min_through_hole_diameter": 0.3, "min_copper_edge_clearance": 0.5,
-        "min_hole_to_hole": 0.25, "min_text_height": 1.0, "min_text_thickness": 0.15,
-    }
-    ds["track_widths"] = [0.0, 0.25, 0.6]
-    ds["via_dimensions"] = [{"diameter": 0.0, "drill": 0.0}, {"diameter": 0.6, "drill": 0.3}]
-    pro["net_settings"] = {
-        "classes": [
-            {"name": "Default", "clearance": 0.25, "track_width": 0.25,
-             "via_diameter": 0.6, "via_drill": 0.3},
-            {"name": "Power", "clearance": 0.25, "track_width": 0.6,
-             "via_diameter": 0.6, "via_drill": 0.3},
-        ],
-        "netclass_patterns": [{"netclass": "Power", "pattern": n} for n in NET_CLASS_POWER],
-        "meta": {"version": 3},
-    }
-    pro.setdefault("meta", {"filename": pro_path.name, "version": 1})
-    pro_path.write_text(json.dumps(pro, indent=2) + "\n")
+def apply_rules(board):
+    """Apply JLCPCB-compatible clearances and net classes to a live pcbnew.BOARD.
+
+    This is the single source of truth for design rules -- it sets pcbnew's own
+    BOARD_DESIGN_SETTINGS and NET_SETTINGS directly, so pcbnew.SaveBoard() then
+    writes correct values into the sibling .kicad_pro itself, and anything that
+    reads the live board (DSN export for the autorouter, kicad-cli DRC) sees the
+    same rules. Idempotent -- safe to call again after a load/save cycle, which
+    is required wherever a board is reloaded from disk (autoroute(), stitch_ground()).
+    """
+    ds = board.GetDesignSettings()
+    ds.m_MinClearance = MM(0.25)
+    ds.m_TrackMinWidth = MM(0.25)
+    ds.m_ViasMinSize = MM(0.6)
+    ds.m_MinThroughDrill = MM(0.3)
+    ds.m_CopperEdgeClearance = MM(0.5)
+    ds.m_HoleToHoleMin = MM(0.25)
+    ds.m_MinSilkTextHeight = MM(1.0)
+    ds.m_MinSilkTextThickness = MM(0.15)
+
+    ns = ds.m_NetSettings
+    default = ns.GetDefaultNetclass()
+    default.SetTrackWidth(MM(0.25))
+    default.SetClearance(MM(0.25))
+    default.SetViaDiameter(MM(0.6))
+    default.SetViaDrill(MM(0.3))
+
+    power = pcbnew.NETCLASS("Power")
+    power.SetTrackWidth(MM(0.6))
+    power.SetClearance(MM(0.25))
+    power.SetViaDiameter(MM(0.6))
+    power.SetViaDrill(MM(0.3))
+    ns.SetNetclass("Power", power)
+
+    for pattern in NET_CLASS_POWER:
+        ns.SetNetclassPatternAssignment(pattern, "Power")
+
+    board.SynchronizeNetsAndNetClasses(False)
+
+
+def _save_board(board, path):
+    """Save `board` to `path`, saving+restoring the sibling .kicad_pro.
+
+    pcbnew.SaveBoard() also (re)writes the sibling .kicad_pro with whatever is
+    in the live board's design settings / net classes, discarding every other
+    top-level key that was already in the file (the real carriers' schematic-
+    derived settings, sheet layout, etc.). Snapshot the file first and restore
+    every top-level key except "board" and "net_settings" -- those two pcbnew
+    now owns, and apply_rules() is what puts the right values in them. "meta"
+    is left as pcbnew wrote it unless the snapshot's meta.filename differs
+    (e.g. the project was renamed), in which case the snapshot's meta wins.
+    """
+    path = Path(path)
+    pro = path.with_suffix(".kicad_pro")
+    prior = json.loads(pro.read_text()) if pro.exists() else None
+    pcbnew.SaveBoard(str(path), board)
+    if prior is None:
+        return
+    new = json.loads(pro.read_text())
+    for key, val in prior.items():
+        if key in ("board", "net_settings", "meta"):
+            continue
+        new[key] = val
+    old_meta, new_meta = prior.get("meta"), new.get("meta")
+    if old_meta is not None and (old_meta.get("filename") != (new_meta or {}).get("filename")):
+        new["meta"] = old_meta
+    pro.write_text(json.dumps(new, indent=2) + "\n")
 
 
 def autoroute(pcb_path, jar, flags):
@@ -163,6 +198,7 @@ def autoroute(pcb_path, jar, flags):
     flags: callable(dsn, ses) -> list of Freerouting CLI args (from Task 1's --help record).
     """
     board = pcbnew.LoadBoard(str(pcb_path))
+    apply_rules(board)
     with tempfile.TemporaryDirectory() as d:
         dsn, ses = Path(d) / "board.dsn", Path(d) / "board.ses"
         if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
@@ -173,36 +209,51 @@ def autoroute(pcb_path, jar, flags):
         if not pcbnew.ImportSpecctraSES(board, str(ses)):
             raise RuntimeError("SES import failed")
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-    pcbnew.SaveBoard(str(pcb_path), board)
+    _save_board(board, pcb_path)
 
 
-def stitch_ground(pcb_path, pitch=10.0, margin=1.0):
-    """Add GND vias on a grid wherever both GND zones are filled around the point."""
+def stitch_ground(pcb_path, pitch=10.0, margin=0.2):
+    """Add GND vias, sized from GND's own net class, on a grid wherever both GND
+    zones are filled in a ring around the candidate point (not just the centre)."""
     board = pcbnew.LoadBoard(str(pcb_path))
+    apply_rules(board)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    net = board.FindNet("GND")
+    if net is None:
+        _save_board(board, pcb_path)
+        return 0
+
+    nc = net.GetNetClassSlow()
+    via_dia, via_drill = nc.GetViaDiameter(), nc.GetViaDrill()
+    default_clearance = board.GetDesignSettings().m_NetSettings.GetDefaultNetclass().GetClearance()
+    probe_r = via_dia / 2 + default_clearance + MM(margin)
+    ring = 8
+
     gnd = [z for z in board.Zones() if not z.GetIsRuleArea() and z.GetNetname() == "GND"]
     front = [z for z in gnd if z.GetLayer() == pcbnew.F_Cu]
     back = [z for z in gnd if z.GetLayer() == pcbnew.B_Cu]
     box = board.GetBoardEdgesBoundingBox()
-    net = board.FindNet("GND")
     added = 0
     x = box.GetX() + MM(pitch / 2)
     while x < box.GetRight():
         y = box.GetY() + MM(pitch / 2)
         while y < box.GetBottom():
-            probes = [pcbnew.VECTOR2I(x + dx, y + dy) for dx, dy in
-                      ((0, 0), (MM(margin), 0), (-MM(margin), 0), (0, MM(margin)), (0, -MM(margin)))]
+            probes = [pcbnew.VECTOR2I(int(x), int(y))]
+            for i in range(ring):
+                angle = 2 * math.pi * i / ring
+                probes.append(pcbnew.VECTOR2I(int(x + probe_r * math.cos(angle)),
+                                               int(y + probe_r * math.sin(angle))))
             if all(any(z.HitTestFilledArea(pcbnew.F_Cu, pt) for z in front) and
                    any(z.HitTestFilledArea(pcbnew.B_Cu, pt) for z in back) for pt in probes):
                 via = pcbnew.PCB_VIA(board)
-                via.SetPosition(pcbnew.VECTOR2I(x, y))
-                via.SetWidth(MM(0.6))
-                via.SetDrill(MM(0.3))
+                via.SetPosition(pcbnew.VECTOR2I(int(x), int(y)))
+                via.SetWidth(via_dia)
+                via.SetDrill(via_drill)
                 via.SetNet(net)
                 board.Add(via)
                 added += 1
             y += MM(pitch)
         x += MM(pitch)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-    pcbnew.SaveBoard(str(pcb_path), board)
+    _save_board(board, pcb_path)
     return added
