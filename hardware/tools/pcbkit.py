@@ -21,6 +21,7 @@ def _load_fp(lib_id):
     fp = pcbnew.FootprintLoad(str(FP_DIR / (lib + ".pretty")), name)
     if fp is None:
         raise KeyError("footprint not found: " + lib_id)
+    fp.SetFPID(pcbnew.LIB_ID(lib, name))  # keep the nickname, or DRC reports a symbol mismatch
     return fp
 
 
@@ -82,7 +83,7 @@ class BoardBuilder:
     def rule_area(self, x0, y0, x1, y1):
         z = pcbnew.ZONE(self.board)
         z.SetIsRuleArea(True)
-        z.SetDoNotAllowCopperPour(True)
+        z.SetDoNotAllowZoneFills(True)  # KiCad 10 name for "no copper pour"
         z.SetDoNotAllowTracks(True)
         z.SetDoNotAllowVias(True)
         z.SetDoNotAllowPads(False)
@@ -212,9 +213,15 @@ def autoroute(pcb_path, jar, flags):
     _save_board(board, pcb_path)
 
 
-def stitch_ground(pcb_path, pitch=10.0, margin=0.2):
+def stitch_ground(pcb_path, pitch=10.0, margin=0.2, avoid=()):
     """Add GND vias, sized from GND's own net class, on a grid wherever both GND
-    zones are filled in a ring around the candidate point (not just the centre)."""
+    zones are filled in a ring around the candidate point (not just the centre).
+
+    avoid: (x0, y0, x1, y1) rectangles in board mm (top-left origin, as BoardBuilder)
+    where no via is placed -- e.g. silkscreen label bands.
+    """
+    avoid_nm = [(MM(ORIGIN[0] + x0), MM(ORIGIN[1] + y0), MM(ORIGIN[0] + x1), MM(ORIGIN[1] + y1))
+                for x0, y0, x1, y1 in avoid]
     board = pcbnew.LoadBoard(str(pcb_path))
     apply_rules(board)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
@@ -238,6 +245,9 @@ def stitch_ground(pcb_path, pitch=10.0, margin=0.2):
     while x < box.GetRight():
         y = box.GetY() + MM(pitch / 2)
         while y < box.GetBottom():
+            if any(ax0 <= x <= ax1 and ay0 <= y <= ay1 for ax0, ay0, ax1, ay1 in avoid_nm):
+                y += MM(pitch)
+                continue
             probes = [pcbnew.VECTOR2I(int(x), int(y))]
             for i in range(ring):
                 angle = 2 * math.pi * i / ring

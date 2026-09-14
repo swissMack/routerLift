@@ -58,6 +58,29 @@ class BoardBuilderTest(unittest.TestCase):
             loaded = pcbnew.LoadBoard(str(pcb))
         self.assertEqual(len(loaded.Zones()), 2)
 
+    def test_rule_area_forbids_pour_tracks_and_vias(self):
+        b = self.build()
+        z = b.rule_area(30.0, 10.0, 40.0, 30.0)
+        self.assertTrue(z.GetIsRuleArea())
+        self.assertTrue(z.GetDoNotAllowZoneFills())
+        self.assertTrue(z.GetDoNotAllowTracks())
+        self.assertTrue(z.GetDoNotAllowVias())
+
+    def test_footprints_keep_their_library_nickname(self):
+        b = self.build()
+        self.assertEqual(str(b.fps["R1"].GetFPID().GetLibNickname()), "Resistor_THT")
+
+    def test_stitch_ground_skips_avoid_rectangles(self):
+        b = pcbkit.BoardBuilder("stitch", 40.0, 30.0)
+        b.ground_zones()
+        pcbkit.apply_rules(b.board)
+        with tempfile.TemporaryDirectory() as d:
+            free, blocked = Path(d) / "free.kicad_pcb", Path(d) / "blocked.kicad_pcb"
+            b.save(free)
+            b.save(blocked)
+            self.assertGreater(pcbkit.stitch_ground(free), 0)
+            self.assertEqual(pcbkit.stitch_ground(blocked, avoid=[(0, 0, 40, 30)]), 0)
+
 
 @unittest.skipIf(pcbkit is None, "needs KiCad's bundled python (pcbnew)")
 class ApplyRulesTest(unittest.TestCase):
