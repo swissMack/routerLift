@@ -4,6 +4,12 @@ import parts
 
 HDR4 = "Connector_Generic:Conn_01x04"
 LVC14 = "74xx:74HC14"  # 74LVC14 is not in the stock KiCad library; Value overridden below.
+# The stock 74HC14 symbol's own Datasheet/Description are for the HC part, not the LVC14
+# actually fitted (BOM: a 74LVC14 on 3.3 V, not 74HCT14 - 5 V outputs would damage the S3).
+# Override both via place()'s fields= so nothing on the sheet points a BOM/datasheet lookup
+# at the wrong part.
+LVC14_FIELDS = {"Datasheet": "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf",
+                "Description": "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"}
 POWER_UNIT = 7
 GATE_PINS = {1: ("1", "2"), 2: ("3", "4"), 3: ("5", "6"), 4: ("9", "8"), 5: ("11", "10"), 6: ("13", "12")}
 GATES = {1: ("MPG_A_5V", "MPG_A_N"), 2: ("MPG_A_N", "MPG_A_3V3"),
@@ -40,13 +46,14 @@ def build(lib, outdir):
     for unit, (inp, out) in GATES.items():
         pin_in, pin_out = GATE_PINS[unit]
         s.place(LVC14, "U1", "74LVC14", (114.3, 38.1 + (unit - 1) * 20.32),
-                {pin_in: inp, pin_out: out}, unit=unit, footprint=parts.FP_SOIC14)
+                {pin_in: inp, pin_out: out}, unit=unit, footprint=parts.FP_SOIC14,
+                fields=LVC14_FIELDS)
     # Power unit sits a full extra row pitch below U1F (not the usual single 20.32 step)
     # so its own +3V3 flag - pulled back up toward U1F by POWER_STUB - lands clear of
     # U1F's "74LVC14" Value text instead of on top of it (confirmed by rendering: at
     # the usual one-step gap they overlapped as "+3V74LVC14").
     s.place(LVC14, "U1", "74LVC14", (114.3, 180.34), {"14": "+3V3", "7": "GND"},
-            unit=POWER_UNIT, footprint=parts.FP_SOIC14)
+            unit=POWER_UNIT, footprint=parts.FP_SOIC14, fields=LVC14_FIELDS)
     s.place(parts.C, "C1", "100n", (139.7, 180.34), {"1": "+3V3", "2": "GND"}, footprint=parts.FP_C)
     s.place(parts.R, "R3", "10k DNP", (165.1, 38.1), {"1": "+5V", "2": "MPG_A_5V"},
             footprint=parts.FP_R, dnp=True)
