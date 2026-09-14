@@ -6,7 +6,7 @@ before ordering a PCB. Index 0 is header pin 1 (top).
 import re
 
 DEVKIT_LEFT = ["EN", "VP_36", "VN_39", "D34", "D35", "D32", "D33", "D25",
-               "D26", "D27", "D14", "D12", "GND", "D13", "VIN"]
+               "D26", "D27", "D14", "D12", "D13", "GND", "VIN"]
 DEVKIT_RIGHT = ["D23", "D22", "TX0_1", "RX0_3", "D21", "D19", "D18", "D5",
                 "TX2_17", "RX2_16", "D4", "D2", "D15", "GND", "3V3"]
 
