@@ -49,6 +49,18 @@ class BoardBuilderTest(unittest.TestCase):
         hole = [f for f in b.board.GetFootprints() if f.GetReference().startswith("H")][0]
         self.assertTrue(hole.GetAttributes() & pcbnew.FP_BOARD_ONLY)
 
+    def test_mounting_hole_has_no_net(self):
+        b = self.build()
+        hole = [f for f in b.board.GetFootprints() if f.GetReference().startswith("H")][0]
+        self.assertTrue(list(hole.Pads()))
+        for p in hole.Pads():
+            self.assertEqual(p.GetNetCode(), 0)
+            self.assertEqual(p.GetNetname(), "")
+
+    def test_mounting_hole_records_its_centre(self):
+        b = self.build()
+        self.assertEqual(b.holes, [(35.0, 5.0)])
+
     def test_save_round_trip_and_zones(self):
         b = self.build()
         b.ground_zones()
@@ -94,6 +106,43 @@ class BoardBuilderTest(unittest.TestCase):
 
 
 @unittest.skipIf(pcbkit is None, "needs KiCad's bundled python (pcbnew)")
+class GeometryTest(unittest.TestCase):
+    def test_hole_rectangle_accepts_a_rectangle_in_any_order(self):
+        holes = [(93.0, 56.5), (4.0, 4.0), (4.0, 56.5), (93.0, 4.0)]
+        self.assertEqual(pcbkit.hole_rectangle(holes), (4.0, 4.0, 93.0, 56.5))
+
+    def test_hole_rectangle_rejects_the_old_motion_pattern(self):
+        with self.assertRaises(ValueError):
+            pcbkit.hole_rectangle([(4.0, 4.0), (85.0, 4.0), (4.0, 62.0), (136.0, 62.0)])
+
+    def test_hole_rectangle_rejects_wrong_count_and_duplicates(self):
+        with self.assertRaises(ValueError):
+            pcbkit.hole_rectangle([(4.0, 4.0), (8.0, 4.0), (4.0, 8.0)])
+        with self.assertRaises(ValueError):
+            pcbkit.hole_rectangle([(4.0, 4.0), (8.0, 4.0), (4.0, 8.0), (4.0, 8.0)])
+
+    def test_rect_gap(self):
+        self.assertEqual(pcbkit.rect_gap((0, 0, 1, 1), (0.5, 0.5, 2, 2)), 0.0)
+        self.assertAlmostEqual(pcbkit.rect_gap((0, 0, 1, 1), (4, 0, 5, 1)), 3.0)
+        self.assertAlmostEqual(pcbkit.rect_gap((0, 0, 1, 1), (4, 5, 5, 6)), 5.0)
+
+    def test_carrier_hole_patterns_are_rectangles(self):
+        import pcb_motion
+        import pcb_panel
+        self.assertEqual(pcbkit.hole_rectangle(pcb_motion.HOLES), (4.0, 4.0, 93.0, 56.5))
+        self.assertEqual(pcbkit.hole_rectangle(pcb_panel.HOLES), (4.0, 4.0, 76.0, 58.0))
+
+    def test_freerouting_jar_is_the_pinned_version_or_an_error(self):
+        self.assertEqual(pcbkit.pinned_freerouting_version(), "v2.1.0")
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "freerouting-9.9.9.jar").write_text("")   # a newer jar must not be picked
+            with self.assertRaises(FileNotFoundError):
+                pcbkit.freerouting_jar(d, "v2.1.0")
+            (Path(d) / "freerouting-2.1.0.jar").write_text("")
+            self.assertEqual(pcbkit.freerouting_jar(d, "v2.1.0").name, "freerouting-2.1.0.jar")
+
+
+@unittest.skipIf(pcbkit is None, "needs KiCad's bundled python (pcbnew)")
 class ApplyRulesTest(unittest.TestCase):
     def test_rules_reach_the_live_board_after_save_and_load(self):
         comps, pads = read_netlist(TEXT)
@@ -121,7 +170,7 @@ class ApplyRulesTest(unittest.TestCase):
         self.assertEqual(v3v3.GetNetClassName(), "Power")
         self.assertEqual(gnd.GetNetClassName(), "Power")
 
-    def test_save_preserves_unrelated_pro_keys_across_reruns(self):
+    def test_save_preserves_unrelated_pro_keys_across_repeated_load_save_cycles(self):
         comps, pads = read_netlist(TEXT)
         b = pcbkit.BoardBuilder("tiny", 40.0, 30.0)
         b.place(comps["R1"], pads, 10.0, 10.0)
@@ -131,11 +180,16 @@ class ApplyRulesTest(unittest.TestCase):
             pro = Path(d) / "tiny.kicad_pro"
             pro.write_text(json.dumps({"schematic": {"x": 1}, "meta": {"filename": "tiny.kicad_pro"}}))
             b.save(pcb)
+            # Same cycle autoroute() and stitch_ground() run: load, re-apply rules, save. Twice.
+            for _ in range(2):
+                loaded = pcbnew.LoadBoard(str(pcb))
+                pcbkit.apply_rules(loaded)
+                pcbkit._save_board(loaded, pcb)
             after = json.loads(pro.read_text())
         self.assertEqual(after.get("schematic"), {"x": 1})
         classes = {c["name"]: c for c in after["net_settings"]["classes"]}
-        self.assertEqual(classes["Power"]["track_width"], 0.6)
-        self.assertEqual(classes["Default"]["clearance"], 0.25)
+        self.assertEqual(classes["Power"]["track_width"], pcbkit.POWER_TRACK_WIDTH)
+        self.assertEqual(classes["Default"]["clearance"], pcbkit.CLEARANCE)
 
 
 @unittest.skipUnless(pcbkit is not None and JAR is not None,

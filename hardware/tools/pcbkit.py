@@ -4,6 +4,8 @@ Coordinates are millimetres from the board's top-left corner, y down.
 """
 import json
 import math
+import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -14,6 +16,63 @@ FP_DIR = Path("/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints")
 ORIGIN = (100.0, 100.0)  # where the board sits on the KiCad page
 NET_CLASS_POWER = ("+5V", "+3V3", "GND")
 MM = pcbnew.FromMM
+
+# JLCPCB design rules, mm. apply_rules() and every hand-placed track/via read these.
+CLEARANCE = 0.25
+TRACK_WIDTH = 0.25
+POWER_TRACK_WIDTH = 0.6
+VIA_DIAMETER = 0.6
+VIA_DRILL = 0.3
+
+TOOLS = Path(__file__).resolve().parent
+FREEROUTING_SCRIPT = TOOLS / "get_freerouting.sh"
+FREEROUTING_CACHE = TOOLS / ".cache"
+
+
+def pinned_freerouting_version():
+    """The version get_freerouting.sh downloads: $FREEROUTING_VERSION, else the script's default."""
+    env = os.environ.get("FREEROUTING_VERSION")
+    if env:
+        return env
+    m = re.search(r"FREEROUTING_VERSION:-([^}]+)\}", FREEROUTING_SCRIPT.read_text())
+    if not m:
+        raise RuntimeError("no default FREEROUTING_VERSION in " + str(FREEROUTING_SCRIPT))
+    return m.group(1)
+
+
+def freerouting_jar(cache=FREEROUTING_CACHE, version=None):
+    """Path of the cached jar for the pinned version; raises if it has not been downloaded."""
+    version = version or pinned_freerouting_version()
+    jar = Path(cache) / ("freerouting-%s.jar" % version.lstrip("v"))
+    if not jar.is_file():
+        raise FileNotFoundError("Freerouting %s not found at %s - run hardware/tools/get_freerouting.sh"
+                                % (version, jar))
+    return jar
+
+
+def rect_gap(a, b):
+    """Edge-to-edge distance between two (x0, y0, x1, y1) rectangles; 0 if they touch or overlap."""
+    dx = max(b[0] - a[2], a[0] - b[2], 0.0)
+    dy = max(b[1] - a[3], a[1] - b[3], 0.0)
+    return (dx * dx + dy * dy) ** 0.5
+
+
+def hole_rectangle(holes, tol=1e-6):
+    """(x0, y0, x1, y1) of four hole centres that form an axis-aligned rectangle; ValueError if not."""
+    if len(holes) != 4:
+        raise ValueError("expected 4 holes, got %d" % len(holes))
+    xs = sorted(set(round(x / tol) * tol for x, _ in holes))
+    ys = sorted(set(round(y / tol) * tol for _, y in holes))
+    corners = set((round(x / tol) * tol, round(y / tol) * tol) for x, y in holes)
+    if len(xs) != 2 or len(ys) != 2 or corners != set((x, y) for x in xs for y in ys):
+        raise ValueError("holes are not a rectangle: %r" % (holes,))
+    return xs[0], ys[0], xs[1], ys[1]
+
+
+def bbox_mm(item):
+    box = item.GetBoundingBox()
+    return (pcbnew.ToMM(box.GetX()) - ORIGIN[0], pcbnew.ToMM(box.GetY()) - ORIGIN[1],
+            pcbnew.ToMM(box.GetRight()) - ORIGIN[0], pcbnew.ToMM(box.GetBottom()) - ORIGIN[1])
 
 
 def _load_fp(lib_id):
@@ -31,6 +90,8 @@ class BoardBuilder:
         self.board = pcbnew.BOARD()
         self.nets, self.fps = {}, {}
         self._holes = 0
+        self.holes = []          # (x, y) centres, in placement order
+        self.stitch_avoid = []   # (x0, y0, x1, y1) mm boxes where stitch_ground() places no via
         rect = pcbnew.PCB_SHAPE(self.board, pcbnew.SHAPE_T_RECT)
         rect.SetStart(self.p(0, 0))
         rect.SetEnd(self.p(self.w, self.h))
@@ -76,7 +137,18 @@ class BoardBuilder:
         self.board.Add(fp)
         fp.SetPosition(self.p(x, y))
         self.fps[fp.GetReference()] = fp
+        self.holes.append((float(x), float(y)))
         return fp
+
+    def text_boxes(self, grow=0.0):
+        """(x0, y0, x1, y1) mm boxes, grown by `grow`, around every visible silkscreen text."""
+        items = [d for d in self.board.GetDrawings() if isinstance(d, pcbnew.PCB_TEXT)]
+        items += [fp.Reference() for fp in self.fps.values() if fp.Reference().IsVisible()]
+        out = []
+        for t in items:
+            x0, y0, x1, y1 = bbox_mm(t)
+            out.append((x0 - grow, y0 - grow, x1 + grow, y1 + grow))
+        return out
 
     def _outline_zone(self, zone, x0, y0, x1, y1):
         outline = zone.Outline()
@@ -140,10 +212,10 @@ def apply_rules(board):
     is required wherever a board is reloaded from disk (autoroute(), stitch_ground()).
     """
     ds = board.GetDesignSettings()
-    ds.m_MinClearance = MM(0.25)
-    ds.m_TrackMinWidth = MM(0.25)
-    ds.m_ViasMinSize = MM(0.6)
-    ds.m_MinThroughDrill = MM(0.3)
+    ds.m_MinClearance = MM(CLEARANCE)
+    ds.m_TrackMinWidth = MM(TRACK_WIDTH)
+    ds.m_ViasMinSize = MM(VIA_DIAMETER)
+    ds.m_MinThroughDrill = MM(VIA_DRILL)
     ds.m_CopperEdgeClearance = MM(0.5)
     ds.m_HoleToHoleMin = MM(0.25)
     ds.m_MinSilkTextHeight = MM(1.0)
@@ -151,16 +223,16 @@ def apply_rules(board):
 
     ns = ds.m_NetSettings
     default = ns.GetDefaultNetclass()
-    default.SetTrackWidth(MM(0.25))
-    default.SetClearance(MM(0.25))
-    default.SetViaDiameter(MM(0.6))
-    default.SetViaDrill(MM(0.3))
+    default.SetTrackWidth(MM(TRACK_WIDTH))
+    default.SetClearance(MM(CLEARANCE))
+    default.SetViaDiameter(MM(VIA_DIAMETER))
+    default.SetViaDrill(MM(VIA_DRILL))
 
     power = pcbnew.NETCLASS("Power")
-    power.SetTrackWidth(MM(0.6))
-    power.SetClearance(MM(0.25))
-    power.SetViaDiameter(MM(0.6))
-    power.SetViaDrill(MM(0.3))
+    power.SetTrackWidth(MM(POWER_TRACK_WIDTH))
+    power.SetClearance(MM(CLEARANCE))
+    power.SetViaDiameter(MM(VIA_DIAMETER))
+    power.SetViaDrill(MM(VIA_DRILL))
     ns.SetNetclass("Power", power)
 
     for pattern in NET_CLASS_POWER:

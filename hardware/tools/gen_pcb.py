@@ -2,7 +2,8 @@
 
 $KPY hardware/tools/gen_pcb.py motion-carrier [--no-route]
 
-Exit status is non-zero if DRC reports violations or unconnected items; the exports still run
+Exit status is non-zero if DRC reports violations or warnings (--severity-all) or unconnected
+items, or if the pinned Freerouting jar is missing; the exports still run after a DRC failure
 so the placement can be inspected (expected before routing).
 """
 import subprocess
@@ -41,11 +42,14 @@ def main(argv):
     pcbkit.apply_rules(builder.board)
     builder.save(pcb)
     if route:
-        jar = sorted((HW / "tools" / ".cache").glob("freerouting-*.jar"))[-1]
+        try:
+            jar = pcbkit.freerouting_jar()
+        except (FileNotFoundError, RuntimeError) as e:
+            print("ERROR:", e)
+            return 2
         pcbkit.autoroute(pcb, jar, freerouting_flags)
-        avoid = getattr(BOARDS[name], "STITCH_AVOID", ())
-        print("stitching vias:", pcbkit.stitch_ground(pcb, avoid=avoid))
-    drc = cli("pcb", "drc", "--schematic-parity", "--severity-error", "--exit-code-violations",
+        print("stitching vias:", pcbkit.stitch_ground(pcb, avoid=builder.stitch_avoid))
+    drc = cli("pcb", "drc", "--schematic-parity", "--severity-all", "--exit-code-violations",
               "--refill-zones", "-o", outdir / (name + "-drc.rpt"), pcb)
     gerbers = outdir / "fab" / "gerbers"
     gerbers.mkdir(parents=True, exist_ok=True)
