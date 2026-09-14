@@ -710,5 +710,7 @@ class Project:
             paths = [path for s, path, _ in insts if s is sheet]
             tree = sheet.to_sexpr(self.name, paths, refs, page_of, sheet is self.root)
             (self.outdir / sheet.filename).write_text(dump(tree) + "\n", encoding="utf-8")
-        pro = {"meta": {"filename": self.name + ".kicad_pro", "version": 1}}
-        (self.outdir / (self.name + ".kicad_pro")).write_text(json.dumps(pro, indent=2) + "\n")
+        pro_path = self.outdir / (self.name + ".kicad_pro")
+        pro = json.loads(pro_path.read_text()) if pro_path.exists() else {}
+        pro["meta"] = {"filename": self.name + ".kicad_pro", "version": 1}
+        pro_path.write_text(json.dumps(pro, indent=2) + "\n")

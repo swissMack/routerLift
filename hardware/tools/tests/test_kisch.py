@@ -726,5 +726,19 @@ class GlobalNetStubTest(unittest.TestCase):
         self.assertAlmostEqual(self._stub_length(s, "G"), kisch.STUB)
 
 
+class ProjectFilePreservationTest(unittest.TestCase):
+    def test_existing_pro_keys_survive_regeneration(self):
+        import json
+        s = Sheet("p", "p", lib())
+        s.place("Test:R2", "R?", "1k", (50.8, 50.8), {"1": "A", "2": "A"})
+        with tempfile.TemporaryDirectory() as d:
+            pro = Path(d) / "p.kicad_pro"
+            pro.write_text(json.dumps({"board": {"design_settings": {"x": 1}}, "meta": {"version": 0}}))
+            Project("p", s, d).write()
+            data = json.loads(pro.read_text())
+        self.assertEqual(data["board"], {"design_settings": {"x": 1}})
+        self.assertEqual(data["meta"], {"filename": "p.kicad_pro", "version": 1})
+
+
 if __name__ == "__main__":
     unittest.main()
