@@ -276,15 +276,15 @@ class Sheet:
         part's own furthest pin so both fields clear the whole symbol instead of landing
         on one row. See test_kisch.py FieldGapTest.
 
-        The same value also sets how far a POWER net's own flag symbol (GND/+3V3/+5V/
-        +24V, auto-added for any of this part's pins wired to one) keeps its Value text
-        from its own arrow graphic - default STUB is occasionally too tight there too:
-        confirmed on J4 in the real motion-carrier design (+3V3 on pins 1/3/5, pins
-        pointing left) and reproduced on J2/J4/J5 here, where a +3V3 or +5V flag's own
-        "+3V3"/"+5V" text overlaps its own arrow's tip at some rotations (GND's flag
-        clears fine at the same offset; +3V3/+5V's does not - a rendering quirk of the
-        stock symbols' geometry, not something derivable, only found by rendering). See
-        test_kisch.py FieldGapTest.test_field_gap_clears_a_power_flags_own_arrow.
+        field_gap does NOT affect a POWER net's own flag symbol (GND/+3V3/+5V/+24V,
+        auto-added for any of this part's pins wired to one) - that flag's Value text
+        keeps a fixed STUB gap from its own arrow graphic regardless of what field_gap
+        this part was placed with. It used to inherit field_gap, which broke the other
+        way: U2 here (field_gap=27.94, for the reason above) and the large system.py
+        boxes dragged their own "GND"/"+3V3" flag text 24-28mm from the arrow it
+        belongs to. See test_kisch.py FieldGapTest and _symbol()'s comment for the
+        (separate) fix for a power flag's own "+3V3"/"+5V" text touching its own
+        arrow's tip.
 
         jog maps a pin number or unique pin name (same key style as `nets`) to an extra
         sideways offset in mm (signed - either direction), inserted into that one pin's
@@ -396,6 +396,17 @@ class Sheet:
                                uuid=self._next("part")))
 
     def wire(self, a, b):
+        # A zero-length segment draws nothing visible but still writes a wire element -
+        # KiCad accepts it silently, so nothing catches it short of counting endpoints.
+        # place()'s jog= draws its third (final) segment as `jogged -> end`, where `end`
+        # is `jogged` moved by (stub - STUB) along the pin's own outward direction; for
+        # a plain net (stub == STUB, the common case - only a power or global net gets
+        # the longer POWER_STUB) that offset is exactly 0, so `end == jogged` and this
+        # third wire has identical endpoints. Confirmed: 19 such wires on the real
+        # low-voltage.kicad_sch (every jogged plain-net pin there). See
+        # test_kisch.py JogTest.test_jog_never_draws_a_zero_length_wire.
+        if a == b:
+            return
         self.items.append([A("wire"), [A("pts"), [A("xy"), a[0], a[1]], [A("xy"), b[0], b[1]]],
                            [A("stroke"), [A("width"), 0], [A("type"), A("default")]],
                            [A("uuid"), self._next()]])
@@ -489,9 +500,14 @@ class Sheet:
         #    which all sit close to the connector regardless of row. On its own this
         #    does not stop the Value field reaching a neighbouring row, because -
         #  - the Value field is offset *in the same direction the stub already runs*
-        #    (part["text_dir"], set by label() to the net's outward pin direction),
-        #    scaled by GRID * 2, instead of the regular fixed diagonal - so it moves
-        #    further from the row it came from, not back into a neighbour's. A smaller
+        #    (part["text_dir"], set by label() to the net's outward pin direction), by a
+        #    FIXED STUB (GRID * 2) - not by field_gap, which only ever moves the placed
+        #    part's own Reference/Value (see place()'s field_gap docstring). field_gap
+        #    used to drive this offset too, but a part placed with a large field_gap
+        #    (U2 here, field_gap=27.94; the large system.py boxes) then dragged its own
+        #    power flags' "GND"/"+3V3" Value text 24-28mm from their own arrow -
+        #    confirmed by rendering - so the two are now deliberately decoupled:
+        #    field_gap moves the part, a fixed STUB alone moves the flag. A smaller
         #    offset (GRID) leaves the text still touching its own symbol's glyph; a
         #    larger one (3 * GRID) overshoots it on some rotations - both confirmed by
         #    rendering, not derived.
@@ -506,20 +522,57 @@ class Sheet:
         #    as load-bearing and re-check by rendering before changing it.
         # See test_kisch.py PowerNetLegibilityTest, which renders an actual multi-row
         # power-and-signal connector (not just an isolated part) through kicad-cli and
-        # asserts none of the resulting glyph boxes overlap.
+        # asserts none of the resulting glyph boxes overlap, and FieldGapTest, which
+        # checks a power flag's Value text stays within the fixed STUB distance of its
+        # own flag even when the placed part uses a large field_gap.
+        #
+        # A power flag whose own rotation (part["rot"], as computed by label() via
+        # _rotation(base, direction)) is exactly 90 degrees is a further, separate
+        # case: at that one rotation the arrowhead/ground-symbol's own tip sits right
+        # at the Value text's anchor point, and _DIR_SIDE's normal justify - correct
+        # at every OTHER rotation (0, 180, 270) - renders with the text's leading
+        # glyph sitting under the graphic instead of clear of it. Confirmed by
+        # rendering through kicad-cli two ways round: a RISING arrow (+3V3/+5V/+24V)
+        # pointing left (rot 90) reads "<3V3", the "+" invisible (motion-carrier
+        # J3/J4/J5, the panel carrier's +3V3/+5V flags); GND pointing right (rot 90 -
+        # GND's own base direction is the opposite of a rising arrow's, so the SAME
+        # rot 90 happens at the OPPOSITE text_dir) reads with "GND" struck through by
+        # its own arrow (system.py's MOTION_CARRIER/RELAY_MODULE/etc. boxes, whose
+        # left-column +5V and right-column GND both land on rot 90 - see
+        # RisingArrowPlusVisibilityTest, added when only the +3V3 half of this was
+        # known, and its docstring). Both are fixed the same way: flip _DIR_SIDE's
+        # normal side at rot 90 only - confirmed by rendering, not derived; rot 90 is
+        # the only rotation any POWER_NETS member's flag ever takes for a HORIZONTAL
+        # text_dir (rot is otherwise 0/180 for a vertical one, which never showed this
+        # failure), so this one check covers every net and every direction. See
+        # test_kisch.py RisingArrowPlusVisibilityTest.
         fg = part["field_gap"]
         if part["power"] and part["text_dir"] is not None:
             tdx, tdy = part["text_dir"]
-            value_offset, value_justify = (tdx * fg, tdy * fg), [_DIR_SIDE[part["text_dir"]]]
+            value_offset = (tdx * STUB, tdy * STUB)
+            side = _DIR_SIDE[part["text_dir"]]
+            if part["rot"] == 90:
+                side = "left" if side == "right" else "right"
+            value_justify = [side]
         elif part["power"]:
             value_offset, value_justify = (1.27, 1.27), ["left"]
         else:
             value_offset, value_justify = (2.54, fg), ["left"]
-        props = [("Reference", instances[0][1], part["power"], (2.54, -fg), ["left"]),
-                 ("Value", part["value"], False, value_offset, value_justify),
-                 ("Footprint", part["footprint"], True, (0, 0), ["left"]),
-                 ("Datasheet", "", True, (0, 0), ["left"])]
-        props += [(k, v, True, (0, 0), ["left"]) for k, v in part["fields"].items()]
+        props = [["Reference", instances[0][1], part["power"], (2.54, -fg), ["left"]],
+                 ["Value", part["value"], False, value_offset, value_justify],
+                 ["Footprint", part["footprint"], True, (0, 0), ["left"]],
+                 ["Datasheet", "", True, (0, 0), ["left"]]]
+        # fields (place()'s own kwarg) overrides one of the four defaults above by name
+        # (e.g. a stock symbol's baked-in Datasheet - see panel_carrier.py's 74LVC14,
+        # which reuses the stock 74HC14 symbol under a different Value and needs its
+        # own Datasheet/Description, not the HC part's) instead of adding a same-named
+        # duplicate property; any other key is a genuinely new property, appended as
+        # before. See test_kisch.py FieldsOverrideTest.
+        remaining = dict(part["fields"])
+        for row in props:
+            if row[0] in remaining:
+                row[1] = remaining.pop(row[0])
+        props += [(k, v, True, (0, 0), ["left"]) for k, v in remaining.items()]
         # KiCad renders a symbol property's stored angle combined with the parent
         # symbol's own rotation, but not by simple addition - determined empirically
         # (see hardware/tools/tests/test_kisch.py FieldRotationTest): a stored angle of

@@ -358,16 +358,19 @@ class FieldGapTest(unittest.TestCase):
         self.assertEqual((float(at[1]), float(at[2])),
                          (float(flag_at[1]), round(float(flag_at[2]) - kisch.STUB, 4)))
 
-    def test_field_gap_clears_a_power_flags_own_arrow(self):
-        """The regression that prompted extending field_gap to power flags: J2/J4/J5 in
-        the real panel-carrier design each put a +3V3 or +5V pin next to a GND pin on a
-        connector whose pins point left (direction (-1, 0)) - and at that rotation, a
-        +3V3/+5V flag's own Value text ("+3V3"/"+5V") overlaps its own arrow glyph's tip
-        (GND's flag does not, at the identical offset - confirmed by rendering the real
-        design through kicad-cli and reading the PDF, not derived). Reproduce the same
-        direction and check that a larger field_gap moves the +3V3 flag's Value field
-        further from its own origin than the default does, in the same outward
-        direction - the concrete lever this test's regression was fixed with."""
+    def test_field_gap_does_not_move_a_power_flags_own_arrow_distance(self):
+        """The ruling from the final fix wave: field_gap and a power flag's own
+        Value-to-arrow distance are deliberately DECOUPLED (see place()'s field_gap
+        docstring and _symbol()'s comment). This used to be the opposite - field_gap
+        was the lever that fixed J2/J4/J5's +3V3/+5V flags overlapping their own
+        arrow's tip - but a part placed with a large field_gap for its OWN
+        Reference/Value clearance (U2 here, field_gap=27.94; the large system.py
+        boxes) then dragged its power flags' "GND"/"+3V3" Value text 24-28mm away
+        from their own arrow too, which is worse. So a power flag's Value now keeps
+        the fixed pre-parameter STUB gap regardless of field_gap - confirmed here by
+        checking a large field_gap changes nothing about that distance. (The separate
+        "+" hidden behind the arrow's tip - the actual J2/J4/J5 regression - is now
+        fixed generically in kisch instead: see RisingArrowPlusVisibilityTest.)"""
         def value_pos(field_gap):
             l = lib()
             sym = kisch.box_symbol("H", ["1", "2"], [])
@@ -386,7 +389,39 @@ class FieldGapTest(unittest.TestCase):
             flag_at = find(flag, "at")
             return abs(float(at[1]) - float(flag_at[1])) + abs(float(at[2]) - float(flag_at[2]))
         self.assertAlmostEqual(value_pos(None), kisch.STUB)
-        self.assertGreater(value_pos(5.08), value_pos(None))
+        self.assertAlmostEqual(value_pos(27.94), kisch.STUB)
+
+
+class FieldsOverrideTest(unittest.TestCase):
+    """place()'s fields= kwarg (panel_carrier.py's 74LVC14, which reuses the stock
+    74HC14 symbol under a different Value and needs its own Datasheet/Description,
+    not the HC part's own) must OVERRIDE a same-named default property (Datasheet is
+    always emitted, empty, by _symbol()) rather than emit a second, duplicate
+    property of the same name - and still add a genuinely new field (Description,
+    which has no default) as before."""
+
+    def _props(self, fields):
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "A", "2": "B"}, fields=fields)
+        tree = s.to_sexpr("p", ["/x"], {("/x", s.parts[0]["uuid"]): "R1"}, {}, True)
+        sym = find(tree, "symbol")
+        return findall(sym, "property")
+
+    def test_fields_overrides_an_existing_default_property(self):
+        props = self._props({"Datasheet": "https://example.com/lvc14.pdf"})
+        datasheets = [p for p in props if p[1] == "Datasheet"]
+        self.assertEqual(len(datasheets), 1, "expected exactly one Datasheet property")
+        self.assertEqual(datasheets[0][2], "https://example.com/lvc14.pdf")
+
+    def test_fields_still_adds_a_genuinely_new_property(self):
+        props = self._props({"Description": "Hex Schmitt-trigger inverter"})
+        descriptions = [p for p in props if p[1] == "Description"]
+        self.assertEqual(len(descriptions), 1)
+        self.assertEqual(descriptions[0][2], "Hex Schmitt-trigger inverter")
+
+    def test_omitting_fields_is_unaffected(self):
+        props = self._props(None)
+        self.assertEqual([p[2] for p in props if p[1] == "Datasheet"], [""])
 
 
 class JogTest(unittest.TestCase):
@@ -538,6 +573,112 @@ class JogTest(unittest.TestCase):
         self.assertEqual(len(wires), 2)
         for w in wires:
             self.assertEqual(len(find(w, "pts")) - 1, 2)
+
+    def test_jog_never_draws_a_zero_length_wire(self):
+        """place()'s jog cascade draws point -> mid -> jogged -> end, where `end` is
+        `jogged` moved by (stub - STUB) along the pin's own outward direction. For a
+        PLAIN net (stub == STUB - every net that is not itself a POWER_NET or a
+        declared global) that offset is exactly 0, so end == jogged and the third
+        wire has identical endpoints - confirmed on the real low-voltage.kicad_sch,
+        which has 19 of these (system.py's power_plain_jogs jogs the plain net
+        directly below a power pin whose own row above is also a power pin, e.g.
+        MOTION_CARRIER's ENA-/RELAY_5V/RELAY_GND run). Reproduce with place() jogging
+        a plain net directly and check no wire kisch wrote has equal endpoints."""
+        s = Sheet("t", "t", lib())
+        s.place("Test:R2", "R1", "1k", (50.8, 50.8), {"1": "A", "2": "B"},
+                jog={"1": 2 * kisch.GRID})
+        for w in findall(s.items, "wire"):
+            pts = find(w, "pts")
+            p1, p2 = tuple(pts[1][1:]), tuple(pts[2][1:])
+            self.assertNotEqual(p1, p2, "zero-length wire: %r" % (w,))
+
+
+class RisingArrowPlusVisibilityTest(unittest.TestCase):
+    """The regression, found in two halves:
+
+    Half 1 - a RISING-arrow power net (+3V3/+5V/+24V) whose pin points left
+    (text_dir == (-1, 0)) put its Value text's leading "+" glyph under its own
+    arrowhead's sharp tip - confirmed by rendering motion-carrier J3/J4/J5 and the
+    panel carrier's own +3V3/+5V flags through kicad-cli: it read "<3V3", the "+"
+    invisible.
+
+    Half 2 - found only AFTER fixing half 1 and re-rendering the real system project
+    for the legibility check this fix wave required: GND, pointing RIGHT
+    (text_dir == (1, 0)) - the opposite net, the opposite direction - has the exact
+    same failure ("GND" struck through by its own arrow), on system.py's
+    MOTION_CARRIER box (M11's RELAY_GND). An earlier version of this fix special-cased
+    "rising arrow, direction (-1, 0)" and missed this half entirely.
+
+    Both halves turn out to be ONE case, not two: label() computes each flag's own
+    rotation via _rotation(base, direction), and that rotation is 90 degrees for
+    BOTH failures (GND's base is the opposite of a rising arrow's, so the same 90
+    degrees falls at the opposite text_dir) and only ever 0/180/270 for every other
+    (net, direction) combination - confirmed by enumerating all 4 directions x all 4
+    POWER_NETS members (see the fix wave's report). So the fix keys on part["rot"]
+    == 90 alone, not on lib_id or text_dir, and covers every net/direction pair with
+    one check.
+
+    This is NOT checked here by re-deriving a bounding box the way
+    PowerNetLegibilityTest and JogTest do for their own regressions: the property
+    that broke is the stored 90 degree field angle (see FieldRotationTest's own
+    comment on this being a KiCad rendering quirk with no documented model) combined
+    with a *rotated* justify meaning that does not match the plain left-grows-right /
+    right-grows-left textbook convention _text_bbox assumes for angle-0 text - the
+    same category of "not derivable, only found by rendering" quirk _symbol()'s
+    comment on vertical justify already warns about
+    (test_power_value_field_has_no_vertical_justify pins that one the same way, by
+    asserting the known-good justify directly rather than a bbox). So this pins the
+    known-good *justify choice* the fix makes for all four (net-shape, direction)
+    combinations that reach rot 90 or rot 270 - confirmed correct by rendering, not
+    modelled geometrically - and that the offset magnitude (still exactly STUB, in
+    the same text_dir direction) is otherwise unchanged by it."""
+
+    def _flag_value(self, net, pin):
+        l = lib()
+        s = Sheet("t", "t", l)
+        # Test:G2's pin "A" (angle 0) has pin_outward (-1, 0); pin "Y" (angle 180) has
+        # pin_outward (1, 0) - the two horizontal directions this regression needs
+        # (see LibraryTest.test_pin_geometry's sibling cases and box_symbol()'s left-
+        # and right-side pins, which use the same two angles).
+        other = "Y" if pin == "A" else "A"
+        s.place("Test:G2", "U1", "G2", (50.8, 50.8), {pin: net, other: "OTHER"}, unit=1)
+        s.place("Test:G2", "U2", "G2", (101.6, 50.8), {pin: "OTHER", other: None}, unit=1)
+        with tempfile.TemporaryDirectory() as d:
+            Project("t", s, d).write()
+            tree = parse((Path(d) / "t.kicad_sch").read_text())
+        lib_id = kisch.POWER_NETS[net]
+        flag = [sym for sym in findall(tree, "symbol") if find(sym, "lib_id")[1] == lib_id][0]
+        flag_at = find(flag, "at")
+        value_prop = [p for p in findall(flag, "property") if p[1] == "Value"][0]
+        at = find(value_prop, "at")
+        justify = find(find(value_prop, "effects"), "justify")[1:]
+        offset = (round(float(at[1]) - float(flag_at[1]), 4),
+                 round(float(at[2]) - float(flag_at[2]), 4))
+        return int(flag_at[3]), offset, list(justify)
+
+    def test_rising_arrow_pointing_left_gets_the_flipped_justify(self):
+        rot, offset, justify = self._flag_value("+3V3", "A")
+        self.assertEqual(rot, 90)
+        self.assertEqual(offset, (-kisch.STUB, 0))
+        self.assertEqual(justify, ["left"])
+
+    def test_rising_arrow_pointing_right_keeps_the_ordinary_justify(self):
+        rot, offset, justify = self._flag_value("+3V3", "Y")
+        self.assertEqual(rot, 270)
+        self.assertEqual(offset, (kisch.STUB, 0))
+        self.assertEqual(justify, ["left"])
+
+    def test_gnd_pointing_right_gets_the_flipped_justify(self):
+        rot, offset, justify = self._flag_value("GND", "Y")
+        self.assertEqual(rot, 90)
+        self.assertEqual(offset, (kisch.STUB, 0))
+        self.assertEqual(justify, ["right"])
+
+    def test_gnd_pointing_left_keeps_the_ordinary_justify(self):
+        rot, offset, justify = self._flag_value("GND", "A")
+        self.assertEqual(rot, 270)
+        self.assertEqual(offset, (-kisch.STUB, 0))
+        self.assertEqual(justify, ["right"])
 
 
 class BoxSymbolTest(unittest.TestCase):
