@@ -19,8 +19,11 @@ DEVKIT_PIN1_X = W - 3.0                              # pin 1 (antenna end) near 
 DEVKIT_TOP_ROW_Y = 8.0
 ANTENNA_KEEPOUT = (W - 6.0, 4.0, W, 38.0)
 HOLES = [(4.0, 4.0), (85.0, 4.0), (4.0, 62.0), (W - 4.0, 62.0)]
-STITCH_AVOID = [(0.0, 59.0, W, H)]                   # terminal net-label band + terminal row
-J8_POS = (134.0, 52.0)                             # rot 90: pin 1 (GND) lowest
+ANTENNA_CLEAR = 10.0                                 # no stitching vias this close to the keep-out
+STITCH_AVOID = [(0.0, 59.0, W, H),                   # terminal net-label band + terminal row
+                (ANTENNA_KEEPOUT[0] - ANTENNA_CLEAR, 0.0, W, ANTENNA_KEEPOUT[3] + ANTENNA_CLEAR)]
+# Left short edge, far from the antenna end. rot 90: pin 1 (GND) lowest.
+J8_POS = (5.0, 36.0)
 CHANNELS = ["HOME", "TOP", "PROBE", "FOOT", "DRV_ALM"]
 FIELD_TERMINAL_PIN = {"HOME": ("J6", "1"), "TOP": ("J6", "3"), "DRV_ALM": ("J6", "5"),
                       "PROBE": ("J7", "1"), "FOOT": ("J7", "3")}
@@ -111,16 +114,15 @@ def build(comps, pads):
         set_ref(fp, b, px + BLOCK_C[0], BLOCK_DC_REF_Y)
         b.silk(ch, px, BLOCK_LABEL_Y, size=1.0)
 
-    # J8 on the right short edge, beside the devkit's TX/RX pins (J2-9/10). On the left edge the
-    # ~108 mm link run cut the B.Cu pour and starved J2-14's thermal (see task-3 report).
+    # J8 on the left short edge (away from the antenna). Pin labels sit on its board side.
     j8 = b.place(comps["J8"], pads, J8_POS[0], J8_POS[1], rot=90)
-    x0, y0, _, _ = b.courtyard_mm("J8")
-    set_ref(j8, b, J8_POS[0] + 1.0, y0 - 0.9)
+    x0, y0, x1, y1 = b.courtyard_mm("J8")
+    set_ref(j8, b, (x0 + x1) / 2, y1 + 0.9)
     for pad in j8.Pads():
         py = pcbnew.ToMM(pad.GetPosition().y) - pcbkit.ORIGIN[1]
-        t = b.silk(terminal_label(pad.GetNetname()).replace("LINK_", ""), x0 - 0.8, py, size=1.0)
-        t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_RIGHT)
-    b.silk("LINK", x0 - 3.0, y0 - 0.9, size=1.0)
+        t = b.silk(terminal_label(pad.GetNetname()).replace("LINK_", ""), x1 + 0.8, py, size=1.0)
+        t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    b.silk("LINK", (x0 + x1) / 2 + 1.0, y0 - 0.9, size=1.0)
     for hx, hy in HOLES:
         set_ref(b.mounting_hole(hx, hy), b, hx, hy, visible=False)
     b.silk("routerLift motion carrier Rev H", 32.0, 3.0, size=1.2)
