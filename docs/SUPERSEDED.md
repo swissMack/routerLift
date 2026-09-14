@@ -8,6 +8,7 @@ never as a build reference.
 | --- | --- | --- |
 | `superseded-SCHEMATIC.svg` | The pre-RevG **single-ESP32** design: ILI9488 TFT, XPT2046 touch, MCP23017 expander, DM542 driver, one controller doing motion and UI together | `SCHEMATIC-RevH.svg` |
 | `superseded-wiring_diagram.svg` / `.png` | The **RevG** wiring: display-only HMI, MPG on the FluidNC ESP32 at GPIO 34/35, TB6600 common anode at +5 V, `ENA±` n/c | `SCHEMATIC-RevH.svg` + `WIRING-RevH.svg` |
+| `SCHEMATIC-RevH.svg` | Hand-drawn Rev H schematic | `hardware/` KiCad projects (system.pdf, carrier PDFs) |
 
 ## Why they are wrong to build from
 
