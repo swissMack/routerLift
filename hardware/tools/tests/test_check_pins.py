@@ -44,3 +44,11 @@ class CheckPinsTest(unittest.TestCase):
         self.assertEqual(c["UART_TX"], 18)
         self.assertEqual(c["A_ZERO"], 3)
         self.assertNotIn("MCP_ADDR", c)
+
+    def test_config_pins_rejects_a_duplicate_key(self):
+        """A duplicate (section, key) used to let the last one silently win, hiding a
+        real copy-paste mistake in config.yaml (e.g. two axes' stepstick blocks both
+        setting step_pin under the same top-level section) instead of raising it."""
+        dup = YAML + "\nRelay:\n  output_pin: gpio.5\n"
+        with self.assertRaisesRegex(ValueError, r"Relay\.output_pin"):
+            config_pins(dup)

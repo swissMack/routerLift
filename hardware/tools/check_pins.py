@@ -28,12 +28,21 @@ MOTION_EXPECT = {
 RESERVED = {35: "DRV_ALM_IN"}
 P3 = {"1": 6, "2": 7, "3": 15, "4": 16}
 P4 = {"3": 17, "4": 18}
+P4_POWER = {"1": "GND", "2": "+3V3"}
 PANEL_EXPECT = {"MPG_A": "MPG_A_3V3", "MPG_B": "MPG_B_3V3", "MCP_SDA": "SDA", "MCP_SCL": "SCL",
                 "UART_RX": "LINK_TX", "UART_TX": "LINK_RX"}
 EXPANDER_EXPECT = {"A_CYCLE_START": "BTN_CYCLE_START", "A_ROUTER": "BTN_ROUTER",
                    "A_BIT_CHANGE": "BTN_BIT_CHANGE", "A_ZERO": "BTN_ZERO",
                    "A_PRESET": "BTN_PRESET", "A_ROUGH_FINE": "SW_ROUGH_FINE",
                    "A_FOOT_MIRROR": "FOOT_MIRROR", "B_ROUTER_LED": "LED_ROUTER_DRV"}
+# GND, LINK_TX, LINK_RX in that pin order - motion-carrier J8 and panel-carrier J3 are
+# the two ends of the same 3-wire link cable, so pin 1 on one end must be pin 1's net
+# on the other, etc. (docs/WIRING-RevH.md, UART-PROTOCOL.md).
+LINK_ORDER = ["GND", "LINK_TX", "LINK_RX"]
+# GPA7 is the expander's only fully-spare button input (panel_carrier.py's mcp dict
+# maps it to None -> a no-connect flag) - it must actually be unconnected in the
+# schematic, not silently reused for something else.
+EXPANDER_UNUSED = {"GPA7"}
 
 
 def config_pins(text):
@@ -46,7 +55,10 @@ def config_pins(text):
             section = m.group(1)
         m = re.match(r"^\s*(\w+):\s*gpio\.(\d+)", line)
         if m:
-            out[(section, m.group(1))] = int(m.group(2))
+            key = (section, m.group(1))
+            if key in out:
+                raise ValueError("config.yaml: duplicate key %s.%s" % key)
+            out[key] = int(m.group(2))
     return out
 
 
@@ -79,8 +91,7 @@ def netlist(sch):
     return nodes
 
 
-def check_motion(errors):
-    nodes = netlist(HW / "motion-carrier" / "motion-carrier.kicad_sch")
+def check_motion(errors, nodes):
     gpio_net = {}
     for ref, row in (("J1", DEVKIT_LEFT), ("J2", DEVKIT_RIGHT)):
         for i, silk in enumerate(row):
@@ -102,8 +113,7 @@ def check_motion(errors):
             errors.append("GPIO %d carries %s but config.yaml does not use it" % (gpio, net))
 
 
-def check_panel(errors):
-    nodes = netlist(HW / "panel-carrier" / "panel-carrier.kicad_sch")
+def check_panel(errors, nodes):
     io_net = {io: nodes[("J1", pin)][0] for pin, io in P3.items()}
     io_net.update({io: nodes[("J2", pin)][0] for pin, io in P4.items()})
     consts = header_constants((REPO / "hmi" / "include" / "pins.h").read_text(encoding="utf-8"))
@@ -113,6 +123,11 @@ def check_panel(errors):
         elif io_net.get(consts[name]) != net:
             errors.append("pins.h %s = %d but the schematic has %r there, expected %r"
                           % (name, consts[name], io_net.get(consts[name]), net))
+    for pin, net in P4_POWER.items():
+        actual = nodes.get(("J2", pin), (None, None))[0]
+        if actual != net:
+            errors.append("panel-carrier J2 (P4) pin %s is %r, expected %r"
+                          % (pin, actual, net))
     mcp = {func: net for (ref, _), (net, func) in nodes.items() if ref == "U2"}
     for name, net in EXPANDER_EXPECT.items():
         if name not in consts:
@@ -121,12 +136,29 @@ def check_panel(errors):
         func = ("GPA%d" if name.startswith("A_") else "GPB%d") % consts[name]
         if mcp.get(func) != net:
             errors.append("pins.h %s -> %s but U2 %s is %r" % (name, net, func, mcp.get(func)))
+    for func in EXPANDER_UNUSED:
+        net = mcp.get(func)
+        if net is None or not net.startswith("unconnected"):
+            errors.append("U2 %s expected unconnected, has %r" % (func, net))
+
+
+def check_link(errors, motion_nodes, panel_nodes):
+    for i, expected in enumerate(LINK_ORDER, start=1):
+        motion_net = motion_nodes.get(("J8", str(i)), (None, None))[0]
+        panel_net = panel_nodes.get(("J3", str(i)), (None, None))[0]
+        if motion_net != expected or panel_net != expected:
+            errors.append(
+                "link pin %d: motion-carrier J8 has %r, panel-carrier J3 has %r, both "
+                "expected %r" % (i, motion_net, panel_net, expected))
 
 
 def main():
     errors = []
-    check_motion(errors)
-    check_panel(errors)
+    motion_nodes = netlist(HW / "motion-carrier" / "motion-carrier.kicad_sch")
+    panel_nodes = netlist(HW / "panel-carrier" / "panel-carrier.kicad_sch")
+    check_motion(errors, motion_nodes)
+    check_panel(errors, panel_nodes)
+    check_link(errors, motion_nodes, panel_nodes)
     for e in errors:
         print("MISMATCH:", e)
     print("check_pins: %d mismatch(es)" % len(errors))
