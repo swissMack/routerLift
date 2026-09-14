@@ -7,7 +7,9 @@ BOXES = {
     "RCD": (["L_IN", "N_IN"], ["L_OUT", "N_OUT"]),
     "ESTOP_NC": (["L_IN"], ["L_OUT"]),
     "PSU_24_36V": (["L", "N", "PE"], ["V+", "V-"]),
-    "CONTACTOR": (["A1", "A2", "L1", "L2"], ["T1", "T2"]),
+    # Single-pole (L only) per WIRING-RevH diagram 5 - N runs straight from the RCD to
+    # the router socket and never passes through the contactor. See mains()'s note.
+    "CONTACTOR": (["A1", "A2", "L1"], ["T1"]),
     "KEY_SWITCH": (["IN"], ["OUT"]),
     "RC_SNUBBER": (["X1"], ["X2"]),
     "ROUTER_SOCKET": (["L", "N", "PE"], []),
@@ -157,19 +159,20 @@ def mains(lib):
     place_box(s, "KEY_SWITCH", "M?", "Bit-change key switch", (114.3, 152.4),
               {"IN": "RELAY_NO", "OUT": "COIL_A1"})
     place_box(s, "CONTACTOR", "M?", "Router contactor", (177.8, 152.4),
-              {"A1": "COIL_A1", "A2": "N_RCD", "L1": "L_FUSED", "L2": "N_RCD",
-               "T1": "ROUTER_L", "T2": "ROUTER_N"})
+              {"A1": "COIL_A1", "A2": "N_RCD", "L1": "L_FUSED", "T1": "ROUTER_L"})
     place_box(s, "RC_SNUBBER", "M?", "RC snubber", (177.8, 203.2),
               {"X1": "L_FUSED", "X2": "ROUTER_L"})
     place_box(s, "ROUTER_SOCKET", "M?", "Router socket", (304.8, 152.4),
-              {"L": "ROUTER_L", "N": "ROUTER_N", "PE": "PE"})
+              {"L": "ROUTER_L", "N": "N_RCD", "PE": "PE"})
     place_box(s, "PE_BOND", "M?", "PE: enclosure + lift frame", (304.8, 203.2), {"PE": "PE"})
     s.flag("+24V", (38.1, 254.0))
     s.flag("GND", (50.8, 254.0))
     s.note("E-stop breaks L to BOTH the PSU and the contactor (SAF-01).\n"
            "Key switch in series with the coil: key out = contactor cannot pull in (SAF-02).\n"
            "Contactor coil voltage UNVERIFIED - drawn as 230 V AC from L_FUSED / N (BOM block A).\n"
-           "L_FUSED and RELAY_NO continue on the low-voltage sheet (relay module contact).",
+           "L_FUSED and RELAY_NO continue on the low-voltage sheet (relay module contact).\n"
+           "Contactor drawn single-pole (L only) per WIRING-RevH diagram 5; switching L and N\n"
+           "with a 2-pole contactor is an open design choice.",
            (25.4, 25.4))
     return s
 
