@@ -22,12 +22,14 @@ HOLES = [(HOLE_INSET, HOLE_INSET), (W - HOLE_INSET, HOLE_INSET),
 LABEL_GAP = 0.8                           # terminal courtyard to label start
 LABEL_BAND = 10.5                         # room reserved for the vertical net labels
 ESCAPE_DX = 2.0                           # U1 pin 8 pad centre to its B.Cu escape via
-RES_PAD1_Y = 31.0                        # vertical axial resistors: pad 1 lowest
+RES_PAD1_Y = 32.0                        # vertical axial resistors: pad 1 lowest (1 mm lower than
+                                          # before, to make room for the LINK note above R1-R4)
 DECOUPLE_MAX = 3.0                       # cap courtyard to chip power pad, edge to edge
 STITCH_TEXT_CLEAR = 1.0                   # no stitching via within this of any silk text
-# Filled in by build(): a box around every silkscreen text (net labels, refdes, P3/P4, DNP),
-# so vias never land under a label but can still stitch the pour between them.
-STITCH_AVOID = []
+LINK_NOTE = "LINK: straight-through 1-1 2-2 3-3"
+LINK_NOTE_POS = (5.9, 21.55)              # left end; under J3's pin labels, above R1-R4,
+                                          # right of J1's courtyard, left of C1
+LINK_NOTE_CLEAR = 0.25                    # min gap from the note to any courtyard or other text
 
 
 def _mm(v):
@@ -47,24 +49,10 @@ def pad(fp, number):
 
 def terminal_label(netname):
     name = netname.lstrip("/")
-    for prefix in ("BTN_", "SW_", "LINK_"):
+    for prefix in ("BTN_", "SW_"):          # LINK_ stays: the link uses the shared net names
         if name.startswith(prefix):
             name = name[len(prefix):]
     return name
-
-
-def rect_gap(a, b):
-    """Edge-to-edge distance between two (x0, y0, x1, y1) rectangles; 0 if they touch."""
-    dx = max(b[0] - a[2], a[0] - b[2], 0.0)
-    dy = max(b[1] - a[3], a[1] - b[3], 0.0)
-    return (dx * dx + dy * dy) ** 0.5
-
-
-def pad_box(p):
-    box = p.GetBoundingBox()
-    return (pcbnew.ToMM(box.GetX()) - pcbkit.ORIGIN[0], pcbnew.ToMM(box.GetY()) - pcbkit.ORIGIN[1],
-            pcbnew.ToMM(box.GetRight()) - pcbkit.ORIGIN[0],
-            pcbnew.ToMM(box.GetBottom()) - pcbkit.ORIGIN[1])
 
 
 def escape_via(b, ref, pin, dx, dy):
@@ -75,34 +63,23 @@ def escape_via(b, ref, pin, dx, dy):
     t = pcbnew.PCB_TRACK(b.board)
     t.SetStart(start)
     t.SetEnd(end)
-    t.SetWidth(pcbkit.MM(0.25))
+    t.SetWidth(pcbkit.MM(pcbkit.TRACK_WIDTH))
     t.SetLayer(pcbnew.F_Cu)
     t.SetNet(p.GetNet())
     t.SetLocked(True)
     b.board.Add(t)
     v = pcbnew.PCB_VIA(b.board)
     v.SetPosition(end)
-    v.SetWidth(pcbkit.MM(0.6))
-    v.SetDrill(pcbkit.MM(0.3))
+    v.SetWidth(pcbkit.MM(pcbkit.VIA_DIAMETER))
+    v.SetDrill(pcbkit.MM(pcbkit.VIA_DRILL))
     v.SetNet(p.GetNet())
     v.SetLocked(True)
     b.board.Add(v)
     return v
 
 
-def text_boxes(b, grow):
-    """(x0, y0, x1, y1) mm boxes, grown by `grow`, around every visible silkscreen text."""
-    items = [d for d in b.board.GetDrawings() if isinstance(d, pcbnew.PCB_TEXT)]
-    items += [fp.Reference() for fp in b.fps.values() if fp.Reference().IsVisible()]
-    out = []
-    for t in items:
-        x0, y0, x1, y1 = pad_box(t)
-        out.append((x0 - grow, y0 - grow, x1 + grow, y1 + grow))
-    return out
-
-
 def decoupling_gap(b, cap, chip, pin):
-    return rect_gap(b.courtyard_mm(cap), pad_box(pad(b.fps[chip], pin)))
+    return pcbkit.rect_gap(b.courtyard_mm(cap), pcbkit.bbox_mm(pad(b.fps[chip], pin)))
 
 
 def _edge_row(b, comps, pads, refs, rot, bottom):
@@ -174,9 +151,20 @@ def build(comps, pads):
 
     for hx, hy in HOLES:
         set_ref(b.mounting_hole(hx, hy), b, hx, hy, visible=False)
+    pcbkit.hole_rectangle(b.holes)
     b.silk("routerLift panel carrier Rev H", W - 2.2, H / 2, size=1.2, rot=90)
+
+    # Link note under J3's pin labels; must not touch any courtyard or other text.
+    others = b.text_boxes()
+    note = b.silk(LINK_NOTE, LINK_NOTE_POS[0], LINK_NOTE_POS[1], size=1.0)
+    note.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    nbox = pcbkit.bbox_mm(note)
+    for what, box in [(r, b.courtyard_mm(r)) for r in b.fps] + [("text", t) for t in others]:
+        if pcbkit.rect_gap(nbox, box) < LINK_NOTE_CLEAR:
+            raise ValueError("LINK note %r overlaps %s %r" % (nbox, what, box))
+
     b.ground_zones()
-    STITCH_AVOID[:] = text_boxes(b, STITCH_TEXT_CLEAR)
+    b.stitch_avoid = b.text_boxes(STITCH_TEXT_CLEAR)
 
     for cap, chip, pins in (("C1", "U1", ("14", "13")), ("C2", "U2", ("9", "10"))):
         for pin in pins:

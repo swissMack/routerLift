@@ -25,17 +25,32 @@ Editor freely. Rebuilding from scratch overwrites hand edits:
     /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 \
       hardware/tools/gen_pcb.py motion-carrier                          # or panel-carrier
 
-`get_freerouting.sh` fetches v2.1.0 (v2.2+ needs Java 25); override with `FREEROUTING_VERSION=2.4.1 ./get_freerouting.sh` etc.
+`get_freerouting.sh` fetches v2.1.0, which runs on Java 21. `gen_pcb.py` uses only the jar for
+that pinned version (`hardware/tools/.cache/freerouting-2.1.0.jar`) and stops with an error if it
+is missing. To try another version, delete the cached jar first, then run e.g.
+`FREEROUTING_VERSION=v2.4.1 hardware/tools/get_freerouting.sh` — and run `gen_pcb.py` with the same
+`FREEROUTING_VERSION` set. v2.2 and later need Java 25.
 
-`verify.sh` runs DRC with schematic parity on both boards. Autorouting gives a different result
-each run, so after any regeneration run `kicad-cli pcb drc --schematic-parity --severity-all` and
-check for warnings too. Fabrication zips for JLCPCB (2-layer, 1.6 mm, HASL) are in
-`<board>/fab/<board>-jlcpcb.zip`.
+**Regenerating a board is destructive.** It overwrites the `.kicad_pcb`, replaces the `board` and
+`net_settings` sections of its `.kicad_pro` (design rules and net classes edited in the GUI are
+discarded; other sections are kept), and rewrites the fab zip, the board PDF and the renders.
+
+`verify.sh` and `gen_pcb.py` run DRC with schematic parity and `--severity-all`, so warnings fail
+too. Autorouting gives a different result each run, so check DRC after every regeneration.
+Fabrication zips for JLCPCB (2-layer, 1.6 mm, HASL) are in `<board>/fab/<board>-jlcpcb.zip`.
 
 | Board | Size | Mounting |
 | --- | --- | --- |
 | motion carrier | 140 × 80 mm | 4× M3 for standard DIN-rail PCB clips |
 | panel carrier | 80 × 62 mm | 4× M3 corners, standoffs |
+
+Mounting hole centres, in mm from the board's top-left corner (x right, y down). Each board's holes
+form a rectangle:
+
+| Board | Holes (x, y) | Pitch (x × y) |
+| --- | --- | --- |
+| motion carrier | (4, 4), (93, 4), (4, 56.5), (93, 56.5) | 89 × 52.5 mm |
+| panel carrier | (4, 4), (76, 4), (4, 58), (76, 58) | 72 × 54 mm |
 
 ## Open items shown on the drawings
 
