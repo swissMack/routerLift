@@ -847,7 +847,7 @@
 			(effects
 				(font
 					(size 1 1))
-				(justify right)))
+				(justify left)))
 		(property "Footprint" ""
 			(at 39.37 50.8 90)
 			(effects

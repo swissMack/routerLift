@@ -3512,7 +3512,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 17.78 86.36 90)
+			(at 22.86 86.36 90)
 			(effects
 				(font
 					(size 1 1))
@@ -3555,11 +3555,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 17.78 88.9 90)
+			(at 22.86 88.9 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify right)))
+				(justify left)))
 		(property "Footprint" ""
 			(at 25.4 88.9 90)
 			(effects
@@ -3735,11 +3735,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 17.78 162.56 90)
+			(at 22.86 162.56 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify right)))
+				(justify left)))
 		(property "Footprint" ""
 			(at 25.4 162.56 90)
 			(effects
@@ -3778,7 +3778,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 17.78 165.1 90)
+			(at 22.86 165.1 90)
 			(effects
 				(font
 					(size 1 1))
@@ -3865,11 +3865,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+5V"
-			(at 17.78 203.2 90)
+			(at 22.86 203.2 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify right)))
+				(justify left)))
 		(property "Footprint" ""
 			(at 25.4 203.2 90)
 			(effects
@@ -3908,7 +3908,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 17.78 205.74 90)
+			(at 22.86 205.74 90)
 			(effects
 				(font
 					(size 1 1))
@@ -3962,7 +3962,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 38.1 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 38.1 0)
 			(effects
 				(font
@@ -4006,7 +4013,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 58.42 0)
 			(effects
 				(font
@@ -4050,7 +4064,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 78.74 0)
 			(effects
 				(font
@@ -4094,7 +4115,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 99.06 0)
 			(effects
 				(font
@@ -4138,7 +4166,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 119.38 0)
 			(effects
 				(font
@@ -4225,7 +4260,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 139.7 0)
 			(effects
 				(font
@@ -4312,7 +4354,14 @@
 					(size 1.27 1.27))
 				(justify left)
 				(hide yes)))
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc14a.pdf"
+			(at 114.3 180.34 0)
+			(effects
+				(font
+					(size 1.27 1.27))
+				(justify left)
+				(hide yes)))
+		(property "Description" "Hex Schmitt-trigger inverter, 5 V tolerant inputs, 1.65-5.5 V"
 			(at 114.3 180.34 0)
 			(effects
 				(font
@@ -4831,7 +4880,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 205.74 116.84 90)
+			(at 231.14 116.84 90)
 			(effects
 				(font
 					(size 1 1))
@@ -4874,7 +4923,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 205.74 119.38 90)
+			(at 231.14 119.38 90)
 			(effects
 				(font
 					(size 1 1))
@@ -4917,7 +4966,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 205.74 121.92 90)
+			(at 231.14 121.92 90)
 			(effects
 				(font
 					(size 1 1))
@@ -4960,11 +5009,11 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 205.74 104.14 90)
+			(at 231.14 104.14 90)
 			(effects
 				(font
 					(size 1 1))
-				(justify right)))
+				(justify left)))
 		(property "Footprint" ""
 			(at 233.68 104.14 90)
 			(effects
@@ -5003,7 +5052,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "GND"
-			(at 254 162.56 0)
+			(at 254 137.16 0)
 			(effects
 				(font
 					(size 1 1))
@@ -5046,7 +5095,7 @@
 				(justify left)
 				(hide yes)))
 		(property "Value" "+3V3"
-			(at 254 40.64 0)
+			(at 254 66.04 0)
 			(effects
 				(font
 					(size 1 1))
