@@ -117,7 +117,7 @@ on a broken wire.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | MPG handwheel | **ZS80-5E100S** — 80 mm dial, 100 PPR, 5 V, single-ended | ✅ | ⚠️ Spec B.8 records the ZS61 (60 mm). Same electricals, larger dial. Corrected in Rev H |
-| 1 | Schmitt inverter | **74LVC14, powered from 3.3 V** (panel P4), two stages per channel — order **SN74LVC14AD** (SOIC-14, fits panel carrier U1) | 🛒 | 5 V-tolerant inputs, outputs swing 0–3.3 V, hysteresis for EMI. **Non-inverting** as configured. Check the marking says **LVC** |
+| 1 | Schmitt inverter | **74LVC14, powered from 3.3 V** (panel P4), two stages per channel — **SN74LVC14AD** (SOIC-14, fits panel carrier U1) | 📦 | Ordered 2026-09-15. 5 V-tolerant inputs, outputs swing 0–3.3 V, hysteresis for EMI. **Non-inverting** as configured. Check the marking says **LVC** |
 | 1 | Level converter module (bench only) | 4-channel BSS138 bidirectional 3.3 V–5 V | 📦 | Ordered 2026-09-15 for the MPG bench test before the PCB: HV = buck 5 V, LV = panel 3.3 V, MPG A/B → HV1/HV2, LV1/LV2 → GPIO 6/7. **No Schmitt hysteresis** and does not fit U1 — not a substitute for the 74LVC14 in the build |
 | — | MPG cable | Shielded, 4-core | 🛒 | ELE-10 |
 
