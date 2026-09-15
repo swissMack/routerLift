@@ -117,7 +117,8 @@ on a broken wire.
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | MPG handwheel | **ZS80-5E100S** — 80 mm dial, 100 PPR, 5 V, single-ended | ✅ | ⚠️ Spec B.8 records the ZS61 (60 mm). Same electricals, larger dial. Corrected in Rev H |
-| 1 | Schmitt inverter | **74LVC14, powered from 3.3 V** (panel P4), two stages per channel | 🛒 | 5 V-tolerant inputs, outputs swing 0–3.3 V, hysteresis for EMI. **Non-inverting** as configured |
+| 1 | Schmitt inverter | **74LVC14, powered from 3.3 V** (panel P4), two stages per channel — order **SN74LVC14AD** (SOIC-14, fits panel carrier U1) | 🛒 | 5 V-tolerant inputs, outputs swing 0–3.3 V, hysteresis for EMI. **Non-inverting** as configured. Check the marking says **LVC** |
+| 1 | Level converter module (bench only) | 4-channel BSS138 bidirectional 3.3 V–5 V | 📦 | Ordered 2026-09-15 for the MPG bench test before the PCB: HV = buck 5 V, LV = panel 3.3 V, MPG A/B → HV1/HV2, LV1/LV2 → GPIO 6/7. **No Schmitt hysteresis** and does not fit U1 — not a substitute for the 74LVC14 in the build |
 | — | MPG cable | Shielded, 4-core | 🛒 | ELE-10 |
 
 > ⚠️ **74LVC14, not 74HCT14 — design error corrected 2026-09-13.** Rev A of this BOM specified a
@@ -136,7 +137,8 @@ switch. Deliberately split across both boards.
 
 | Qty | Item | Specification | Status | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | I/O expander | **MCP23017**, I²C, addr **0x20** | 🛒 | On its own I²C bus 1, GPIO 15 SDA / 16 SCL (connector P3), 100 kHz, external 4.7 kΩ pull-ups to 3.3 V. Powered from P4 GND · 3.3V. The touch bus reaches no connector. **Costs two GPIOs.** 16 I/O, 10 spare |
+| 1 | I/O expander | **MCP23017-E/SO** (SOIC-28 wide, fits panel carrier U2), I²C, addr **0x20** | 📦 | On its own I²C bus 1, GPIO 15 SDA / 16 SCL (connector P3), 100 kHz, external 4.7 kΩ pull-ups to 3.3 V. Powered from P4 GND · 3.3V. The touch bus reaches no connector. **Costs two GPIOs.** 16 I/O, 10 spare. Ordered 2026-09-15 |
+| 1 | I/O expander module (bench only) | MCP23017-E/SS breakout (SSOP-28) | 📦 | Ordered 2026-09-15 for bench testing. ⚠️ **Power from 3.3 V, never 5 V** — its I²C pull-ups go to VCC. Tie A0–A2 to GND (0x20) and confirm RESET is pulled high. SSOP does not fit U2 |
 | 6 | Push button | Momentary NO, panel mount, ≥16 mm | 🛒 | Dry contacts to GND, expander internal pull-ups |
 | 1 | Rough/fine selector | SPDT toggle → GND | 🛒 | ELE-09: 2 positions, not the legacy 3-band x1/x10/x100 |
 | 1 | Indicator LED | Panel mount, + series resistor | 🛒 | ROUTER only — lit = live, blinking = warming |
