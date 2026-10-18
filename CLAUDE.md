@@ -1,6 +1,12 @@
 # Project: routerLift — handoff for Claude Code
 
-## ▶ Current state (2026-09-13) — read this first
+## ▶ Current state (2026-10-18) — read this first
+
+**2026-10-18: first motion on the bench.** TB6600 + bare NEMA 23 jog correctly on 3.3 V signals up
+to 720 mm/min. Two open faults: the WROOM resets/hangs when the 24 V circuit is switched, and the
+TB6600 clone appears to deliver ~2 A peak at its "3.5 A" setting (estimate). ENA− not wired yet;
+`disable_pin` polarity suspect. FluidNC is now at **192.168.1.87**. Details and next steps:
+`docs/BRINGUP-LOG.md`, 2026-10-18 entry.
 
 **Bench status and the resume checklist live in `docs/BRINGUP-LOG.md`.** Design detail lives in
 `docs/DESIGN-PLAN-RevH.md`. In short:

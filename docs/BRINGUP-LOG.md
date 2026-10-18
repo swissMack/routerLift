@@ -5,6 +5,113 @@ the machine *should* be; this file says what has been *proven on the bench*.
 
 ---
 
+## 2026-10-18 — Step C: TB6600 + stepper on the bench ✅ moves, ⚠ two open faults
+
+First motion. Bare NEMA 23 (57HS76-3004A08) on the bench, no lift, no coupling load beyond a
+40 mm jaw coupling on the shaft. Driven over telnet with `$J=` jogs.
+
+### Setup as tested
+
+| Item | As wired |
+| --- | --- |
+| WROOM power | Own Raspberry Pi USB-C supply. **Not** the display's 3V3 — on that rail it browned out |
+| Signal wiring | WROOM 3V3 → PUL+/DIR+/ENA+, D26 → PUL−, D27 → DIR−, **ENA− not connected** (driver enabled) |
+| ESP decoupling | 100 µF electrolytic + 100 nF ceramic across WROOM 3V3–GND (added mid-session) |
+| Motor | RED A+, GRN A−, YEL B+, BLU B−. Coils 1.1 Ω (A) and 1.21 Ω (B) measured at the driver terminals |
+| Driver supply | Bench PSU, 24 V (23.999 V on the Fluke), 3 A limit; later 30 V. No common ground with the ESP |
+| DIP | S1–S3 OFF/ON/OFF (1/8, 1600 pulse/rev). Current stepped 1.0 → 1.5 → 2.0 → 3.0 → 3.5 A |
+| Limits / probe | D33 and D25 jumpered to GND; D32 free. `Pn:` empty |
+
+FluidNC came up on **192.168.1.87**, not .82 — DHCP moved it. Reserve it on the UCG Fiber.
+
+### ✅ Proven
+
+- **Step and direction work on 3.3 V common anode.** Both directions, 0.05 mm to 20 mm moves,
+  60 to **720 mm/min (full rapid)**. Position counts were exact on every move.
+- **Soft limit, bottom end:** a `Z-3` jog from Z 1 was clipped at Z −0.001, i.e. the
+  `(-0.001, 65.001)` envelope works the right way round for home-negative / work-positive.
+  The top end is still unproven (the `config.yaml` VERIFY note stands), and the envelope only
+  means anything after a real `$H`.
+- `G90` / `G91` / `G53` jogs and a `G10 L20` work offset behave as expected.
+- **Hard-limit alarm latches:** after a jumper came off, `$X` was ignored until a soft reset
+  (Ctrl-X). Expected GRBL behaviour — worth knowing for the HMI.
+- **Motor and driver stay cool** at every setting, including "3.5 A" with `idle_ms: 255`.
+- **The driver regulates current:** supply current did not rise when the supply went 24 → 30 V.
+
+### ⚠ Fault 1 — the ESP resets or hangs when the 24 V circuit is switched or broken
+
+Seen about six times. Switching the bench PSU, or breaking the 24 V lead to insert a meter,
+knocked the WROOM off WiFi; it came back in Alarm at MPos 0 (a reboot), and twice it hung until
+EN or a repower. It never reset during motion, including more than 100 mm of jogging at rapid.
+One possible drop happened while the motor was being stalled by hand — not confirmed.
+
+- With the three signal wires **unplugged**, two 24 V toggles did not reset it (one trial).
+- With the wires connected and the 100 µF + 100 nF fitted, it survived two toggles once and hung
+  on the next power-up. **Capacitors helped at best partly.**
+- Pulling the live 3V3 lead out of the terminal with power on also reset it.
+
+Working theory: the disturbance enters through the signal wiring, most likely the 3V3 feed, which
+is the ESP's own rail. Not proven — n is small and the fault is intermittent.
+
+Bench rule until fixed: **24 V on first, then the ESP; never toggle 24 V under a running ESP;
+re-wire only with both off.** On the real machine both rails come from one 24 V PSU via the buck,
+so they power together — but the fault must still be understood before the lift is fitted.
+
+**Final-design candidate (not decided):** isolate the signal path with a *fast* isolator —
+6N137 or a digital isolator (ISO7721 / ADuM1201) — fed by an isolated 5 V DC-DC on the driver side.
+That also gives the TB6600 its rated 5 V inputs and ends the 3.3 V-anode question. **Not** PC817
+modules: too slow for the 12.8 kHz step rate at rapid with 4 µs pulses.
+
+### ⚠ Fault 2 — torque felt low; driver current lower than the DIP labels
+
+- At 1.0 and 1.5 A the shaft could be turned easily at standstill, and a hand on the 40 mm coupling
+  stalled it at once. It got noticeably stronger at 2.0, 3.0 and 3.5 A, but could still be held by
+  hand at 3.0/3.5 A.
+- Supply-side current (Fluke DC A in series with the 24 V lead): **0.20 A** standstill / **0.23 A**
+  moving at "3.0 A"; **0.25–0.26 A** standstill at "3.5 A", moving no higher, ~0.30 A when stalled
+  by hand. At 30 V it stayed under 0.3 A.
+- Estimate from supply power: 0.26 A × 24 V ≈ 6.2 W, minus ~1.5 W driver overhead → ~4.7 W in the
+  coils → ~1.4 A RMS ≈ **2 A peak per phase at the "3.5 A" setting**. A true 3 A would draw
+  ~0.45–0.55 A. This is an **estimate**, not a coil measurement.
+- Steps lost on a hand stall went undetected (flag moved, FluidNC still reported the target) —
+  DEV-01 exactly as designed for.
+
+What this does and does not show:
+
+- A **low supply current is normal for a chopper driver** — it is a buck converter, so supply
+  current ≈ coil power ÷ supply voltage, far below the phase current. The reading by itself is
+  not a fault; only the power estimate above points at a short-delivering driver.
+- **Holding the 40 mm coupling by hand is not evidence of a weak driver.** At 20 mm radius, even
+  the full 2 N·m rating is only ~100 N of grip force, and moving torque is lower than holding
+  torque. ~2 A peak is ~1.3 N·m holding — still about **8× the 0.15 N·m the lift needs**.
+- Likely causes if the driver really is short: clone TB6600 boards (often a TB67S109 behind the
+  TB6600 label) commonly ship with optimistic current tables or differing sense resistors; and
+  labels mix RMS and peak figures.
+
+**Consequence for the BOM:** the 1.0–1.4 A in `docs/BOM.md` assumes the label is true. On this
+driver the switch setting is no guide — choose it from a torque measurement.
+
+### Not done / next session
+
+1. **Measure the phase current directly:** Fluke on **AC A, 10 A jack, in series with one motor
+   lead** (insert with ESP and 24 V **off** — never open a motor lead under power), slow jog at
+   60 mm/min (~33 Hz). Peak ≈ reading × 1.41. Settles fault 2.
+2. **Torque measurement:** a ~10 cm lever on the shaft pressing on a kitchen scale during a slow
+   jog; stall torque = kg × 9.81 × 0.10. Target a stall well above 150 g (0.15 N·m), around
+   450–600 g, while still stalling safely against a hard stop. Then set the final DIP current.
+3. **Fault 1 trials:** 5 toggles with the signal wires unplugged vs 5 connected, to prove the path.
+4. **ENA polarity:** connect D14 → ENA− with power off and check whether the shaft still holds.
+   Expected to go slack — common anode makes ENA− low = disabled, so `disable_pin` probably
+   needs `gpio.14:low`.
+5. **Confirm G54 is cleared:** `G10 L2 P1 Z0` was sent at the end but the board dropped off before
+   it could be read back. Check `$#` shows `[G54:0.000,0.000,0.000]`.
+6. DIP left at **3.5 A**, above the motor's 3.0 A rating — fine at the measured current, but set it
+   back once the torque measurement picks the value.
+7. Close the FluidNC WebUI during telnet tests — with both open the board ended up in `Sleep` and
+   the WebUI showed 500 errors.
+
+---
+
 ## 2026-09-13 (later) — Step B: UART link ✅ passed
 
 Supplied P4 lead wired as planned (red GND, blue IO17 → D17, black IO18 → D16, yellow
